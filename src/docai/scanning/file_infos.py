@@ -13,12 +13,13 @@ def get_file_type(file: str) -> str:
         raise FileNotFoundError(f"File '{file}' does not exist")
 
     # check for extention
+    _, file_extension = os.path.splitext(file)
+    if file_extension != "":
+        return file_extension[1:]
 
     # check for magic numbers
-    #
-    #
     kind = filetype.guess(file)
-    if kind is None:
-        raise ValueError("Could not detect file type")
+    if kind is not None:
+        return kind.extension
 
-    return kind.extension
+    return None
