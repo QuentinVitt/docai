@@ -1,8 +1,24 @@
+import os
+
+import filetype
+
+
 def get_file_type(file: str) -> str:
     # TODO: caching
     # TODO: logging
     # TODO: test logic
-    if "." not in file:
-        # TODO: implement fallback logic - what happends if the file type could not be detected via extension? Maybe it is an executable or not even a file
+
+    # check if this is a real file
+    if not os.path.isfile(file):
+        raise FileNotFoundError(f"File '{file}' does not exist")
+
+    # check for extention
+
+    # check for magic numbers
+    #
+    #
+    kind = filetype.guess(file)
+    if kind is None:
         raise ValueError("Could not detect file type")
-    return file.split(".")[-1]
+
+    return kind.extension
