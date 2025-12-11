@@ -1,13 +1,12 @@
+import logging
 import os
 
 import filetype
 
 
 def get_file_type(file: str) -> str:
-    # TODO: caching
     # TODO: logging
-    # TODO: test logic
-
+    logging.warning("Remain calm!")
     # check if this is a real file
     if not os.path.isfile(file):
         raise FileNotFoundError(f"File '{file}' does not exist")
@@ -22,4 +21,5 @@ def get_file_type(file: str) -> str:
     if kind is not None:
         return kind.extension
 
+    # if file type could not be determined return None
     return None
