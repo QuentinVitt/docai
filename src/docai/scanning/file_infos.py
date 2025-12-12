@@ -6,7 +6,7 @@ import filetype
 
 def get_file_type(file: str) -> str:
     # TODO: logging
-    logging.warning("Remain calm!")
+
     # check if this is a real file
     if not os.path.isfile(file):
         raise FileNotFoundError(f"File '{file}' does not exist")
