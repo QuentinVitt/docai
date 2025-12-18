@@ -1,0 +1,46 @@
+providers:
+  google:
+    api_key_env: GEMINI_API_KEY
+
+models:
+  gemini-2.5-flash:
+    provider: google
+    model_name: gemini-2.5-flash
+    # generation:
+    #   temperature: 0.2
+    #   max_output_tokens: 2048
+    #   top_p: 0.95
+    safety: {} # provider-specific knobs if needed
+  gemini-1.5-pro:
+    provider: google
+    model_name: gemini-1.5-pro
+    generation:
+      temperature: 0.4
+      max_output_tokens: 4096
+
+usecases:
+  default:
+    model: gemini-2.5-flash
+    tools:
+      allowed: [search]
+  summarization:
+    model: gemini-2.5-flash
+    tools:
+      allowed: [] # no tools needed
+  dependency_extraction:
+    model: gemini-1.5-pro
+    tools:
+      allowed: [search]
+  code_assistant:
+    model: gemini-1.5-pro
+    tools:
+      allowed: [search, code_interpreter]
+
+# Optional global tool definitions if you need config per tool
+tools:
+  search:
+    type: web
+    timeout_ms: 5000
+  code_interpreter:
+    type: python_sandbox
+    timeout_ms: 20000

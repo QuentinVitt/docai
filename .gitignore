@@ -8,6 +8,3 @@ wheels/
 
 # Virtual environments
 .venv
-
-# API-Keys
-src/docai/config/llm_config.yaml

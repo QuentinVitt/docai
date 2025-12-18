@@ -15,7 +15,7 @@ def setup_logging(args):
     try:
         config_test = resources.open_text(CONFIG_PACKAGE, CONFIG_FILE)
     except FileNotFoundError:
-        logging.fatal("Logging configuration file not found")
+        logging.critical("Logging configuration file not found", exc_info=True)
         exit(1)
 
     config = yaml.safe_load(config_test)
