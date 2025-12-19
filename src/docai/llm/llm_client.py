@@ -126,6 +126,7 @@ class llm_client:
         client = genai.Client(api_key=api_key)
         logger.debug("New google client created")
         model_config = config["models"][model]
+        model_name = model_config.get("model_name", model)
         generation_config = model_config.get("generation", {})
 
         if agent_mode:
@@ -138,17 +139,18 @@ class llm_client:
             structured_output: dict | None = None,
         ):
             # Keep wrapper async; offload sync SDK call to a thread
+            call_generation_config = dict(generation_config)
             if system_prompt:
-                generation_config["system_prompt"] = system_prompt
+                call_generation_config["system_prompt"] = system_prompt
             if structured_output:
                 logger.critical("Structured output is implemented")
                 exit(1)
 
             def _call():
                 return client.models.generate_content(
-                    model=model,
+                    model=model_name,
                     contents=contents,
-                    config=types.GenerateContentConfig(**generation_config),
+                    config=types.GenerateContentConfig(**call_generation_config),
                 )
 
             try:
