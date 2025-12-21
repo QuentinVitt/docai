@@ -1,7 +1,10 @@
 import asyncio
 import logging
 import os
+from dataclasses import dataclass
+from enum import Enum
 from importlib import resources
+from typing import Any
 
 import yaml
 from google import genai
@@ -13,144 +16,106 @@ CONFIG_PACKAGE = "docai.config"
 CONFIG_FILE = "llm_config.yaml"
 
 
-### call_llm function:
-# input:
-# - contents: prompt (str) and history
-# - system_prompt: str, optional
-# - structured_output:
-# output:
-#
-# function_call: bool,
-# response: str, or function_call.name: str, and function_call.arguments: dict
+class LLMRole(Enum):
+    SYSTEM = "system"
+    USER = "user"
+    ASSISTANT = "assistant"
+    FUNCTION = "function"
 
 
-class llm_client:
-    def __init__(
-        self,
-        model: str | None = None,
-        usecase: str | None = None,
-        agent_mode: bool = False,
-    ):
-        logger.debug("Initializing llm_client")
-        logger.debug("Loading llm config file")
-        # load config file
+@dataclass
+class LLMFunctionRequest:
+    name: str
+    args: dict[str, Any]
+
+
+@dataclass
+class LLMMessage:
+    role: LLMRole
+    content: str | LLMFunctionRequest
+
+
+@dataclass
+class LLMRequest:
+    request_id: str
+    model: str
+    contents: list[LLMMessage]
+    system_prompt: str | None = None
+    agent_mode: bool = False
+    structured_output: dict | None = None
+    model_config: dict[str, Any] | None = None
+
+
+@dataclass
+class LLMResponse:
+    request_id: str
+    response: LLMMessage
+    function_call: bool = False
+    error: Any = None  # TODO: Implement and define proper error types and handle them in the LLMResponse
+
+
+class LLMClient:
+    def __init__(self, provider: str):
+        logger.debug("Initializing llm_client for %s", provider)
+
+        # load provider config:
+        logger.debug("Loading provider config")
         try:
-            config_test = resources.open_text(CONFIG_PACKAGE, CONFIG_FILE)
+            llm_config_raw = resources.open_text(CONFIG_PACKAGE, CONFIG_FILE)
         except FileNotFoundError:
-            logger.fatal("Logging configuration file not found")
+            logger.critical("Logging configuration file not found", exc_info=True)
             exit(1)
 
-        config = yaml.safe_load(config_test)
+        provider_config = yaml.safe_load(llm_config_raw)["providers"][provider]
 
-        # get the model
-        if model:
-            logger.debug("Getting model from arguments")
-        elif usecase:
-            logger.debug("Getting default model for usecase %s", usecase)
-            model = self.__get_model_from_usecase(usecase, config)
-        else:
-            logger.debug("Getting default model")
-            model = self.__get_default_model(config)
-
-        # get the provider
-        logger.debug("Getting provider for model %s", model)
-        provider = self.__get_provider_from_model(model, config)
-
-        if provider is None:
-            logger.critical("No provider found for model %s", model)
-            exit(1)
-
-        logger.debug("Provider found: %s", provider)
-
-        # configure the provider
-        logger.debug("Configure provider and set-up wrapper function for call_llm")
         match provider:
             case "google":
-                self.call_llm = self.__configure_google_llm(model, config, agent_mode)
+                logger.debug("Generating call_llm for google")
+                self.call_llm = self.__configure_google_llm(provider_config)
             case _:
                 logger.critical("Unsupported provider: %s", provider)
                 exit(1)
 
-    def __get_model_from_usecase(self, usecase: str, config: dict) -> str:
-        try:
-            return config["usecases"][usecase]["model"]
-        except KeyError:
-            logger.critical(
-                "Usecase %s not found in configuration", usecase, exc_info=True
-            )
-            exit(1)
-        except Exception:
-            logger.critical(
-                "Unexpected error while getting model from usecase: %s",
-                usecase,
-                exc_info=True,
-            )
-            exit(1)
-
-    def __get_default_model(self, config: dict) -> str:
-        try:
-            return config["usecases"]["default"]["model"]
-        except KeyError:
-            logger.critical("Default model not found in configuration", exc_info=True)
-            exit(1)
-        except Exception:
-            logger.critical(
-                "Unexpected error while getting default model", exc_info=True
-            )
-            exit(1)
-
-    def __get_provider_from_model(self, model: str, config: dict) -> str:
-        logger.debug("Getting provider from model %s", model)
-        try:
-            return config["models"][model]["provider"]
-        except KeyError:
-            logger.critical("Model %s not found in configuration", model, exc_info=True)
-            exit(1)
-        except Exception:
-            logger.critical(
-                "Unexpected error while getting provider from model", exc_info=True
-            )
-            exit(1)
-
-    def __configure_google_llm(
-        self, model: str, config: dict, agent_mode: bool = False
-    ):
+    def __configure_google_llm(self, provider_config: dict):
         # check if API key is set
         logger.debug("Checking if an API key is set")
-        api_key_name = config["providers"]["google"]["api_key_env"]
+        if not provider_config["api_key_env"]:
+            logger.critical("API key env is not specified in config file")
+            exit(1)
+        api_key_name = provider_config["api_key_env"]
         api_key = os.environ.get(api_key_name)
         if not api_key:
             logger.critical("API key %s not set", api_key_name)
             exit(1)
 
-        client = genai.Client(api_key=api_key)
-        logger.debug("New google client created")
-        model_config = config["models"][model]
-        model_name = model_config.get("model_name", model)
-        generation_config = model_config.get("generation", {})
-
-        if agent_mode:
-            logger.critical("Agent mode is not implemented")
+        try:
+            client = genai.Client(api_key=api_key)
+        except Exception:
+            logger.critical("Failed to create Google client", exc_info=True)
             exit(1)
 
-        async def wrapper(
-            contents: str,
-            system_prompt: str | None = None,
-            structured_output: dict | None = None,
-        ):
+        logger.debug("New google client created")
+
+        async def wrapper(request: LLMRequest) -> LLMResponse:
             # Keep wrapper async; offload sync SDK call to a thread
-            call_generation_config = dict(generation_config)
-            if system_prompt:
-                call_generation_config["system_prompt"] = system_prompt
-            if structured_output:
+            # Copy so we don't mutate caller-provided config
+            model_config = dict(request.model_config) if request.model_config else {}
+            if request.system_prompt:
+                model_config["system_prompt"] = request.system_prompt
+            if request.structured_output:
                 logger.critical("Structured output is implemented")
                 exit(1)
 
+            # setup the content:
+            google_contents = [
+                self.__google_content_from_dict(message) for message in request.contents
+            ]
+
             def _call():
                 return client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=types.GenerateContentConfig(**call_generation_config),
+                    model=request.model,
+                    contents=google_contents,
+                    config=types.GenerateContentConfig(**model_config),
                 )
 
             try:
@@ -159,6 +124,46 @@ class llm_client:
                 logger.exception("Google LLM call failed: \n%s", e, exc_info=True)
                 raise
 
-            return False, response.text
+            return LLMResponse(
+                request_id=request.request_id,
+                response=LLMMessage(
+                    role=LLMRole.ASSISTANT,
+                    content=response.text if response.text else "",
+                ),
+            )
 
         return wrapper
+
+    def __google_content_from_dict(self, message: LLMMessage) -> types.Content:
+        """
+        Translate an internal LLMMessage into a Google Content object.
+        Ensures text parts are strings and handles function call payloads explicitly.
+        """
+        try:
+            match message.role:
+                case LLMRole.USER:
+                    if not isinstance(message.content, str):
+                        logger.critical(
+                            "User content must be text, got %s",
+                            type(message.content).__name__,
+                            exc_info=True,
+                        )
+                        exit(1)
+                    return types.Content(
+                        role="user", parts=[types.Part(text=message.content)]
+                    )
+                case _:
+                    logger.critical(
+                        "Undefined role for llm_call: %s", message.role, exc_info=True
+                    )
+                    exit(1)
+
+        except KeyError as e:
+            logger.critical("Missing or wrong key in content: %s", e, exc_info=True)
+            exit(1)
+        except Exception:
+            logger.exception(
+                "Unidentfied error while translating content for google llm",
+                exc_info=True,
+            )
+            exit(1)

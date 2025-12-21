@@ -1,27 +1,36 @@
 import asyncio
 import logging
-import os
-from importlib import resources
+from typing import AsyncIterable, AsyncIterator
 
-import yaml
-from _typeshed import ExcInfo
-from google import genai
+from docai.llm.llm_client import LLMClient
 
 logger = logging.getLogger("docai_project")
 
-CONFIG_PACKAGE = "docai.config"
-CONFIG_FILE = "llm_config.yaml"
-
 
 async def run_llm(
-    contents: list[str],
-    use_case: str | None = None,
+    requests: AsyncIterable[list[dict[str, str]]],
+    usecase: str | None = None,
     model: str | None = None,
-    agent: bool = False,
-):
-    # Configure the llm
+    agent_mode: bool = False,
+) -> AsyncIterator[tuple[bool, str | None]]:
+    """
+    Lazily process LLM requests from an async iterable and yield results as they complete.
+    Each yielded item matches the LLMClient.call_llm return (function_call flag, text).
+    """
+    client = LLMClient(model=model, usecase=usecase, agent_mode=agent_mode)
+    semaphore = asyncio.Semaphore(10)
 
-    # Call the configured llm
-    # response = await call_llm()  # Simulates the delay of the LLM call
-    raise NotImplementedError("run_llm is not implemented")
-    # return response
+    async def _handle(contents: list[dict[str, str]]) -> tuple[bool, str | None]:
+        async with semaphore:
+            return await client.call_llm(contents)
+
+    async for contents in requests:
+        try:
+            yield await _handle(contents)
+        except Exception:
+            logger.exception("LLM request failed")
+            raise
+
+    # TODO: retries
+    # TODO: max in-flight requests / backpressure
+    # TODO: optional per-request error handling strategy
