@@ -1,35 +1,67 @@
 import asyncio
 import logging
+from importlib import resources
 from typing import AsyncIterable, AsyncIterator
 
-from docai.llm.llm_client import LLMClient
+import yaml
+
+from docai.llm.llm_client import LLMClient, LLMRequest, LLMResponse
 
 logger = logging.getLogger("docai_project")
 
+CONFIG_PACKAGE = "docai.config"
+CONFIG_FILE = "llm_config.yaml"
+
+max_concurrency = 10
+
+try:
+    llm_config_raw = resources.open_text(CONFIG_PACKAGE, CONFIG_FILE)
+except FileNotFoundError:
+    logger.critical("Logging configuration file not found", exc_info=True)
+    exit(1)
+
+llm_config = yaml.safe_load(llm_config_raw)
+
 
 async def run_llm(
-    requests: AsyncIterable[list[dict[str, str]]],
-    usecase: str | None = None,
-    model: str | None = None,
-    agent_mode: bool = False,
-) -> AsyncIterator[tuple[bool, str | None]]:
+    requests: AsyncIterable[LLMRequest],
+) -> AsyncIterator[LLMResponse]:
     """
     Lazily process LLM requests from an async iterable and yield results as they complete.
     Each yielded item matches the LLMClient.call_llm return (function_call flag, text).
     """
-    client = LLMClient(model=model, usecase=usecase, agent_mode=agent_mode)
-    semaphore = asyncio.Semaphore(10)
 
-    async def _handle(contents: list[dict[str, str]]) -> tuple[bool, str | None]:
-        async with semaphore:
-            return await client.call_llm(contents)
+    clients: dict[str, LLMClient] = {}
+    pending: set[asyncio.Task[LLMResponse]] = set()
 
-    async for contents in requests:
-        try:
-            yield await _handle(contents)
-        except Exception:
-            logger.exception("LLM request failed")
-            raise
+    async def handle(req: LLMRequest) -> LLMResponse:
+        provider = llm_config["models"][req.model]["provider"]
+        if provider not in clients:
+            clients[provider] = LLMClient(provider)
+        return await clients[provider].call_llm(req)
+
+    async for req in requests:
+        pending.add(asyncio.create_task(handle(req)))
+
+        if len(pending) >= max_concurrency:
+            done, _ = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                pending.remove(task)
+                try:
+                    response = task.result()
+                    yield response
+                except Exception as e:
+                    yield LLMResponse(request_id=req.request_id, error=str(e))
+
+    while pending:
+        done, _ = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            pending.remove(task)
+            try:
+                response = task.result()
+                yield response
+            except Exception as e:
+                yield LLMResponse(request_id="", error=str(e))
 
     # TODO: retries
     # TODO: max in-flight requests / backpressure

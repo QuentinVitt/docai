@@ -10,7 +10,6 @@ models:
     #   temperature: 0.2
     #   max_output_tokens: 2048
     #   top_p: 0.95
-    safety: {} # provider-specific knobs if needed
   gemini-1.5-pro:
     provider: google
     model_name: gemini-1.5-pro
@@ -36,3 +35,6 @@ tools:
   code_interpreter:
     type: python_sandbox
     timeout_ms: 20000
+
+globals:
+  max_concurrency: 10

@@ -49,9 +49,11 @@ class LLMRequest:
 @dataclass
 class LLMResponse:
     request_id: str
-    response: LLMMessage
+    response: LLMMessage | None = None
     function_call: bool = False
-    error: Any = None  # TODO: Implement and define proper error types and handle them in the LLMResponse
+    error: str | None = (
+        None  # TODO: Implement and define proper error types and handle them in the LLMResponse
+    )
 
 
 class LLMClient:
@@ -101,9 +103,12 @@ class LLMClient:
             # Copy so we don't mutate caller-provided config
             model_config = dict(request.model_config) if request.model_config else {}
             if request.system_prompt:
-                model_config["system_prompt"] = request.system_prompt
+                model_config["system_instruction"] = request.system_prompt
             if request.structured_output:
-                logger.critical("Structured output is implemented")
+                logger.critical("Structured output is not implemented")
+                exit(1)
+            if request.agent_mode:
+                logger.critical("Agent mode is not implemented")
                 exit(1)
 
             # setup the content:
@@ -120,17 +125,16 @@ class LLMClient:
 
             try:
                 response = await asyncio.to_thread(_call)
+                return LLMResponse(
+                    request_id=request.request_id,
+                    response=LLMMessage(
+                        role=LLMRole.ASSISTANT,
+                        content=response.text if response.text else "",
+                    ),
+                )
             except Exception as e:
-                logger.exception("Google LLM call failed: \n%s", e, exc_info=True)
-                raise
-
-            return LLMResponse(
-                request_id=request.request_id,
-                response=LLMMessage(
-                    role=LLMRole.ASSISTANT,
-                    content=response.text if response.text else "",
-                ),
-            )
+                logger.exception("Google LLM call failed", exc_info=True)
+                return LLMResponse(request_id=request.request_id, error=str(e))
 
         return wrapper
 
