@@ -3,12 +3,12 @@ import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
-from importlib import resources
 from typing import Any
 
-import yaml
 from google import genai
 from google.genai import types
+
+from docai.llm.agent_tools import TOOL_REGISTRY
 
 logger = logging.getLogger("docai_project")
 
@@ -20,7 +20,8 @@ class LLMRole(Enum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
-    FUNCTION = "function"
+    FUNCTIONREQ = "function_request"
+    FUNCTIONRESP = "function_response"
 
 
 @dataclass
@@ -30,9 +31,15 @@ class LLMFunctionRequest:
 
 
 @dataclass
+class LLMFunctionResponse:
+    name: str
+    result: Any
+
+
+@dataclass
 class LLMMessage:
     role: LLMRole
-    content: str | LLMFunctionRequest
+    content: str | LLMFunctionRequest | LLMFunctionResponse
 
 
 @dataclass
@@ -41,7 +48,7 @@ class LLMRequest:
     model: str
     contents: list[LLMMessage]
     system_prompt: str | None = None
-    agent_mode: bool = False
+    agent_functions: list[str] | None = None
     structured_output: dict | None = None
     model_config: dict[str, Any] | None = None
 
@@ -57,18 +64,8 @@ class LLMResponse:
 
 
 class LLMClient:
-    def __init__(self, provider: str):
+    def __init__(self, provider: str, provider_config: dict):
         logger.debug("Initializing llm_client for %s", provider)
-
-        # load provider config:
-        logger.debug("Loading provider config")
-        try:
-            llm_config_raw = resources.open_text(CONFIG_PACKAGE, CONFIG_FILE)
-        except FileNotFoundError:
-            logger.critical("Logging configuration file not found", exc_info=True)
-            exit(1)
-
-        provider_config = yaml.safe_load(llm_config_raw)["providers"][provider]
 
         match provider:
             case "google":
@@ -105,11 +102,20 @@ class LLMClient:
             if request.system_prompt:
                 model_config["system_instruction"] = request.system_prompt
             if request.structured_output:
-                logger.critical("Structured output is not implemented")
-                exit(1)
-            if request.agent_mode:
-                logger.critical("Agent mode is not implemented")
-                exit(1)
+                model_config["response_mime_type"] = "application/json"
+                model_config["response_json_schema"] = request.structured_output
+            if request.agent_functions:
+                # Build tools list exactly as in Gemini examples:
+                # tools = [types.Tool(function_declarations=[tool_1, tool_2, ...])]
+                function_decls = [
+                    TOOL_REGISTRY[name]
+                    for name in request.agent_functions
+                    if name in TOOL_REGISTRY
+                ]
+                if function_decls:
+                    model_config["tools"] = [
+                        types.Tool(function_declarations=function_decls)
+                    ]
 
             # setup the content:
             google_contents = [
@@ -125,13 +131,7 @@ class LLMClient:
 
             try:
                 response = await asyncio.to_thread(_call)
-                return LLMResponse(
-                    request_id=request.request_id,
-                    response=LLMMessage(
-                        role=LLMRole.ASSISTANT,
-                        content=response.text if response.text else "",
-                    ),
-                )
+                return LLMResponse(request_id=request.request_id, response=response)
             except Exception as e:
                 logger.exception("Google LLM call failed", exc_info=True)
                 return LLMResponse(request_id=request.request_id, error=str(e))
@@ -156,6 +156,58 @@ class LLMClient:
                     return types.Content(
                         role="user", parts=[types.Part(text=message.content)]
                     )
+                case LLMRole.ASSISTANT:
+                    if not isinstance(message.content, str):
+                        logger.critical(
+                            "Model content must be text, got %s",
+                            type(message.content).__name__,
+                            exc_info=True,
+                        )
+                        exit(1)
+                    return types.Content(
+                        role="model",
+                        parts=[types.Part.from_text(text=message.content)],
+                    )
+                case LLMRole.SYSTEM:
+                    logger.critical(
+                        "System content not supported for google llm", exc_info=True
+                    )
+                    exit(1)
+                case LLMRole.FUNCTIONREQ:
+                    if not isinstance(message.content, LLMFunctionRequest):
+                        logger.critical(
+                            "Model content must be LLMFunctionRequest, got %s",
+                            type(message.content).__name__,
+                            exc_info=True,
+                        )
+                        exit(1)
+
+                    return types.Content(
+                        role="model",
+                        parts=[
+                            types.Part(
+                                function_call=types.FunctionCall(
+                                    name=message.content.name, args=message.content.args
+                                )
+                            )
+                        ],
+                    )
+
+                case LLMRole.FUNCTIONRESP:
+                    if not isinstance(message.content, LLMFunctionResponse):
+                        logger.critical(
+                            "Function response content must be LLMFunctionResponse, got %s",
+                            type(message.content).__name__,
+                            exc_info=True,
+                        )
+                        exit(1)
+
+                    function_response_part = types.Part.from_function_response(
+                        name=message.content.name,
+                        response={"result": message.content.result},
+                    )
+                    return types.Content(role="user", parts=[function_response_part])
+
                 case _:
                     logger.critical(
                         "Undefined role for llm_call: %s", message.role, exc_info=True

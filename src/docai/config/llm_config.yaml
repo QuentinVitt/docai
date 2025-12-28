@@ -21,20 +21,20 @@ profiles:
   default:
     model: gemini-2.5-flash
     tools:
-      allowed: [search]
+      allowed: [dummy_schedule_meeting_function]
   fast:
     model: gemini-2.5-flash
     tools:
       allowed: [search]
 
 # Optional global tool definitions if you need config per tool
-tools:
-  search:
-    type: web
-    timeout_ms: 5000
-  code_interpreter:
-    type: python_sandbox
-    timeout_ms: 20000
+# tools:
+#   search:
+#     type: web
+#     timeout_ms: 5000
+#   code_interpreter:
+#     type: python_sandbox
+#     timeout_ms: 20000
 
 globals:
   max_concurrency: 10

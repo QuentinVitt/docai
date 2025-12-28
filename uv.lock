@@ -109,6 +109,7 @@ dependencies = [
     { name = "google-genai" },
     { name = "importlib" },
     { name = "logging" },
+    { name = "pydantic" },
     { name = "pyyaml" },
 ]
 
@@ -123,6 +124,7 @@ requires-dist = [
     { name = "google-genai", specifier = ">=1.55.0" },
     { name = "importlib", specifier = ">=1.0.4" },
     { name = "logging", specifier = ">=0.4.9.6" },
+    { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 

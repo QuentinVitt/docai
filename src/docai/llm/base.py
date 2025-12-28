@@ -1,30 +1,17 @@
 import asyncio
 import logging
-from importlib import resources
 from typing import AsyncIterable, AsyncIterator
-
-import yaml
 
 from docai.llm.llm_client import LLMClient, LLMRequest, LLMResponse
 
 logger = logging.getLogger("docai_project")
 
-CONFIG_PACKAGE = "docai.config"
-CONFIG_FILE = "llm_config.yaml"
-
 max_concurrency = 10
-
-try:
-    llm_config_raw = resources.open_text(CONFIG_PACKAGE, CONFIG_FILE)
-except FileNotFoundError:
-    logger.critical("Logging configuration file not found", exc_info=True)
-    exit(1)
-
-llm_config = yaml.safe_load(llm_config_raw)
 
 
 async def run_llm(
     requests: AsyncIterable[LLMRequest],
+    llm_config: dict,
 ) -> AsyncIterator[LLMResponse]:
     """
     Lazily process LLM requests from an async iterable and yield results as they complete.
@@ -37,7 +24,7 @@ async def run_llm(
     async def handle(req: LLMRequest) -> LLMResponse:
         provider = llm_config["models"][req.model]["provider"]
         if provider not in clients:
-            clients[provider] = LLMClient(provider)
+            clients[provider] = LLMClient(provider, llm_config["providers"][provider])
         return await clients[provider].call_llm(req)
 
     async for req in requests:
