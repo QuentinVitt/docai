@@ -1,11 +1,17 @@
+from typing import Any
+
 import pytest
 
 from docai.llm.llm_client import LLMClient
-from docai.llm.models import LLMError
+from docai.llm.llm_datatypes import LLMError
 
 
 def test_google_provider_initializes_and_wires_call(monkeypatch):
-    recorded = {"config": None, "client": None, "wrapped_client": None}
+    recorded: dict[str, Any] = {
+        "config": None,
+        "client": None,
+        "wrapped_client": None,
+    }
 
     def fake_configure_google_client(provider_config):
         recorded["config"] = provider_config

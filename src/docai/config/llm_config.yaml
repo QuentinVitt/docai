@@ -4,14 +4,14 @@ providers:
 
 models:
   gemini-2.5-flash:
-    provider: google
+    default-provider: google
     model_name: gemini-2.5-flash
     # generation:
     #   temperature: 0.2
     #   max_output_tokens: 2048
     #   top_p: 0.95
   gemini-1.5-pro:
-    provider: google
+    default-provider: google
     model_name: gemini-1.5-pro
     generation:
       temperature: 0.4
@@ -22,6 +22,11 @@ profiles:
     model: gemini-2.5-flash
     tools:
       allowed: [dummy_schedule_meeting_function]
+  fallback:
+    model: gemini-2.5-flash
+    provider: google # provider can be set if the wanted provider is different from the default provider
+    tools:
+      allowed: [search]
   fast:
     model: gemini-2.5-flash
     tools:

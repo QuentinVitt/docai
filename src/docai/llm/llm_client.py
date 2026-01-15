@@ -1,12 +1,8 @@
 import logging
 
 from docai.llm.google_provider import configure_google_call_llm, configure_google_client
-from docai.llm.models import (
-    LLMClientError,
+from docai.llm.llm_datatypes import (
     LLMError,
-    LLMRequest,
-    LLMResponse,
-    LLMServerError,
 )
 
 logger = logging.getLogger("docai_project")

@@ -6,7 +6,7 @@ from google.genai import errors as genai_errors
 from google.genai import types
 
 from docai.llm.agent_tools import TOOL_REGISTRY
-from docai.llm.models import (
+from docai.llm.llm_datatypes import (
     LLMClientError,
     LLMError,
     LLMFunctionRequest,

@@ -2,7 +2,8 @@ import asyncio
 import logging
 from typing import AsyncIterable, AsyncIterator
 
-from docai.llm.llm_client import LLMClient, LLMRequest, LLMResponse
+from docai.llm.llm_client import LLMClient
+from docai.llm.llm_datatypes import LLMRequest, LLMResponse
 
 logger = logging.getLogger("docai_project")
 
@@ -37,7 +38,7 @@ async def run_llm(
                 try:
                     response = task.result()
                     yield response
-                except Exception as e:
+                except Exception:
                     # yield LLMResponse(request_id=req.request_id, error=str(e))
                     pass
 
@@ -48,7 +49,7 @@ async def run_llm(
             try:
                 response = task.result()
                 yield response
-            except Exception as e:
+            except Exception:
                 # yield LLMResponse(request_id="", error=str(e))
                 pass
 
