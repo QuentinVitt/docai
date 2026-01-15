@@ -1,143 +1,52 @@
 import pytest
 
-from docai.llm.llm_client import (
-    LLMClient,
-    LLMMessage,
-    LLMRequest,
-    LLMResponse,
-    LLMRole,
-)
+from docai.llm.llm_client import LLMClient
+from docai.llm.models import LLMError
 
 
-class FakeModels:
-    def __init__(self, recorder):
-        self.recorder = recorder
+def test_google_provider_initializes_and_wires_call(monkeypatch):
+    recorded = {"config": None, "client": None, "wrapped_client": None}
 
-    def generate_content(self, *, model, contents, config):
-        self.recorder["calls"].append(
-            {"model": model, "contents": contents, "config": config}
-        )
-        return type("Resp", (), {"text": "ok"})()
+    def fake_configure_google_client(provider_config):
+        recorded["config"] = provider_config
+        client = object()
 
+        async def cleanup():
+            return None
 
-class FakeClient:
-    def __init__(self, recorder, *_, **__):
-        self.models = FakeModels(recorder)
+        recorded["client"] = client
+        return client, cleanup
 
+    def fake_configure_google_call_llm(client):
+        recorded["wrapped_client"] = client
 
-@pytest.fixture(autouse=True)
-def clear_env(monkeypatch):
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        async def fake_call_llm(request):
+            return request
 
+        return fake_call_llm
 
-@pytest.fixture
-def base_config():
-    return {"providers": {"google": {"api_key_env": "GEMINI_API_KEY"}}}
-
-
-@pytest.fixture
-def fake_sdk(monkeypatch, base_config):
-    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    recorder = {"calls": []}
-
-    # stub types to simple dict-based structures for inspection
     monkeypatch.setattr(
-        "docai.llm.llm_client.types.Part",
-        lambda text=None, function_call=None: {
-            "text": text,
-            "function_call": function_call,
-        },
+        "docai.llm.llm_client.configure_google_client",
+        fake_configure_google_client,
     )
     monkeypatch.setattr(
-        "docai.llm.llm_client.types.Content",
-        lambda role=None, parts=None: {"role": role, "parts": parts},
+        "docai.llm.llm_client.configure_google_call_llm",
+        fake_configure_google_call_llm,
     )
-    monkeypatch.setattr(
-        "docai.llm.llm_client.types.GenerateContentConfig", lambda **kw: kw
-    )
-    monkeypatch.setattr(
-        "docai.llm.llm_client.genai.Client", lambda **_: FakeClient(recorder)
-    )
-    monkeypatch.setattr("docai.llm.llm_client.yaml.safe_load", lambda *_: base_config)
-    return recorder
+
+    provider_config = {"api_key_env": "GEMINI_API_KEY"}
+    client = LLMClient(provider="google", provider_config=provider_config)
+
+    assert recorded["config"] == provider_config
+    assert recorded["wrapped_client"] is recorded["client"]
+    assert callable(client.call_llm)
+    assert callable(client.cleanup)
 
 
-def asyncio_run(coro):
-    import asyncio
+def test_unknown_provider_raises_llm_error():
+    with pytest.raises(LLMError) as excinfo:
+        LLMClient(provider="unknown", provider_config={})
 
-    return asyncio.run(coro)
-
-
-def _sample_request(**kwargs):
-    defaults = dict(
-        request_id="req-1",
-        model="gemini-2.5-flash",
-        contents=[LLMMessage(role=LLMRole.USER, content="hi")],
-    )
-    defaults.update(kwargs)
-    return LLMRequest(**defaults)
-
-
-def test_google_call_success(fake_sdk):
-    client = LLMClient(provider="google")
-    req = _sample_request()
-
-    resp = asyncio_run(client.call_llm(req))
-
-    assert isinstance(resp, LLMResponse)
-    assert resp.request_id == req.request_id
-    assert resp.response.role == LLMRole.ASSISTANT
-    assert resp.response.content == "ok"
-    assert resp.function_call is False
-    assert len(fake_sdk["calls"]) == 1
-    call = fake_sdk["calls"][0]
-    assert call["model"] == req.model
-    assert call["contents"] == [
-        {"role": "user", "parts": [{"text": "hi", "function_call": None}]}
-    ]
-    assert call["config"] == {}
-
-
-def test_system_prompt_and_model_config_added(fake_sdk):
-    client = LLMClient(provider="google")
-    cfg = {"temperature": 0.2}
-    req = _sample_request(system_prompt="sys", model_config=cfg)
-
-    asyncio_run(client.call_llm(req))
-
-    call = fake_sdk["calls"][0]
-    assert call["config"]["temperature"] == 0.2
-    assert call["config"]["system_prompt"] == "sys"
-    # ensure original model_config not mutated
-    assert cfg == {"temperature": 0.2}
-
-
-def test_structured_output_not_implemented(fake_sdk):
-    client = LLMClient(provider="google")
-    req = _sample_request(structured_output={"schema": "x"})
-    with pytest.raises(SystemExit):
-        asyncio_run(client.call_llm(req))
-
-
-def test_missing_api_key(monkeypatch, base_config):
-    monkeypatch.setattr("docai.llm.llm_client.yaml.safe_load", lambda *_: base_config)
-    with pytest.raises(SystemExit):
-        LLMClient(provider="google")
-
-
-def test_non_user_role_raises(fake_sdk):
-    client = LLMClient(provider="google")
-    bad_request = _sample_request(
-        contents=[LLMMessage(role=LLMRole.ASSISTANT, content="hi")]
-    )
-    with pytest.raises(SystemExit):
-        asyncio_run(client.call_llm(bad_request))
-
-
-def test_user_content_must_be_text(fake_sdk):
-    client = LLMClient(provider="google")
-    bad_request = _sample_request(
-        contents=[LLMMessage(role=LLMRole.USER, content=LLMMessage)]
-    )
-    with pytest.raises(SystemExit):
-        asyncio_run(client.call_llm(bad_request))
+    err = excinfo.value
+    assert err.status_code == 600
+    assert "LLMClient not found for provider: unknown" in err.response

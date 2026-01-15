@@ -6,7 +6,7 @@ from google.genai import errors as genai_errors
 from google.genai import types
 
 from docai.llm.agent_tools import TOOL_REGISTRY
-from docai.llm.llm_client import (
+from docai.llm.models import (
     LLMClientError,
     LLMError,
     LLMFunctionRequest,
@@ -63,7 +63,7 @@ def configure_google_client(provider_config: dict):
         raise LLMError(601, f"Unexpected error: {e}")
 
 
-def configure_google_call_llm():
+def configure_google_call_llm(client):
     async def wrapper(request: LLMRequest) -> LLMResponse:
         # Keep wrapper async; offload sync SDK call to a thread
         # Copy so we don't mutate caller-provided config
@@ -123,7 +123,7 @@ def configure_google_call_llm():
                 request.request_id,
                 request.model,
             )
-            response = await self.client.models.generate_content(
+            response = await client.models.generate_content(
                 model=request.model,
                 contents=google_contents,
                 config=types.GenerateContentConfig(**model_config),

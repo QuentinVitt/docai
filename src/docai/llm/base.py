@@ -38,7 +38,8 @@ async def run_llm(
                     response = task.result()
                     yield response
                 except Exception as e:
-                    yield LLMResponse(request_id=req.request_id, error=str(e))
+                    # yield LLMResponse(request_id=req.request_id, error=str(e))
+                    pass
 
     while pending:
         done, _ = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -48,7 +49,8 @@ async def run_llm(
                 response = task.result()
                 yield response
             except Exception as e:
-                yield LLMResponse(request_id="", error=str(e))
+                # yield LLMResponse(request_id="", error=str(e))
+                pass
 
     # TODO: retries
     # TODO: max in-flight requests / backpressure

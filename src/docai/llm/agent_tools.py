@@ -1,7 +1,3 @@
-TOOL_REGISTRY: dict = {
-    "schedule_meeting": DummyScheduleMeetingFunction(),
-}
-
 dummy_schedule_meeting_function = {
     "name": "schedule_meeting",
     "description": "Schedules a meeting with specified attendees at a given time and date.",
@@ -28,4 +24,8 @@ dummy_schedule_meeting_function = {
         },
         "required": ["attendees", "date", "time", "topic"],
     },
+}
+
+TOOL_REGISTRY: dict = {
+    "schedule_meeting": dummy_schedule_meeting_function,
 }
