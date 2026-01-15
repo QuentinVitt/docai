@@ -26,8 +26,8 @@ def test_google_provider_initializes_and_wires_call(monkeypatch):
     def fake_configure_google_call_llm(client):
         recorded["wrapped_client"] = client
 
-        async def fake_call_llm(request):
-            return request
+        async def fake_call_llm(request, model, model_config=None):
+            return {"request": request, "model": model, "model_config": model_config}
 
         return fake_call_llm
 

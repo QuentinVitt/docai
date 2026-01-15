@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Any
 
 from google import genai
 from google.genai import errors as genai_errors
@@ -64,10 +65,12 @@ def configure_google_client(provider_config: dict):
 
 
 def configure_google_call_llm(client):
-    async def wrapper(request: LLMRequest) -> LLMResponse:
+    async def wrapper(
+        request: LLMRequest, model: str, model_config: dict[str, Any] | None = None
+    ) -> LLMResponse:
         # Keep wrapper async; offload sync SDK call to a thread
         # Copy so we don't mutate caller-provided config
-        model_config = dict(request.model_config) if request.model_config else {}
+        model_config = dict(model_config) if model_config else {}
         if request.system_prompt:
             model_config["system_instruction"] = request.system_prompt
             logger.debug("System instruction set for request %s", request.request_id)
@@ -121,10 +124,10 @@ def configure_google_call_llm(client):
             logger.debug(
                 "Sending request %s to model '%s'",
                 request.request_id,
-                request.model,
+                model,
             )
             response = await client.models.generate_content(
-                model=request.model,
+                model=model,
                 contents=google_contents,
                 config=types.GenerateContentConfig(**model_config),
             )
