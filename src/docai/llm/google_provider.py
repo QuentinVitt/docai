@@ -24,11 +24,7 @@ logger = logging.getLogger("docai_project")
 
 def configure_google_client(provider_config: dict):
     logger.debug("Configuring Google client")
-    api_key_name = (
-        provider_config["api_key_env"]
-        if provider_config["api_key_env"]
-        else "GEMINI_API_KEY"
-    )
+    api_key_name = provider_config.get('api_key_env', 'GEMINI_API_KEY')
     logger.debug("Using API key from env '%s'", api_key_name)
     api_key = os.environ.get(api_key_name)
     if not api_key:
@@ -211,7 +207,7 @@ def configure_google_call_llm(client):
                 response=LLMMessage(
                     role=LLMRole.FUNCTIONREQ,
                     content=content,
-                    original_content=response.candidates[0].content,
+                    original_content=('google', response.candidates[0].content),
                 ),
             )
 
@@ -222,7 +218,7 @@ def configure_google_call_llm(client):
                 response=LLMMessage(
                     role=LLMRole.ASSISTANT,
                     content=response.text,
-                    original_content=response.candidates[0].content,
+                    original_content=('google', response.candidates[0].content),
                 ),
             )
 
@@ -259,9 +255,9 @@ def google_content_from_dict(message: LLMMessage) -> types.Content:
             return types.UserContent(parts=[types.Part.from_text(text=message.content)])
 
         case LLMRole.ASSISTANT:
-            if message.original_content is not None:
+            if message.original_content is not None and message.original_content[0] == "google":
                 logger.debug("Using original assistant content passthrough")
-                return message.original_content
+                return message.original_content[1]
 
             if not isinstance(message.content, str):
                 logger.error(
@@ -283,9 +279,9 @@ def google_content_from_dict(message: LLMMessage) -> types.Content:
             raise ValueError("System content not supported for google llm")
 
         case LLMRole.FUNCTIONREQ:
-            if message.original_content is not None:
+            if message.original_content is not None and message.original_content[0] == "google":
                 logger.debug("Using original function request content passthrough")
-                return message.original_content
+                return message.original_content[1]
 
             if not isinstance(message.content, LLMFunctionRequest):
                 logger.error(

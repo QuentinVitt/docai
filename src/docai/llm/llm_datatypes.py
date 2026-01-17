@@ -27,7 +27,7 @@ class LLMFunctionResponse:
 class LLMMessage:
     role: LLMRole
     content: str | LLMFunctionRequest | LLMFunctionResponse
-    original_content: Any = None
+    original_content: tuple[str, Any] | None = None
 
 
 @dataclass

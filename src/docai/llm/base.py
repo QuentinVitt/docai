@@ -7,15 +7,12 @@ from docai.llm.llm_client import LLMClient
 from docai.llm.llm_datatypes import (
     LLMError,
     LLMExecutionPlan,
-    LLMRequest,
     LLMResponse,
-    LLMTarget,
 )
 
 logger = logging.getLogger("docai_project")
 
 clients: dict[str, LLMClient] = {}
-
 
 def _status_code_matches(patterns: list[str], status_code: int) -> bool:
     for pattern in patterns:
@@ -24,10 +21,10 @@ def _status_code_matches(patterns: list[str], status_code: int) -> bool:
     return False
 
 
-async def run_request(execution_plan: LLMExecutionPlan) -> LLMResponse:
+async def run_request(request: LLMExecutionPlan) -> LLMResponse:
     last_error: Optional[LLMError] = None
 
-    for target in [execution_plan.primary] + execution_plan.fallbacks:
+    for target in [request.primary] + request.fallbacks:
         provider = target.provider
         try:
             if provider not in clients:
@@ -36,23 +33,20 @@ async def run_request(execution_plan: LLMExecutionPlan) -> LLMResponse:
                 )
         except LLMError as e:
             last_error = e
-            logger.exception(
-                "Failed to initialize LLM client for provider '%s': %s", provider, e
-            )
             continue
 
-        for _ in range(execution_plan.retry.max_attempts):
+        for _ in range(request.retry.max_attempts):
             try:
                 return await clients[provider].call_llm(
-                    execution_plan.request,
+                    request.request,
                     target.model,
                     target.model_config,
                 )
             except LLMError as e:
                 last_error = e
 
-                if _status_code_matches(execution_plan.retry.retry_on, e.status_code):
-                    await asyncio.sleep(execution_plan.retry.backoff_sec)
+                if _status_code_matches(request.retry.retry_on, e.status_code):
+                    await asyncio.sleep(request.retry.backoff_sec)
                     continue
 
                 # Not retryable (or no attempts left) on this target; try next fallback.
@@ -64,14 +58,14 @@ async def run_request(execution_plan: LLMExecutionPlan) -> LLMResponse:
     raise LLMError(604, "No LLM targets could be executed")
 
 
-# async def run_llm(
-#     requests: AsyncIterable[LLMRequest],
-#     llm_config: dict,
-# ) -> AsyncIterator[LLMResponse]:
-#     """
-#     Lazily process LLM requests from an async iterable and yield results as they complete.
-#     Each yielded item matches the LLMClient.call_llm return (function_call flag, text).
-#     """
+async def run_llm(
+    requests: AsyncIterable[LLMExecutionPlan],
+) -> AsyncIterator[LLMResponse]:
+    """
+    Lazily process LLM requests from an async iterable and yield results as they complete.
+    Each yielded item matches the LLMClient.call_llm return (function_call flag, text).
+    """
+
 
 #     clients: dict[str, LLMClient] = {}
 #     pending: set[asyncio.Task[LLMResponse]] = set()
