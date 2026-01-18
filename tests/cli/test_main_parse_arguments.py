@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from docai.main import parse_arguments
+from docai.config.loader import parse_arguments
 
 
 def _parse(monkeypatch, *args):
