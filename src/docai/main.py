@@ -3,6 +3,7 @@ import sys
 
 from docai.config.loader import ConfigError, load_config
 from docai.utils.logging_utils import setup_logging
+from docai.workflows import WORKFLOWS
 
 logger = logging.getLogger("docai_project")
 
@@ -28,11 +29,8 @@ def main():
     setup_logging(config.cli_args, config.logger_args)
     logger.debug("Logger setup finished")
 
-    # identify what needs to be done - for the time beeing only documentation
-    match config.project_args.action:
-        case _:
-            document(config)
-
+    # start the workflow
+    WORKFLOWS[config.project_args.action](config)
 
 if __name__ == "__main__":
     main()

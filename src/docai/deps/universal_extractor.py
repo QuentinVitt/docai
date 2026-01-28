@@ -3,7 +3,7 @@ Calls a LLM-Agent with a file that determines what files this file depends on. (
 """
 
 
-def extract_dependencies():
+def extract_dependencies(file: str, file_type: str | None = None):
     # Set up LLM-Agent
 
     # Set up LLM-Client()

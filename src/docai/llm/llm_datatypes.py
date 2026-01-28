@@ -81,6 +81,7 @@ class LLMError(Exception):
     # code 602: couldn't convert LLM content to provider content
     # code 603: faulty response from LLMCall received
     # code 604: faulty LLMExecutionPlan - No LLMTarget specified
+    # code 605: Error for configuring the semaphore for concurrent requests
 
     def __init__(self, status_code: int, response: str = ""):
         self.status_code = status_code

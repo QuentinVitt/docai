@@ -1,5 +1,6 @@
 import argparse
 import os
+from asyncio import Semaphore
 from dataclasses import dataclass
 from importlib import resources
 
@@ -22,6 +23,7 @@ class ProjectArgs:
     working_dir: str
     interactive: bool
 
+
 @dataclass(frozen=True)
 class Config:
     project_args: ProjectArgs
@@ -32,9 +34,9 @@ class Config:
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog='docai',
-        description='DocAI is a command-line tool for automating documentation of software projects.', # TODO: improve the description text
-        epilog='Enjoy the power of DocAI!' # TODO: improve the epilog text
+        prog="docai",
+        description="DocAI is a command-line tool for automating documentation of software projects.",  # TODO: improve the description text
+        epilog="Enjoy the power of DocAI!",  # TODO: improve the epilog text
     )
     parser.add_argument(
         "action",
@@ -45,22 +47,42 @@ def parse_arguments() -> argparse.Namespace:
         help="action to perform",
     )
 
-    parser.add_argument("-d", "--directory", type=str, help="path to directory to work on")
+    parser.add_argument(
+        "-d", "--directory", type=str, help="path to directory to work on"
+    )
 
     verbosity_group = parser.add_mutually_exclusive_group()
-    verbosity_group.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
-    verbosity_group.add_argument("-q", "--quiet", action="store_true", help="decrease output verbosity")
-    verbosity_group.add_argument('-s', '--silent', action="store_true", help="disable all output")
+    verbosity_group.add_argument(
+        "-v", "--verbose", action="store_true", help="increase output verbosity"
+    )
+    verbosity_group.add_argument(
+        "-q", "--quiet", action="store_true", help="decrease output verbosity"
+    )
+    verbosity_group.add_argument(
+        "-s", "--silent", action="store_true", help="disable all output"
+    )
 
-    parser.add_argument('-l', '--log', action='store_true', help="enable file logging")
+    parser.add_argument("-l", "--log", action="store_true", help="enable file logging")
 
     log_file_group = parser.add_argument_group()
-    log_file_group.add_argument('-ll', '--log_level', type=str, choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], help="set log level")
-    log_file_group.add_argument('-lf', '--log_file', type=str, help="set log file path")
-    log_file_group.add_argument('-lms', '--log_max_size', type=int, help="set log file max size in bytes")
-    log_file_group.add_argument('-lbc', '--log_backup_count', type=int, help="set log file backup count")
+    log_file_group.add_argument(
+        "-ll",
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="set log level",
+    )
+    log_file_group.add_argument("-lf", "--log_file", type=str, help="set log file path")
+    log_file_group.add_argument(
+        "-lms", "--log_max_size", type=int, help="set log file max size in bytes"
+    )
+    log_file_group.add_argument(
+        "-lbc", "--log_backup_count", type=int, help="set log file backup count"
+    )
 
-    parser.add_argument("-i", "--interactive", action="store_true", help="run in interactive mode")
+    parser.add_argument(
+        "-i", "--interactive", action="store_true", help="run in interactive mode"
+    )
 
     args = parser.parse_args()
 
@@ -89,13 +111,9 @@ def load_config_file(config_package: str, config_file: str) -> dict:
         with resources.open_text(config_package, config_file) as config_test:
             config = yaml.safe_load(config_test)
     except FileNotFoundError as exc:
-        raise ConfigError(
-            f"Configuration file '{config_file}' not found"
-        ) from exc
+        raise ConfigError(f"Configuration file '{config_file}' not found") from exc
     except yaml.YAMLError as exc:
-        raise ConfigError(
-            f"Invalid configuration file '{config_file}': {exc}"
-        ) from exc
+        raise ConfigError(f"Invalid configuration file '{config_file}': {exc}") from exc
 
     if not isinstance(config, dict):
         raise ConfigError(
@@ -104,11 +122,19 @@ def load_config_file(config_package: str, config_file: str) -> dict:
 
     return config
 
+
+def setup_llm(llm_args: dict):
+    max_concurrency = llm_args.get("globals", {}).get("max_concurrency", 1)
+    semaphore = Semaphore(max_concurrency)
+    llm_args["semaphore"] = semaphore
+
+
 def load_config() -> Config:
     cli_args = parse_arguments()
     project_args = build_project_args(cli_args)
     logger_args = load_config_file(LOG_CONFIG_PACKAGE, LOG_CONFIG_FILE)
     llm_args = load_config_file(LLM_CONFIG_PACKAGE, LLM_CONFIG_FILE)
+    setup_llm(llm_args)
 
     return Config(
         project_args=project_args,
