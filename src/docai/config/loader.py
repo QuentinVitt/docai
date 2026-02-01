@@ -1,6 +1,6 @@
 import argparse
 import os
-from asyncio import Semaphore
+from asyncio import Lock, Semaphore
 from dataclasses import dataclass
 from importlib import resources
 
@@ -126,7 +126,9 @@ def load_config_file(config_package: str, config_file: str) -> dict:
 def setup_llm(llm_args: dict):
     max_concurrency = llm_args.get("globals", {}).get("max_concurrency", 1)
     semaphore = Semaphore(max_concurrency)
+    inflight_requests = max_concurrency * 2
     llm_args["semaphore"] = semaphore
+    llm_args["inflight_semaphore"] = Semaphore(inflight_requests)
 
 
 def load_config() -> Config:

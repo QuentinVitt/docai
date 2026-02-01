@@ -89,6 +89,11 @@ class ChatResponse:
 
 
 async def run_chat(chat_request: ChatRequest, config: Config) -> ChatResponse:
+    try:
+        semaphore = config.llm_args["semaphore"]
+        max_inflight = config.llm_args["max_inflight"]
+    except KeyError:
+        raise LLMError(status_code=605, response="Semaphores not configured")
     # use async with semaphore
     raise NotImplementedError("Implement this function")
 
@@ -97,43 +102,47 @@ async def chat(
     chat_requests: AsyncIterator[ChatRequest], config: Config
 ) -> AsyncIterable[ChatResponse | Exception]:
     try:
-        semaphore = config.llm_args["semaphore"]
-        max_inflight = config.llm_args["max_inflight"]
+        inflight_sem: asyncio.Semaphore = config.llm_args["inflight_semaphore"]
     except KeyError:
         raise LLMError(status_code=605, response="Semaphores not configured")
 
     pending: set[asyncio.Task[ChatResponse]] = set()
 
+    def _release_inflight(_t: asyncio.Task) -> None:
+        inflight_sem.release()
+
     try:
-        async for chat_request in chat_requests:
-            task = asyncio.create_task(run_chat(chat_request, config))
-            pending.add(task)
+        async for req in chat_requests:
+            # Global backpressure across ALL chat() calls:
+            await inflight_sem.acquire()
 
-            if semaphore.locked():
-                done, pending = await asyncio.wait(
-                    pending, return_when=asyncio.FIRST_COMPLETED
-                )
+            t = asyncio.create_task(run_chat(req, config))
+            t.add_done_callback(_release_inflight)
+            pending.add(t)
 
-                for t in done:
+            # Optional: yield any tasks that are already done (cheap)
+            done = {x for x in pending if x.done()}
+            if done:
+                pending -= done
+                for task in done:
                     try:
-                        yield t.result()
+                        yield task.result()
                     except Exception as e:
                         yield e
 
-        # flush remaining
+        # Flush remaining tasks
         while pending:
             done, pending = await asyncio.wait(
                 pending, return_when=asyncio.FIRST_COMPLETED
             )
-
-            for t in done:
+            for task in done:
                 try:
-                    yield t.result()
+                    yield task.result()
                 except Exception as e:
                     yield e
 
     finally:
-        # If chat() exits early (cancel, error, consumer stops), don't leak tasks
+        # If the generator is cancelled / consumer stops early, don't leak tasks
         for t in pending:
             t.cancel()
         if pending:
