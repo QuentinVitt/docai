@@ -1,36 +1,31 @@
 providers:
   google:
     api_key_env: GEMINI_API_KEY
+    # api_key: xxxxxx # can be set if the api key should not be stored in an environment variable # can also be set as an command line argument
 
 models:
   gemini-2.5-flash:
-    default-provider: google
     model_name: gemini-2.5-flash
     # generation:
     #   temperature: 0.2
     #   max_output_tokens: 2048
     #   top_p: 0.95
   gemini-1.5-pro:
-    default-provider: google
     model_name: gemini-1.5-pro
     generation:
       temperature: 0.4
       max_output_tokens: 4096
 
 profiles:
-  default:
+  default: # will be used as the default profile if no profile is specified
+    provider: google
     model: gemini-2.5-flash
-    tools:
-      allowed: [dummy_schedule_meeting_function]
-  fallback:
+  fallback: # will be used as the fallback profile if no fallback profile is specified
+    provider: google
     model: gemini-2.5-flash
-    provider: google # provider can be set if the wanted provider is different from the default provider
-    tools:
-      allowed: [search]
   fast:
+    provider: google
     model: gemini-2.5-flash
-    tools:
-      allowed: [search]
 
 globals:
   max_concurrency: 10 # if not specified, the default value is 1

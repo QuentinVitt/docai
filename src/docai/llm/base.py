@@ -12,6 +12,7 @@ from docai.llm.llm_datatypes import (
     LLMError,
     LLMExecutionPlan,
     LLMMessage,
+    LLMRequest,
     LLMResponse,
     LLMRole,
 )
@@ -65,16 +66,9 @@ async def run_request(
     raise LLMError(604, "No LLM targets could be executed")
 
 
-# Behavior from outside
-#
-# Input is just a prompt & system prompt & config & structured output
-# -> for multiple requests: we need an async generator. Maybe put that into a datatype.
-# -> Datatype almost equal to LLMRequest
-# -> do we want to allow agentic behaviour? methods can be used. For normal chat: YES so we can use this function again for the agent. For agent request: YES (always YES)
-
-
 @dataclass
 class ChatRequest:
+    id: str
     prompt: str
     system_prompt: str | None = None
     structured_output: Optional[dict[str, Any]] = None
@@ -84,6 +78,7 @@ class ChatRequest:
 
 @dataclass
 class ChatResponse:
+    id: str
     response: str | dict[str, Any]
     message: LLMMessage
 
@@ -91,11 +86,25 @@ class ChatResponse:
 async def run_chat(chat_request: ChatRequest, config: Config) -> ChatResponse:
     try:
         semaphore = config.llm_args["semaphore"]
-        max_inflight = config.llm_args["max_inflight"]
     except KeyError:
         raise LLMError(status_code=605, response="Semaphores not configured")
-    # use async with semaphore
+
+    async with semaphore:
+        # 1. Build Request
+        # 2. Check if Request is cached
+        # 3. If cached: return
+        # 4. else call LLM and return and cache answer.
+        # We also sometimes need to run an agent.
+        pass
     raise NotImplementedError("Implement this function")
+
+
+# how do we want to call this function, we need a plural and singular
+# 1. chat | chats
+# 2. run_llm | run_llms
+# 3. run_chat | run chats
+# 4. call_llm | call_llms
+# 5. or same name with different inputs. If chat_requests is a list, we do this extra stuff, else we just do _chat
 
 
 async def chat(
@@ -147,3 +156,44 @@ async def chat(
             t.cancel()
         if pending:
             await asyncio.gather(*pending, return_exceptions=True)
+
+
+def _build_request(chat_request: ChatRequest, config: Config) -> LLMExecutionPlan:
+    message = LLMMessage(role=LLMRole.USER, content=chat_request.prompt)
+    contents = [message]
+    if chat_request.history:
+        contents += [
+            LLMMessage(role=LLMRole.USER, content=cnt) if isinstance(cnt, str) else cnt
+            for cnt in chat_request.history
+        ]
+
+    llm_default_profile_name = (
+        config.cli_args.llm_default if config.cli_args.llm_default else "default"
+    )
+    llm_fallback_profile_name = (
+        config.cli_args.llm_fallback if config.cli_args.llm_fallback else "fallback"
+    )
+
+    try:
+        llm_default_profile = config.llm_args["profiles"][llm_default_profile_name]
+    except KeyError as e:
+        raise ValueError(f"LLM profile '{llm_default_profile_name}' not found") from e
+
+    try:
+        llm_fallback_profile = config.llm_args["profiles"][llm_fallback_profile_name]
+    except KeyError as e:
+        raise ValueError(f"LLM profile '{llm_fallback_profile_name}' not found") from e
+
+    agent_tools = (
+        config.llm_args.get("tools", {}).get("allowed", None)
+        if chat_request.agent
+        else None
+    )
+
+    request = LLMRequest(
+        request_id=chat_request.id,
+        contents=contents,
+        system_prompt=chat_request.system_prompt,
+        agent_functions=agent_tools,
+    )
+    raise NotImplementedError("Implement _build_request")

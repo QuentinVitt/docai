@@ -84,6 +84,12 @@ def parse_arguments() -> argparse.Namespace:
         "-i", "--interactive", action="store_true", help="run in interactive mode"
     )
 
+    llm_group = parser.add_argument_group()
+    llm_group.add_argument("--llm_default", type=str, help="select default LLM profile")
+    llm_group.add_argument(
+        "--llm_fallback", type=str, help="select fallback LLM profile"
+    )
+
     args = parser.parse_args()
 
     log_file_args = ("log_level", "log_file", "log_max_size", "log_backup_count")
