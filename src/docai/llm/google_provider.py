@@ -150,14 +150,14 @@ class GoogleClient:
                 "Content transformed into provider specific format for request %s",
                 request.id,
             )
-        except genai.APIError as e:
+        except genai_errors.APIError as e:
             raise LLMError(607, f"Failed to transform content: {e}")
 
         try:
             response = await self._client.models.generate_content(
                 model=config.name,
                 contents=content,
-                config=generation,
+                config=types.GenerateContentConfig(**generation),
             )
         except genai_errors.APIError as e:
             if 400 <= e.code < 500:
@@ -187,18 +187,22 @@ class GoogleClient:
             raise LLMError(601, str(e))
 
         # check if there is a content:
-        if not response.candidates[0].content:
+        if not response or not response.candidates or not response.candidates[0]:
             logger.error("No content returned from Google API")
             raise LLMError(602, "No content returned from Google API")
 
         # check if there was a function call:
         if response.function_calls and len(response.function_calls) > 1:
             raise LLMError(603, "Multiple function calls returned from Google API")
-        elif response.function_calls:
+        elif (
+            response.function_calls
+            and response.function_calls[0].name
+            and response.function_calls[0].args
+        ):
             return LLMResponse(
                 response=LLMFunctionCall(
                     name=response.function_calls[0].name,
-                    arguments=response.function_calls[0].arguments,
+                    arguments=response.function_calls[0].args,
                     original_content=LLMOriginalContent(
                         provider="google", content=response.candidates[0].content
                     ),
