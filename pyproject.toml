@@ -27,3 +27,8 @@ packages = ["src/docai"]
 dev = [
     "pytest>=9.0.2",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: mark test as integration test",
+]

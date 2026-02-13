@@ -54,6 +54,45 @@ class GoogleClient:
 
         logger.debug("LLMClient for provider Google initialized")
 
+    async def _validate(self) -> None:
+        """
+        Performs a lightweight API call to validate the provided credentials.
+
+        Raises:
+            LLMClientError: If the credentials are bad (4xx error).
+            LLMServerError: If the backend has an issue (5xx error).
+            LLMError: For other network or API-related errors.
+        """
+        try:
+            # Get the async iterator for models and try to pull the first item.
+            # This is a lightweight way to validate credentials and connectivity.
+            await self._client.models.list()
+            logger.debug("Google API credentials are valid.")
+        except genai_errors.APIError as e:
+            logger.error(
+                "Google API credential validation failed with code %s: %s",
+                e.code,
+                e.message,
+            )
+            if 400 <= e.code < 500:
+                raise LLMClientError(e.code, e.message)
+            elif 500 <= e.code < 600:
+                raise LLMServerError(e.code, e.message)
+            else:
+                raise LLMError(e.code, e.message)
+        except Exception as e:
+            logger.error("An unexpected error occurred during credential validation.")
+            raise LLMError(601, str(e))
+
+    @classmethod
+    async def create(
+        cls, config: LLMProviderConfig, custom_tools: Optional[dict[str, Any]] = None
+    ):
+        """Creates and validates a new GoogleClient instance."""
+        client = cls(config, custom_tools)
+        await client._validate()
+        return client
+
     async def close(self) -> None:
         if self._closed:
             logger.debug("Google client already closed")
@@ -79,28 +118,29 @@ class GoogleClient:
             logger.debug("System instruction set for request %s", request.id)
 
         # configure tools
-        tools = []
-        funcs = []
+        if request.allowed_tools:
+            tools = []
+            funcs = []
 
-        for tool in request.allowed_tools:
-            if tool in self._custom_tools:
-                funcs.append(self._custom_tools[tool])
-            elif tool in self._provider_tools:
-                tools.append(self._provider_tools[tool])
-            else:
-                logger.error(
-                    "Tool '%s' from allowed_tools not found in for request %s",
-                    tool,
-                    request.id,
-                )
-                raise LLMError(606, f"Tool '{tool}' not found")
+            for tool in request.allowed_tools:
+                if tool in self._custom_tools:
+                    funcs.append(self._custom_tools[tool])
+                elif tool in self._provider_tools:
+                    tools.append(self._provider_tools[tool])
+                else:
+                    logger.error(
+                        "Tool '%s' from allowed_tools not found in for request %s",
+                        tool,
+                        request.id,
+                    )
+                    raise LLMError(606, f"Tool '{tool}' not found")
 
-        if funcs:
-            tools.append(types.Tool(function_declarations=funcs))
+            if funcs:
+                tools.append(types.Tool(function_declarations=funcs))
 
-        if tools:
-            generation["tools"] = tools
-            logger.debug("Tools set for request %s", request.id)
+            if tools:
+                generation["tools"] = tools
+                logger.debug("Tools set for request %s", request.id)
 
         # configure content
         try:
@@ -115,15 +155,15 @@ class GoogleClient:
 
         try:
             response = await self._client.models.generate_content(
-                model="something",
-                content=["dummylist"],
+                model=config.name,
+                contents=content,
                 config=generation,
             )
         except genai_errors.APIError as e:
             if 400 <= e.code < 500:
                 logger.error(
                     "Google API client error for request %s (code %s): %s",
-                    request.request_id,
+                    request.id,
                     e.code,
                     str(e),
                 )
@@ -131,7 +171,7 @@ class GoogleClient:
             if 500 <= e.code < 600:
                 logger.error(
                     "Google API server error for request %s (code %s): %s",
-                    request.request_id,
+                    request.id,
                     e.code,
                     str(e),
                 )
@@ -141,7 +181,7 @@ class GoogleClient:
         except Exception as e:
             logger.exception(
                 "Unexpected error during Google call for request %s: %s",
-                request.request_id,
+                request.id,
                 str(e),
             )
             raise LLMError(601, str(e))
@@ -152,13 +192,13 @@ class GoogleClient:
             raise LLMError(602, "No content returned from Google API")
 
         # check if there was a function call:
-        if response.function_call and len(response.function_call) > 1:
+        if response.function_calls and len(response.function_calls) > 1:
             raise LLMError(603, "Multiple function calls returned from Google API")
-        elif response.function_call:
+        elif response.function_calls:
             return LLMResponse(
                 response=LLMFunctionCall(
-                    name=response.function_call.name,
-                    arguments=response.function_call.arguments,
+                    name=response.function_calls[0].name,
+                    arguments=response.function_calls[0].arguments,
                     original_content=LLMOriginalContent(
                         provider="google", content=response.candidates[0].content
                     ),
@@ -180,7 +220,7 @@ class GoogleClient:
 
         logger.error(
             "Response for request %s did not contain any text content: %s",
-            request.request_id,
+            request.id,
             str(response),
         )
         raise LLMError(

@@ -23,10 +23,10 @@ class LLMClient(Protocol):
     async def close(self) -> None: ...
 
 
-def get_client(config: LLMProviderConfig) -> LLMClient:
+async def create_client(config: LLMProviderConfig) -> LLMClient:
     match config.name:
         case "google":
-            return GoogleClient(config)
+            return await GoogleClient.create(config)
         case _:
             logger.error("Provider '%s' is not supported", config.name)
             raise LLMError(

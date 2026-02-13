@@ -13,7 +13,7 @@ class LLMError(Exception):
     # code 606: Tool not found
     # code 607: Failed to transform content to provider content
 
-    def __init__(self, status_code: int, response: str = ""):
+    def __init__(self, status_code: int, response: str | None = None):
         self.status_code = status_code
         self.response = response
         super().__init__(f"code {self.status_code} -> {self.response}")
@@ -22,8 +22,8 @@ class LLMError(Exception):
 class LLMClientError(LLMError):
     """Raised when an error occurs while interacting with an LLMClient."""
 
-    # code 400: Bad Request
-    # code 401: Authentication Error
+    # code 400: Authentication Error
+    # code 401: Bad Request
     # code 403: Permission Denied
     # code 404: Not Found Error
     # code 408: Request Timeout
