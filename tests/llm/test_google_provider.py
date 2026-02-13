@@ -2,6 +2,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from google.genai import errors as genai_errors
+from google.genai import types
+from pydantic import ValidationError
 
 from docai.llm.datatypes import LLMProviderConfig
 from docai.llm.errors import LLMClientError
@@ -10,7 +12,7 @@ from docai.llm.google_provider import GoogleClient
 
 @pytest.fixture
 def custom_function_one():
-    return {
+    function_declaration = {
         "name": "get_current_weather",
         "description": "Get the current weather in a given location",
         "parameters_json_schema": {
@@ -24,11 +26,12 @@ def custom_function_one():
             "required": ["location"],
         },
     }
+    return function_declaration, types.FunctionDeclaration(**function_declaration)
 
 
 @pytest.fixture
 def custom_function_two():
-    return {
+    function_declaration = {
         "name": "send_email",
         "description": "Sends an email to a recipient.",
         "parameters_json_schema": {
@@ -50,11 +53,12 @@ def custom_function_two():
             "required": ["recipient", "subject", "body"],
         },
     }
+    return function_declaration, types.FunctionDeclaration(**function_declaration)
 
 
 @pytest.fixture
 def custom_function_three():
-    return {
+    function_declaration = {
         "name": "get_news_headlines",
         "description": "Gets the latest news headlines for a given topic.",
         "parameters_json_schema": {
@@ -68,6 +72,7 @@ def custom_function_three():
             "required": ["topic"],
         },
     }
+    return function_declaration, types.FunctionDeclaration(**function_declaration)
 
 
 @pytest.mark.asyncio
@@ -116,14 +121,37 @@ async def test_google_client_initialization_succeeds(mock_genai_client):
     assert isinstance(client, GoogleClient)
 
 
-# for the init we need check if the tools are set right.
+@pytest.fixture
+def function_declarations(request):
+    fixture_names = request.param
+    return [request.getfixturevalue(name) for name in fixture_names]
 
 
 @pytest.mark.asyncio
-# @pytest.mark.parametrize()
-async def test_google_client_set_tools():
-    # TODO: finish this test
-    client = await GoogleClient.create(
-        config=LLMProviderConfig(name="google", api_key="a-valid-key")
+@pytest.mark.parametrize(
+    "function_declarations",
+    [
+        [],
+        ["custom_function_one"],
+        ["custom_function_one", "custom_function_two"],
+        ["custom_function_one", "custom_function_two", "custom_function_three"],
+    ],
+    indirect=True,
+)
+async def test_google_client_set_tools(function_declarations):
+    tools, validate = {}, {}
+    for function_declaration_json, function_declaration_type in function_declarations:
+        name = function_declaration_json["name"]
+        tools[name] = function_declaration_json
+        validate[name] = function_declaration_type
+
+    client = GoogleClient(
+        config=LLMProviderConfig(name="google", api_key="a-valid-key"),
+        custom_tools=tools,
     )
-    # assert client.tools == ["google-search", "google-translate"]
+
+    assert len(client._custom_tools) == len(validate)
+
+    for name, fnc in validate.items():
+        assert name in client._custom_tools
+        assert client._custom_tools[name] == fnc
