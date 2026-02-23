@@ -144,8 +144,8 @@ class GoogleClient:
 
         # configure content
         try:
-            content = [_transform_content(request.prompt)]
-            content += [_transform_content(message) for message in request.history]
+            content = [_transform_content(message) for message in request.history]
+            content.append(_transform_content(request.prompt))
             logger.debug(
                 "Content transformed into provider specific format for request %s",
                 request.id,
@@ -187,31 +187,45 @@ class GoogleClient:
             raise LLMError(601, str(e))
 
         # check if there is a content:
-        if not response or not response.candidates or not response.candidates[0]:
+        if (
+            not isinstance(response, types.GenerateContentResponse)
+            or not response.candidates
+            or not response.candidates[0]
+        ):
             logger.error("No content returned from Google API")
-            raise LLMError(602, "No content returned from Google API")
+            raise LLMError(603, "No content returned from Google API")
 
         # check if there was a function call:
-        if response.function_calls and len(response.function_calls) > 1:
-            raise LLMError(603, "Multiple function calls returned from Google API")
-        elif (
-            response.function_calls
-            and response.function_calls[0].name
-            and response.function_calls[0].args
-        ):
-            return LLMResponse(
-                response=LLMFunctionCall(
-                    name=response.function_calls[0].name,
-                    arguments=response.function_calls[0].args,
-                    original_content=LLMOriginalContent(
-                        provider="google", content=response.candidates[0].content
+        if response.function_calls:
+            if len(response.function_calls) > 1:
+                logger.error("Multiple function calls returned from Google API")
+                raise LLMError(603, "Multiple function calls returned from Google API")
+            elif not response.function_calls[0].name:
+                logger.error("No function name returned from Google API")
+                raise LLMError(603, "No function name returned from Google API")
+            elif (
+                request.allowed_tools is None
+                or response.function_calls[0].name not in request.allowed_tools
+            ):
+                logger.error("Function call not allowed")
+                raise LLMError(603, "Function call not allowed")
+            elif not response.function_calls[0].args:
+                logger.error("No function arguments returned from Google API")
+                raise LLMError(603, "No function arguments returned from Google API")
+            else:
+                return LLMResponse(
+                    response=LLMFunctionCall(
+                        name=response.function_calls[0].name,
+                        arguments=response.function_calls[0].args,
+                        original_content=LLMOriginalContent(
+                            provider="google", content=response.candidates[0].content
+                        ),
                     ),
-                ),
-                id=request.id,
-            )
+                    id=request.id,
+                )
 
         # if there was no function call check if there was a normal response:
-        if response.text:
+        if response.text and response.text:
             return LLMResponse(
                 response=LLMAssistantMessage(
                     content=response.text,
@@ -228,7 +242,7 @@ class GoogleClient:
             str(response),
         )
         raise LLMError(
-            602, "response didn't contain any content.\nResponse: " + str(response)
+            603, "response didn't contain any content.\nResponse: " + str(response)
         )
 
 
