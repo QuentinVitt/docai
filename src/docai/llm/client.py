@@ -31,19 +31,13 @@ class LLMClient(Protocol):
     async def close(self) -> None: ...
 
 
-async def create_client(config: LLMProviderConfig) -> LLMClient:
-
-    # TODO: Set up everything for custom tools
-    #
-    # What custom tools do I need?
-    # - write documentation
-    # - read documentation
-    # - read files
-    # - view project structure
+async def create_client(
+    config: LLMProviderConfig, tools: Optional[dict[str, Any]] = None
+) -> LLMClient:
 
     match config.name:
         case "google":
-            return await GoogleClient.create(config)
+            return await GoogleClient.create(config, tools)
         case _:
             logger.error("Provider '%s' is not supported", config.name)
             raise LLMError(

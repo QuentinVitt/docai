@@ -1,6 +1,8 @@
 from unittest.mock import patch
 
 import pytest
+from google.genai._interactions.types import tool
+from google.genai.interactions import Tool
 
 from docai.llm.client import create_client
 from docai.llm.datatypes import LLMProviderConfig
@@ -20,6 +22,22 @@ async def test_create_google_client(mock_validate):
     client = await create_client(config)
 
     assert isinstance(client, GoogleClient)
+
+
+@pytest.mark.asyncio
+@patch(
+    "docai.llm.google_provider.GoogleClient._validate",
+    async_mock=True,
+    return_value=None,
+)
+async def test_create_google_client_with_tools(mock_validate):
+    config = LLMProviderConfig(name="google", api_key="my_api_key")
+    tools = {"write": {"name": "write"}, "read": {"name": "read"}}
+    client = await create_client(config, tools)
+
+    assert isinstance(client, GoogleClient)
+    for key in tools.keys():
+        assert key in client._custom_tools
 
 
 @pytest.mark.asyncio

@@ -29,12 +29,6 @@ class LLMProfileConfig:
 
 
 @dataclass(frozen=True)
-class LLMProfileSelection:
-    default: LLMProfileConfig
-    fallback: LLMProfileConfig
-
-
-@dataclass(frozen=True)
 class LLMConcurrencyConfig:
     max_concurrency: int
     concurrent: Semaphore
@@ -50,7 +44,7 @@ class LLMRetryConfig:
 
 @dataclass(frozen=True)
 class LLMConfig:
-    profiles: LLMProfileSelection
+    profiles: list[LLMProfileConfig]
     concurrency: LLMConcurrencyConfig
     retry: LLMRetryConfig
     tools: Optional[dict[str, Any]] = None

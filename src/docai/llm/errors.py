@@ -12,6 +12,8 @@ class LLMError(Exception):
     # code 605: Error for configuring the semaphore for concurrent requests
     # code 606: Tool not found
     # code 607: Failed to transform content to provider content
+    # code 608: Failed to create LLMService
+    # code 609: Failed to close LLM clients
 
     def __init__(self, status_code: int, response: str | None = None):
         self.status_code = status_code

@@ -1,23 +1,60 @@
-from docai.llm.client import LLMClient
-from docai.llm.datatypes import LLMConfig
+from __future__ import annotations
+
+import asyncio
+from logging import getLogger
+
+from _typeshed import ExcInfo
+
+from docai.llm.client import LLMClient, create_client
+from docai.llm.datatypes import LLMConfig, LLMModelConfig
+from docai.llm.errors import LLMError
+
+logger = getLogger("docai_project")
 
 
 class LLMService:
     def __init__(self, config: LLMConfig):
-        self._default_client = LLMClient(config.profiles.default.provider)
-        self._fallback_client = LLMClient(config.profiles.fallback.provider)
+        self._connections: list[tuple[LLMClient, LLMModelConfig]] = []
+        self._config: LLMConfig = config
 
-        pass
+    @classmethod
+    async def create(cls, config: LLMConfig) -> LLMService:
+        """Creates and initializes an LLMService with clients for each profile."""
+        service = cls(config)
+        for profile in config.profiles:
+            try:
+                client = await create_client(profile.provider)
+                service._connections.append((client, profile.model))
+                logger.debug("Created client for provider %s", profile.provider.name)
+            except LLMError as e:
+                logger.error(
+                    "Failed to create client for provider %s",
+                    profile.provider.name,
+                    exc_info=e,
+                )
 
-    def close(self):
-        self._default_client.cleanup()
-        self._fallback_client.cleanup()
+        if not service._connections:
+            logger.error(
+                "Failed to create LLMService because no clients could be created"
+            )
+            raise LLMError(608, "Failed to create LLMService")
 
-    def generate(self):
-        pass
+        return service
 
-    def generate_batch(self):
-        pass
+    async def close(self):
+        """Closes all client connections."""
+        try:
+            close_tasks = [client.close() for client, _ in self._connections]
+            await asyncio.gather(*close_tasks)
+            logger.debug("All LLM clients closed.")
+        except Exception as e:
+            logger.error("Failed to close LLM clients", exc_info=e)
+            raise LLMError(609, "Failed to close LLM clients")
 
+    async def generate(self):
+        # TODO: Implement generation logic, likely using self._connections[0]
+        ...
 
-# Now do we want to allow multiple Fallbacks or just one?
+    async def generate_batch(self):
+        # TODO: Implement batch generation logic
+        ...
