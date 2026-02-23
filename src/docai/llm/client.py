@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from logging import getLogger
-from typing import Protocol
+from typing import Any, Optional, Protocol
 
 # from docai.llm.google_provider
 from docai.llm.datatypes import (
@@ -17,13 +19,28 @@ logger = getLogger("docai_project")
 class LLMClient(Protocol):
     """Unified interface for interacting with different LLM providers."""
 
+    @classmethod
+    async def create(
+        cls, config: LLMProviderConfig, custom_tools: Optional[dict[str, Any]] = None
+    ) -> LLMClient: ...
+
     async def generate(
         self, request: LLMRequest, config: LLMModelConfig
     ) -> LLMResponse: ...
+
     async def close(self) -> None: ...
 
 
 async def create_client(config: LLMProviderConfig) -> LLMClient:
+
+    # TODO: Set up everything for custom tools
+    #
+    # What custom tools do I need?
+    # - write documentation
+    # - read documentation
+    # - read files
+    # - view project structure
+
     match config.name:
         case "google":
             return await GoogleClient.create(config)

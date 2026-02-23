@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Any, Optional
 
@@ -87,7 +89,7 @@ class GoogleClient:
     @classmethod
     async def create(
         cls, config: LLMProviderConfig, custom_tools: Optional[dict[str, Any]] = None
-    ):
+    ) -> GoogleClient:
         """Creates and validates a new GoogleClient instance."""
         client = cls(config, custom_tools)
         await client._validate()
