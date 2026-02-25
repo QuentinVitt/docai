@@ -3,10 +3,8 @@ from __future__ import annotations
 import asyncio
 from logging import getLogger
 
-from _typeshed import ExcInfo
-
 from docai.llm.client import LLMClient, create_client
-from docai.llm.datatypes import LLMConfig, LLMModelConfig
+from docai.llm.datatypes import LLMConfig, LLMModelConfig, LLMRequest
 from docai.llm.errors import LLMError
 
 logger = getLogger("docai_project")
@@ -16,6 +14,10 @@ class LLMService:
     def __init__(self, config: LLMConfig):
         self._connections: list[tuple[LLMClient, LLMModelConfig]] = []
         self._config: LLMConfig = config
+
+        # set up cache
+        self._cache = None
+        raise NotImplementedError("Cache setup not implemented")
 
     @classmethod
     async def create(cls, config: LLMConfig) -> LLMService:
@@ -51,10 +53,27 @@ class LLMService:
             logger.error("Failed to close LLM clients", exc_info=e)
             raise LLMError(609, "Failed to close LLM clients")
 
-    async def generate(self):
-        # TODO: Implement generation logic, likely using self._connections[0]
+    async def _run(
+        self, connection: tuple[LLMClient, LLMModelConfig], request: LLMRequest
+    ):
+        client, model_config = connection
+        async with self._config.concurrency.concurrency_semaphore:
+            await client.generate(request, model_config)
+
+    async def _cache_or_run(self):
+        # this gets connection details and Request. If they already exist, cache it.
         ...
+
+    async def _generate(self, request: LLMRequest):
+
+        for connection in self._connections:
+            async with self._config.concurrency.concurrency_semaphore:
+                pass
 
     async def generate_batch(self):
         # TODO: Implement batch generation logic
         ...
+
+    async def generate_agent(self): ...
+
+    async def generate_agent_batch(self): ...

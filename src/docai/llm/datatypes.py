@@ -31,7 +31,7 @@ class LLMProfileConfig:
 @dataclass(frozen=True)
 class LLMConcurrencyConfig:
     max_concurrency: int
-    concurrent: Semaphore
+    concurrency_semaphore: Semaphore
     inflight_requests: Semaphore
 
 
@@ -42,11 +42,31 @@ class LLMRetryConfig:
     retry_on: list[str] = field(default_factory=lambda: ["5..", "408", "429"])
 
 
+class LLMCacheModelConfigStrategy(Enum):
+    NEWEST = "newest"
+    BEST_MATCH = "best_match"
+    EXACT_MATCH = "exact_match"
+
+
+@dataclass(frozen=True)
+class LLMCacheConfig:
+    use_cache: bool
+    cache_dir: str
+    max_disk_size: int = (
+        1_000_000_000  # space in bytes occupied by cache - deletes oldest entries first
+    )
+    max_lru_size: int = 1_000  # max number of entries in the lru cache
+    max_age: int = 86_400  # max age of disk cache usable in seconds
+    clean_old_entries: bool = False  # clean old entries from disk cache
+    model_config_strategy: LLMCacheModelConfigStrategy = LLMCacheModelConfigStrategy.EXACT_MATCH  # don't need to match model config and can return newest, or best match or something else
+
+
 @dataclass(frozen=True)
 class LLMConfig:
     profiles: list[LLMProfileConfig]
     concurrency: LLMConcurrencyConfig
     retry: LLMRetryConfig
+    cache: LLMCacheConfig
     tools: Optional[dict[str, Any]] = None
 
 
