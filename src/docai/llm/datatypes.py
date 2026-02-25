@@ -113,10 +113,16 @@ class LLMProviderMessage(LLMMessage, ABC):
 class LLMUserMessage(LLMInternalMessage):
     content: str
 
+    def __str__(self):
+        return f"User: {self.content}"
+
 
 @dataclass(frozen=True)
 class LLMAssistantMessage(LLMProviderMessage):
     content: str
+
+    def __str__(self):
+        return f"Assistant: {self.content}"
 
 
 @dataclass(frozen=True)
@@ -124,11 +130,17 @@ class LLMFunctionCall(LLMProviderMessage):
     name: str
     arguments: dict[str, Any] = field(default_factory=dict)
 
+    def __str__(self):
+        return f"Function Call: {self.name}({', '.join(f'{k}={v}' for k, v in self.arguments.items())})"
+
 
 @dataclass(frozen=True)
 class LLMFunctionResponse(LLMInternalMessage):
     call: LLMFunctionCall
     response: dict[str, Any] = field(default_factory=dict)
+
+    def __str__(self):
+        return f"Function Response: {self.call.name}({', '.join(f'{k}={v}' for k, v in self.call.arguments.items())}) -> {self.response}"
 
 
 @dataclass(frozen=True)
