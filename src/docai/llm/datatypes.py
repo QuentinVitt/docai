@@ -52,12 +52,12 @@ class LLMCacheModelConfigStrategy(Enum):
 class LLMCacheConfig:
     use_cache: bool
     cache_dir: str
+    start_with_clean_cache: bool = False  # clean old entries from disk cache
     max_disk_size: int = (
         1_000_000_000  # space in bytes occupied by cache - deletes oldest entries first
     )
+    max_age: float = 86_400  # max age of disk cache usable in seconds
     max_lru_size: int = 1_000  # max number of entries in the lru cache
-    max_age: int = 86_400  # max age of disk cache usable in seconds
-    clean_old_entries: bool = False  # clean old entries from disk cache
     model_config_strategy: LLMCacheModelConfigStrategy = LLMCacheModelConfigStrategy.EXACT_MATCH  # don't need to match model config and can return newest, or best match or something else
 
 
