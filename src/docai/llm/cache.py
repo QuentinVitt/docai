@@ -32,26 +32,25 @@ class LRUCacheNode:
         self.model_config = model_config
         self.model_config_key = model_config_key
         self.request_key = request_key
-        self.next: Optional[LRUCacheNode] = None
-        self.prev: Optional[LRUCacheNode] = None
+        self.last_accessed = time.monotonic()  # Added for O(1) NEWEST lookup
+        self.next: Optional["LRUCacheNode"] = None
+        self.prev: Optional["LRUCacheNode"] = None
 
 
-class LLMLRUCache:
+class LRUCache:
     CACHE_VERSION = "1.0"
 
     def __init__(
         self, capacity: int, model_config_strategy: LLMCacheModelConfigStrategy
     ):
-        # Check if lru cache size is correctly
         if capacity < 0:
             logger.error(
-                "The maximum LRU cache size can't be negative. max LRU cache size: %s",
-                capacity,
+                f"The maximum LRU cache size can't be negative. max: {capacity}"
             )
             raise ValueError(
-                "The maximum LRU cache size can't be negative. max LRU cache size: %s",
-                capacity,
+                f"The maximum LRU cache size can't be negative. max: {capacity}"
             )
+
         self.capacity = capacity
         self.curr_size = 0
         self.head = LRUCacheNode(None, None, None, None)
@@ -61,49 +60,52 @@ class LLMLRUCache:
         self.cache = {}
         self.model_config_strategy = model_config_strategy
 
-    def _remove(self, node):
-        node.prev.next = node.next
-        node.next.prev = node.prev
+    def _remove(self, node: LRUCacheNode):
+        node.prev.next = node.next  # type: ignore
+        node.next.prev = node.prev  # type: ignore
+
         del self.cache[node.request_key][node.model_config_key]
         if not self.cache[node.request_key]:
             del self.cache[node.request_key]
+
         self.curr_size -= 1
 
-    def _add(self, node):
+    def _add(self, node: LRUCacheNode):
+        node.last_accessed = time.monotonic()  # Update time when adding/moving to front
+
         node.prev = self.head
         node.next = self.head.next
-
-        self.head.next.prev = node
+        self.head.next.prev = node  # type: ignore
         self.head.next = node
-        self.cache[node.request_key] = self.cache.get(node.request_key, {})
-        self.cache[node.request_key][node.model_config_key] = node
+
+        self.cache.setdefault(node.request_key, {})[node.model_config_key] = node
         self.curr_size += 1
 
-    def _best_model_config_match(
-        self,
-        model_config: LLMModelConfig,
-        node1: Optional[LRUCacheNode],
-        node2: Optional[LRUCacheNode],
-    ) -> Optional[LRUCacheNode]:
-        if not node1:
-            return node2
-        if not node2:
-            return node1
+    def _calculate_penalty(
+        self, requested_config: LLMModelConfig, cached_config: LLMModelConfig
+    ) -> float:
+        penalty = 0.0
 
-        if (
-            node1.model_config.name == model_config.name
-            and node2.model_config.name != model_config.name
-        ):
-            return node1
-        elif (
-            node2.model_config.name == model_config.name
-            and node1.model_config.name != model_config.name
-        ):
-            return node2
+        if requested_config.name != cached_config.name:
+            penalty += 1000.0
 
-        return (
-            node1 if node1.model_config.generation == model_config.generation else node2
-        )
+        req_gen = requested_config.generation or {}
+        cache_gen = cached_config.generation or {}
+
+        all_keys = set(req_gen.keys()) | set(cache_gen.keys())
+
+        for key in all_keys:
+            if key in req_gen and key in cache_gen:
+                v1, v2 = req_gen[key], cache_gen[key]
+                if type(v1) in (int, float) and type(v2) in (int, float):
+                    penalty += abs(float(v1) - float(v2))
+                else:
+                    if v1 != v2:
+                        penalty += 1.0
+            else:
+                penalty += 1.0
+
+        return penalty
 
     def get(
         self, request_key, model_config_key, model_config
@@ -112,28 +114,26 @@ class LLMLRUCache:
             return None
 
         node = None
+        nodes_for_request = self.cache[request_key]
 
         match self.model_config_strategy:
             case LLMCacheModelConfigStrategy.NEWEST:
-                node = self.head.next
-                while node:
-                    if node.request_key == request_key:
-                        break
-                    node = node.next
+                # O(1) relative to cache size: just find max timestamp among the few nodes for this request
+                node = max(nodes_for_request.values(), key=lambda n: n.last_accessed)
 
             case LLMCacheModelConfigStrategy.BEST_MATCH:
-                possible_nodes = self.cache[request_key]
-                for possible_node in possible_nodes:
-                    node = self._best_model_config_match(
-                        model_config, node, possible_node
-                    )
+                node = min(
+                    nodes_for_request.values(),
+                    key=lambda n: self._calculate_penalty(model_config, n.model_config),
+                )
 
             case LLMCacheModelConfigStrategy.EXACT_MATCH:
-                node = self.cache[request_key].get(model_config_key, None)
+                node = nodes_for_request.get(model_config_key)
 
         if not node:
             return None
 
+        # Move to front (most recently used)
         self._remove(node)
         self._add(node)
         return node.response
@@ -143,12 +143,14 @@ class LLMLRUCache:
             self._remove(self.cache[request_key][model_config_key])
 
         node = LRUCacheNode(request_key, model_config_key, response, model_config)
-
         self._add(node)
+
         if self.curr_size > self.capacity:
             lru = self.tail.prev
-            self._remove(lru)
-            del self.cache[lru.request_key][lru.model_config_key]
+            self._remove(lru)  # type: ignore
+
+
+class DiskCache: ...
 
 
 class LLMCache:
@@ -246,9 +248,9 @@ class LLMCache:
             request_hash, model_config_hash, response.response, model_config
         )
         new_lru_cache_node.next = self._lru_head
-        new_lru_cache_node.prev = self._lru_head.prev
-        self._lru_head.prev.next = new_lru_cache_node
-        self._lru_head.prev = new_lru_cache_node
+        new_lru_cache_node.prev = self._lru_head.prev  # type: ignore
+        self._lru_head.prev.next = new_lru_cache_node  # type: ignore
+        self._lru_head.prev = new_lru_cache_node  # type: ignore
 
         self._lru_dict[request_hash] = self._lru_dict.get(request_hash, {})[
             model_config_hash
