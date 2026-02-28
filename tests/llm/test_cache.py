@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 import pytest
 
@@ -8,7 +7,6 @@ from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMModelConfig,
     LLMOriginalContent,
-    LLMProviderMessage,
 )
 
 
@@ -134,7 +132,7 @@ def test_lru_cache_best_match_strategy(mock_response):
     )
     res = cache.get("req-1", "any", search_config1)
     assert res is not None
-    assert res.content == "res-1"
+    assert res.content == "res-1"  # type: ignore
 
     # 0.7 is closer to 0.8 than 0.5.
     search_config2 = LLMModelConfig(
@@ -142,19 +140,19 @@ def test_lru_cache_best_match_strategy(mock_response):
     )
     res = cache.get("req-1", "any", search_config2)
     assert res is not None
-    assert res.content == "res-2"
+    assert res.content == "res-2"  # type: ignore
 
     # Exact temp, but missing top_k. It should prefer config3
     search_config3 = LLMModelConfig(name="model-a", generation={"temp": 0.5})
     res = cache.get("req-1", "any", search_config3)
     assert res is not None
-    assert res.content == "res-3"
+    assert res.content == "res-3"  # type: ignore
 
     # Testing exact name matching penalty. It should pick config4
     search_config4 = LLMModelConfig(name="model-b", generation={"temp": 0.9})
     res = cache.get("req-1", "any", search_config4)
     assert res is not None
-    assert res.content == "res-4"
+    assert res.content == "res-4"  # type: ignore
 
 
 def test_lru_cache_put_overwrite(mock_response):
