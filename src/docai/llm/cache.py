@@ -414,4 +414,89 @@ class DiskCache:
 class LLMCache:
     CACHE_VERSION = "1.0"
 
-    def __init__(self, config: LLMCacheConfig): ...
+    def __init__(self, config: LLMCacheConfig):
+        self.use_cache = config.use_cache
+
+        self.lru_cache = LRUCache(config.max_lru_size, config.model_config_strategy)
+        self.disk_cache = DiskCache(
+            config.cache_dir,
+            config.start_with_clean_cache,
+            config.max_disk_size,
+            config.max_age,
+            config.model_config_strategy,
+        )
+
+    def put(
+        self, request: LLMRequest, model_config: LLMModelConfig, response: LLMResponse
+    ) -> None:
+        if not self.use_cache:
+            return
+
+        request_hash, model_config_hash = self._get_cache_hashes(request, model_config)
+
+        self.lru_cache.put(
+            request_hash, model_config_hash, model_config, response.response
+        )
+        self.disk_cache.put(
+            request_hash, model_config_hash, model_config, response.response
+        )
+
+    def get(
+        self, request: LLMRequest, model_config: LLMModelConfig
+    ) -> Optional[LLMResponse]:
+        if not self.use_cache:
+            return None
+
+        request_hash, model_config_hash = self._get_cache_hashes(request, model_config)
+
+        response = self.lru_cache.get(request_hash, model_config_hash, model_config)
+
+        if not response:
+            response = self.disk_cache.get(
+                request_hash, model_config_hash, model_config
+            )
+            if response:
+                # write the result to lru_cache
+                self.lru_cache.put(
+                    request_hash, model_config_hash, model_config, response
+                )
+
+        if response:
+            return LLMResponse(response=response, id=request.id)
+        return None
+
+    def _get_cache_hashes(
+        self, request: LLMRequest, model_config: LLMModelConfig
+    ) -> tuple[str, str]:
+        """
+        Generates deterministic SHA256 hashes for the request and model config.
+
+        Returns:
+            A tuple containing (request_hash, model_config_hash).
+        """
+        # Generate a hash for the request's content
+        request_hasher = hashlib.sha256()
+
+        request_components = [
+            str(request.prompt),
+            str(request.system_prompt or ""),
+            " $ ".join(map(str, request.history)),
+            json.dumps(request.structured_output, sort_keys=True)
+            if request.structured_output
+            else None,
+            ",".join(sorted(request.allowed_tools)) if request.allowed_tools else None,
+        ]
+
+        for component in request_components:
+            request_hasher.update(component.encode("utf-8"))
+
+        request_hash = request_hasher.hexdigest()
+
+        # Generate a hash for the model configuration
+        model_config_hasher = hashlib.sha256()
+        serialized_model_config = json.dumps(asdict(model_config), sort_keys=True)
+
+        model_config_hasher.update(serialized_model_config.encode("utf-8"))
+        model_config_hash = model_config_hasher.hexdigest()
+
+        return request_hash, model_config_hash
