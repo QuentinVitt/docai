@@ -67,7 +67,7 @@ def test_disk_cache_put_and_exact_match(temp_cache_dir, mock_response):
 
     res = cache.get("req-1", "config-1", config)
     assert res is not None
-    assert res.content == "res-1"
+    assert res.content == "res-1"  # type: ignore
 
 
 def test_disk_cache_strips_original_content(temp_cache_dir, mock_response):
@@ -117,7 +117,7 @@ def test_disk_cache_newest_strategy(temp_cache_dir, mock_response):
 
     res = cache.get("req-1", "any", config1)
     assert res is not None
-    assert res.content == "res-2"
+    assert res.content == "res-2"  # type: ignore
 
 
 def test_disk_cache_best_match_strategy(temp_cache_dir, mock_response):
@@ -138,12 +138,12 @@ def test_disk_cache_best_match_strategy(temp_cache_dir, mock_response):
     search_config1 = LLMModelConfig(name="model-a", generation={"temp": 0.6})
     res = cache.get("req-1", "any", search_config1)
     assert res is not None
-    assert res.content == "res-1"
+    assert res.content == "res-1"  # type: ignore
 
     search_config2 = LLMModelConfig(name="model-a", generation={"temp": 0.9})
     res = cache.get("req-1", "any", search_config2)
     assert res is not None
-    assert res.content == "res-2"
+    assert res.content == "res-2"  # type: ignore
 
 
 def test_disk_cache_eviction_by_size(temp_cache_dir, mock_response):

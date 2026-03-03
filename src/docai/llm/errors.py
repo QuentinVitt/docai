@@ -14,6 +14,8 @@ class LLMError(Exception):
     # code 607: Failed to transform content to provider content
     # code 608: Failed to create LLMService
     # code 609: Failed to close LLM clients
+    # code 610: Failed to generate response with all connections
+    # code 611: Failed to generate content
 
     def __init__(self, status_code: int, response: str | None = None):
         self.status_code = status_code

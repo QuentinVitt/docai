@@ -488,7 +488,7 @@ class LLMCache:
         ]
 
         for component in request_components:
-            request_hasher.update(component.encode("utf-8"))
+            request_hasher.update(str(component or "").encode("utf-8"))
 
         request_hash = request_hasher.hexdigest()
 

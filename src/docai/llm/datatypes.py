@@ -119,7 +119,7 @@ class LLMUserMessage(LLMInternalMessage):
 
 @dataclass(frozen=True)
 class LLMAssistantMessage(LLMProviderMessage):
-    content: str
+    content: str | dict
 
     def __str__(self):
         return f"Assistant: {self.content}"

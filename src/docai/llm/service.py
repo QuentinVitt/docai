@@ -1,11 +1,25 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 from logging import getLogger
+from typing import Optional
 
+from docai.llm.cache import LLMCache
 from docai.llm.client import LLMClient, create_client
-from docai.llm.datatypes import LLMConfig, LLMModelConfig, LLMRequest
+from docai.llm.datatypes import (
+    LLMAssistantMessage,
+    LLMConfig,
+    LLMFunctionCall,
+    LLMMessage,
+    LLMModelConfig,
+    LLMProviderMessage,
+    LLMRequest,
+    LLMResponse,
+    LLMUserMessage,
+)
 from docai.llm.errors import LLMError
+from docai.llm.runner import run
 
 logger = getLogger("docai_project")
 
@@ -16,8 +30,7 @@ class LLMService:
         self._config: LLMConfig = config
 
         # set up cache
-        self._cache = None
-        raise NotImplementedError("Cache setup not implemented")
+        self._cache = LLMCache(self._config.cache)
 
     @classmethod
     async def create(cls, config: LLMConfig) -> LLMService:
@@ -53,26 +66,65 @@ class LLMService:
             logger.error("Failed to close LLM clients", exc_info=e)
             raise LLMError(609, "Failed to close LLM clients")
 
-    async def _run(
-        self, connection: tuple[LLMClient, LLMModelConfig], request: LLMRequest
-    ):
-        client, model_config = connection
-        async with self._config.concurrency.concurrency_semaphore:
-            await client.generate(request, model_config)
+    async def _generate(
+        self, client: LLMClient, model_config: LLMModelConfig, request: LLMRequest
+    ) -> tuple[str | dict, LLMProviderMessage]:
+        result = await run(
+            self._cache,
+            request,
+            model_config,
+            client,
+            self._config.retry,
+            self._config.concurrency.concurrency_semaphore,
+        )
+        if isinstance(result.response, LLMAssistantMessage):
+            return result.response.content, result.response
+        elif isinstance(result.response, LLMFunctionCall):
+            return {
+                "function_call": {
+                    "name": result.response.name,
+                    "arguments": result.response.arguments,
+                }
+            }, result.response
 
-    async def _cache_or_run(self):
-        # this gets connection details and Request. If they already exist, cache it.
-        ...
+        raise LLMError(601, "Unsupported response type: " + str(type(result.response)))
 
-    async def _generate(self, request: LLMRequest):
+    async def generate(
+        self,
+        prompt: str | LLMUserMessage,
+        system_prompt: Optional[str] = None,
+        history: Optional[list[LLMMessage]] = None,
+        structured_output: Optional[dict] = None,
+        id: Optional[uuid.UUID] = None,
+    ) -> tuple[str | dict, LLMProviderMessage]:
 
-        for connection in self._connections:
-            async with self._config.concurrency.concurrency_semaphore:
-                pass
+        request_args = {
+            "prompt": prompt
+            if isinstance(prompt, LLMUserMessage)
+            else LLMUserMessage(content=prompt),
+            "history": history if history else [],
+        }
+        if system_prompt:
+            request_args["system_prompt"] = system_prompt
+        if structured_output:
+            request_args["structured_output"] = structured_output
+        if id:
+            request_args["id"] = id
+        request = LLMRequest(**request_args)
 
-    async def generate_batch(self):
-        # TODO: Implement batch generation logic
-        ...
+        # go over all connections with request. return first hit
+        for client, model_config in self._connections:
+            try:
+                return await self._generate(client, model_config, request)
+            except Exception as e:
+                logger.error(
+                    f"Failed to generate request {request}with {client}, {model_config}",
+                    exc_info=e,
+                )
+
+        raise LLMError(610, "Failed to generate response with all connections")
+
+    async def generate_batch(self): ...
 
     async def generate_agent(self): ...
 
