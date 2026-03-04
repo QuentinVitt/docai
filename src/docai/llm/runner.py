@@ -59,7 +59,7 @@ async def _run(
                 await asyncio.sleep(sleep_time)
                 continue
             raise e
-        except Exception as e:
+        except Exception:
             logger.error(
                 "Unexpected network or parsing error for request: %s in try: %d",
                 request.id,
