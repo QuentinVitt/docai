@@ -33,6 +33,7 @@ class LLMConcurrencyConfig:
     max_concurrency: int
     concurrency_semaphore: Semaphore
     inflight_requests: Semaphore
+    concurrent_agents: Semaphore
 
 
 @dataclass(frozen=True)

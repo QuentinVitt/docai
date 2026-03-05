@@ -185,6 +185,37 @@ class LLMService:
             if pending:
                 await asyncio.gather(*pending, return_exceptions=True)
 
-    async def generate_agent(self): ...
+    # async def generate_agent(
+    #     self,
+    #     prompt: str | LLMUserMessage | LLMRequest,
+    #     system_prompt: Optional[str] = None,
+    #     history: Optional[list[LLMMessage]] = None,
+    #     structured_output: Optional[dict] = None,
+    #     allowed_tools: Optional[set[str]] = None,
+    #     id: Optional[uuid.UUID] = None,
+    # ) -> tuple[str | dict, LLMProviderMessage]:
+    #     # build initial request
+    #     if isinstance(prompt, LLMRequest):
+    #         request = prompt
+    #     else:
+    #         if not history:
+    #             history = []
+    #         request_dict = {
+    #             "prompt": LLMUserMessage(prompt) if isinstance(prompt, str) else prompt,
+    #             "system_prompt": system_prompt,
+    #             "history": history
+    #         }
+    #         if structured_output:
+    #             request_dict["structured_output"] = structured_output
+    #         if allowed_tools:
+    #             request_dict["allowed_tools"] = allowed_tools
+    #         request = LLMRequest(**request_dict)
 
-    async def generate_agent_batch(self): ...
+    #     # agent loop:
+    #     while True:
+    #         # Resason
+    #         # Act
+    #         # observe
+    #         # repeat
+
+    # async def generate_agent_batch(self): ...

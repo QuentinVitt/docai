@@ -1,11 +1,13 @@
 import logging
+from typing import Optional
 
+from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_type
 
 logger = logging.getLogger("docai_project")
 
-def create_dependencies_list(files: set[str]) -> list[set[str]]:
-    raise NotImplementedError("Function not tested")
+
+def create_dependencies_list(files: set[str], llm: LLMService) -> list[set[str]]:
     # TODO: cache
     # TODO: logging
     # TODO: test logic
@@ -25,7 +27,6 @@ def create_dependencies_list(files: set[str]) -> list[set[str]]:
             if file_dependency not in dependencies:
                 dependencies[file_dependency] = set()
             dependencies[file_dependency].add(file)
-
             dependency_count[file] = dependency_count.get(file, 0) + 1
 
     while zero_dependencies:
@@ -39,7 +40,9 @@ def create_dependencies_list(files: set[str]) -> list[set[str]]:
     return dependency_list
 
 
-def get_dependencies_of_file(file: str, file_type: str | None = None) -> list[str]:
+def get_dependencies_of_file(
+    file: str, file_type: str | None = None, llm: Optional[LLMService] = None
+) -> list[str]:
     # TODO: caching
     # TODO: logging
     # TODO: test logic
