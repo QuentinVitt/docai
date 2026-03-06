@@ -23,7 +23,7 @@ async def extract_dependencies(
     file: str,
     file_content: str,
     file_type: str | None,
-    all_files: list[str],
+    all_files: set[str],
     llm: LLMService,
 ) -> list[str]:
 

@@ -27,3 +27,11 @@ def get_file_type(file: str) -> str | None:
     # if file type could not be determined return None
     logger.debug("File type of '%s' could not be determined", file)
     return None
+
+
+def get_file_content(file: str) -> str:
+    if not os.path.isfile(file):
+        logger.error("File '%s' does not exist", file)
+        raise FileNotFoundError(f"File '{file}' does not exist")
+    with open(file, "r") as f:
+        return f.read()
