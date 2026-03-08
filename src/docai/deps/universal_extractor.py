@@ -25,7 +25,7 @@ async def extract_dependencies(
     file_type: str | None,
     all_files: set[str],
     llm: LLMService,
-) -> list[str]:
+) -> set[str]:
 
     file_list_str = "\n".join(f for f in all_files if f != file)
     lang = file_type if file_type else "unknown"
@@ -76,5 +76,5 @@ Return the file paths exactly as they appear in the project_files list.\
     )
 
     if isinstance(result, dict):
-        return result.get("dependencies", [])
+        return set(result.get("dependencies", []))
     raise ValueError("Unexpected result type: " + str(type(result)))

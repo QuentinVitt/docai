@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from logging import getLogger
-from typing import AsyncIterable, AsyncIterator, Optional
+from typing import AsyncIterable, AsyncIterator, Awaitable, Callable, Optional
 
 from docai.llm.cache import LLMCache
 from docai.llm.client import LLMClient, create_client
@@ -11,6 +11,7 @@ from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMConfig,
     LLMFunctionCall,
+    LLMFunctionResponse,
     LLMMessage,
     LLMModelConfig,
     LLMProviderMessage,
@@ -185,37 +186,90 @@ class LLMService:
             if pending:
                 await asyncio.gather(*pending, return_exceptions=True)
 
-    # async def generate_agent(
-    #     self,
-    #     prompt: str | LLMUserMessage | LLMRequest,
-    #     system_prompt: Optional[str] = None,
-    #     history: Optional[list[LLMMessage]] = None,
-    #     structured_output: Optional[dict] = None,
-    #     allowed_tools: Optional[set[str]] = None,
-    #     id: Optional[uuid.UUID] = None,
-    # ) -> tuple[str | dict, LLMProviderMessage]:
-    #     # build initial request
-    #     if isinstance(prompt, LLMRequest):
-    #         request = prompt
-    #     else:
-    #         if not history:
-    #             history = []
-    #         request_dict = {
-    #             "prompt": LLMUserMessage(prompt) if isinstance(prompt, str) else prompt,
-    #             "system_prompt": system_prompt,
-    #             "history": history
-    #         }
-    #         if structured_output:
-    #             request_dict["structured_output"] = structured_output
-    #         if allowed_tools:
-    #             request_dict["allowed_tools"] = allowed_tools
-    #         request = LLMRequest(**request_dict)
+    async def generate_agent(
+        self,
+        prompt: str | LLMUserMessage | LLMRequest,
+        tool_executor: Callable[[LLMFunctionCall], Awaitable[LLMFunctionResponse]],
+        system_prompt: Optional[str] = None,
+        history: Optional[list[LLMMessage]] = None,
+        allowed_tools: Optional[set[str]] = None,
+        structured_output: Optional[dict] = None,
+        max_turns: int = 10,
+        id: Optional[uuid.UUID] = None,
+    ) -> tuple[str | dict, LLMProviderMessage]:
 
-    #     # agent loop:
-    #     while True:
-    #         # Resason
-    #         # Act
-    #         # observe
-    #         # repeat
+        # Build initial request (same as generate)
+        if isinstance(prompt, LLMRequest):
+            request = prompt
+        else:
+            request_args = {
+                "prompt": LLMUserMessage(content=prompt)
+                if isinstance(prompt, str)
+                else prompt,
+                "history": history if history else [],
+            }
+            if system_prompt:
+                request_args["system_prompt"] = system_prompt
+            if allowed_tools:
+                request_args["allowed_tools"] = allowed_tools
+            if structured_output:
+                request_args["structured_output"] = structured_output
+            if id:
+                request_args["id"] = id
+            request = LLMRequest(**request_args)
 
-    # async def generate_agent_batch(self): ...
+        # Agent loop: Reason → Act → Observe → repeat
+        for turn in range(max_turns):
+            # Try all connections, return on first success (same as generate)
+            result = None
+            for client, model_config in self._connections:
+                try:
+                    result = await run(
+                        self._cache,
+                        request,
+                        model_config,
+                        client,
+                        self._config.retry,
+                        self._config.concurrency.concurrency_semaphore,
+                    )
+                    break
+                except Exception as e:
+                    logger.error(
+                        "Agent turn %d failed with %s, %s",
+                        turn + 1,
+                        client,
+                        model_config,
+                        exc_info=e,
+                    )
+
+            if result is None:
+                raise LLMError(610, "Failed to generate response with all connections")
+
+            # Reason: text response — agent is done
+            if isinstance(result.response, LLMAssistantMessage):
+                return result.response.content, result.response
+
+            # Act + Observe: tool call — execute and continue
+            if isinstance(result.response, LLMFunctionCall):
+                logger.debug(
+                    "Agent turn %d: calling tool '%s' for request %s",
+                    turn + 1,
+                    result.response.name,
+                    request.id,
+                )
+                function_response = await tool_executor(result.response)
+
+                # Grow history with this turn, make function response the new prompt
+                request = LLMRequest(
+                    prompt=function_response,
+                    system_prompt=request.system_prompt,
+                    history=list(request.history) + [request.prompt, result.response],
+                    allowed_tools=request.allowed_tools,
+                    structured_output=request.structured_output,
+                    id=request.id,
+                )
+                continue
+
+            raise LLMError(601, "Unsupported response type: " + str(type(result.response)))
+
+        raise LLMError(612, f"Agent exceeded maximum turns ({max_turns})")
