@@ -40,7 +40,7 @@ async def test_returns_dependencies(mock_llm, sample_files):
         llm=mock_llm,
     )
 
-    assert result == ["src/utils.py", "src/models/user.py"]
+    assert result == {"src/utils.py", "src/models/user.py"}
 
 
 @pytest.mark.asyncio
@@ -53,7 +53,7 @@ async def test_returns_empty_list_when_no_dependencies(mock_llm, sample_files):
         llm=mock_llm,
     )
 
-    assert result == []
+    assert result == set()
 
 
 @pytest.mark.asyncio
@@ -69,7 +69,7 @@ async def test_missing_dependencies_key_returns_empty_list(mock_llm, sample_file
         llm=mock_llm,
     )
 
-    assert result == []
+    assert result == set()
 
 
 # --- Self-exclusion test ---

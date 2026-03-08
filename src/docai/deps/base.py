@@ -30,11 +30,14 @@ async def set_files_dependencies(
         project_files[file]["dependencies"] = deps
 
 
-async def create_dependencies_topologically_sorted(
+def create_dependencies_topologically_sorted(
     files: dict[str, dict],
 ) -> list[set[str]]:
 
-    dependency_count: dict[str, int] = {}  # file -> number files it depends on
+    dependents: dict[str, set[str]] = {}  # file -> set of files that depend on it
+    dependency_count: dict[
+        str, int
+    ] = {}  # file -> number of project files it depends on
     zero_dependencies: set[str] = set()  # files that depend on no other files
     unknown_dependencies: set[str] = set()  # files with unknown dependencies
     dependency_list: list[set[str]] = []  # list of files in order of dependencies
@@ -49,16 +52,18 @@ async def create_dependencies_topologically_sorted(
             continue
 
         dependency_count[file] = len(file_info["dependencies"])
+        for dep in file_info["dependencies"]:
+            dependents.setdefault(dep, set()).add(file)
 
     while zero_dependencies:
         independent_files = set(zero_dependencies)
         zero_dependencies.clear()
         for independent_file in independent_files:
-            for dependent_files in files[independent_file]["dependencies"]:
-                dependency_count[dependent_files] -= 1
-                if dependency_count[dependent_files] == 0:
-                    zero_dependencies.add(dependent_files)
-                    del dependency_count[dependent_files]
+            for dependent_file in dependents.get(independent_file, set()):
+                dependency_count[dependent_file] -= 1
+                if dependency_count[dependent_file] == 0:
+                    zero_dependencies.add(dependent_file)
+                    del dependency_count[dependent_file]
 
         dependency_list.append(independent_files)
 
