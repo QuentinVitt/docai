@@ -1,7 +1,5 @@
 import logging
 
-from _pytest.fixtures import write_docstring
-
 from docai.config.loader import Config
 from docai.deps.base import (
     create_dependencies_topologically_sorted,
@@ -24,6 +22,7 @@ async def run(config: Config):
         file: {"file_type": get_file_type(file)} for file in project_files
     }
 
+    # TODO: build LLMService from config.llm_args and pass as llm=
     # add dependent files to project files
     await set_files_dependencies(project_files_info)
 
