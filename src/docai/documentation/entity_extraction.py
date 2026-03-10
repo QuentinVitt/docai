@@ -50,11 +50,6 @@ async def get_entities(
     file: str, file_info: dict, llm: Optional[LLMService]
 ) -> list[tuple[str, DocItemType, str | None]]:
 
-    # Invoke special entity extractors based on file type
-    match file_info.get("file_type"):
-        case _:
-            pass
-
     match file_info.get("doc_type"):
         case FileDocType.CODE:
             if not llm:

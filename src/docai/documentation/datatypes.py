@@ -5,7 +5,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-
 # ---------------------------------------------------------------------------
 # Shared building blocks
 # ---------------------------------------------------------------------------
@@ -48,7 +47,7 @@ class RaisesEntry(BaseModel):
 
 class DocItemType(Enum):
     FUNCTION = "function"
-    METHOD = "method"      # function belonging to a class
+    METHOD = "method"  # function belonging to a class
     CLASS = "class"
     DATATYPE = "datatype"  # dataclass, TypedDict, named tuple, struct, etc.
     CONSTANT = "constant"
@@ -81,10 +80,10 @@ class DocItem(BaseModel):
 
 
 class FileDocType(Enum):
-    CODE = "code"        # .py, .js, .ts, ... — contains DocItems
-    CONFIG = "config"    # .yaml, .json, .toml, .ini, ...
-    DOCS = "docs"        # .md, .rst, .txt, ...
-    OTHER = "other"      # any other human-authored text file
+    CODE = "code"  # .py, .js, .ts, ... — contains DocItems
+    CONFIG = "config"  # .yaml, .json, .toml, .ini, ...
+    DOCS = "docs"  # .md, .rst, .txt, ...
+    OTHER = "other"  # any other human-authored text file
     SKIPPED = "skipped"  # binary, generated, or lock files — not documented
 
 
@@ -93,8 +92,8 @@ class FileDoc(BaseModel):
 
     path: str
     type: FileDocType
-    description: str             # empty string for SKIPPED
-    items: list[DocItem] = []    # populated only for CODE files
+    description: str  # empty string for SKIPPED
+    items: list[DocItem] = []  # populated only for CODE files
 
 
 # ---------------------------------------------------------------------------
@@ -107,8 +106,8 @@ class PackageDoc(BaseModel):
 
     path: str
     description: str
-    files: list[str] = []        # paths of direct FileDoc children
-    packages: list[str] = []     # paths of direct PackageDoc children
+    files: list[str] = []  # paths of direct FileDoc children
+    packages: list[str] = []  # paths of direct PackageDoc children
 
 
 # ---------------------------------------------------------------------------
@@ -121,4 +120,20 @@ class ProjectDoc(BaseModel):
 
     name: str
     description: str
-    packages: list[str] = []     # paths of top-level PackageDoc children
+    packages: list[str] = []  # paths of top-level PackageDoc children
+
+
+# ---------------------------------------------------------------------------
+#  Config
+# ---------------------------------------------------------------------------
+
+
+class DocumentationCacheConfig(BaseModel):
+    """Configuration for the documentation disk cache."""
+
+    cache_dir: str
+    use_cache: bool = True
+    start_with_clean_cache: bool = False
+    max_disk_size: int = 1_000_000_000  # bytes; evicts oldest entries first
+    max_age: float = 86_400             # seconds; entries older than this are stale
+    max_ram_size: Optional[int] = None  # max items in RAM cache; None = unlimited

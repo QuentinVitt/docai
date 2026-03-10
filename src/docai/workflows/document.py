@@ -33,6 +33,7 @@ async def run(config: Config):
 
 
 # 2. Create documentation objects
+# save documentation in cache but also get those no longer needed into disk
 
 # document Objects internal representation
 # for files in dependencie_list:
