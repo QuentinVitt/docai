@@ -2,11 +2,14 @@ import uuid
 
 import pytest
 
-from docai.llm.cache import LLMCache, LLMCacheModelConfigStrategy
+from docai.config.datatypes import (
+    LLMCacheConfig,
+    LLMCacheModelConfigStrategy,
+    LLMModelConfig,
+)
+from docai.llm.cache import LLMCache
 from docai.llm.datatypes import (
     LLMAssistantMessage,
-    LLMCacheConfig,
-    LLMModelConfig,
     LLMOriginalContent,
     LLMRequest,
     LLMResponse,

@@ -8,12 +8,14 @@ from dataclasses import asdict
 from logging import getLogger
 from typing import Optional
 
-from docai.llm.datatypes import (
-    LLMAssistantMessage,
+from docai.config.datatypes import (
     LLMCacheConfig,
     LLMCacheModelConfigStrategy,
-    LLMFunctionCall,
     LLMModelConfig,
+)
+from docai.llm.datatypes import (
+    LLMAssistantMessage,
+    LLMFunctionCall,
     LLMOriginalContent,
     LLMProviderMessage,
     LLMRequest,
@@ -170,29 +172,33 @@ class DiskCache:
         # Check max age and size first (fast fail)
         self.max_age = max_age
         if self.max_age < 0:
-            logger.error(f"The maximum file age can't be negative: {self.max_age}")
-            raise ValueError(f"The maximum file age can't be negative: {self.max_age}")
+            logger.error(f"The maximum llm file age can't be negative: {self.max_age}")
+            raise ValueError(
+                f"The maximum llm file age can't be negative: {self.max_age}"
+            )
 
         self.max_disk_size = max_disk_size
         if self.max_disk_size < 0:
             logger.error(
-                f"The maximum cache size can't be negative: {self.max_disk_size}"
+                f"The maximum llm disk cache size can't be negative: {self.max_disk_size}"
             )
             raise ValueError(
-                f"The maximum cache size can't be negative: {self.max_disk_size}"
+                f"The maximum llm diskcache size can't be negative: {self.max_disk_size}"
             )
 
         # Directory Setup
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
         elif not os.path.isdir(self.cache_dir):
-            logger.error(f"Cache directory {self.cache_dir} is not a directory")
-            raise ValueError(f"Cache directory {self.cache_dir} is not a directory")
+            logger.error(f"LLM Cache directory {self.cache_dir} is not a directory")
+            raise ValueError(f"LLM Cache directory {self.cache_dir} is not a directory")
 
         if not os.access(self.cache_dir, os.W_OK | os.R_OK):
-            logger.error(f"Cache directory {self.cache_dir} has no read/write access")
+            logger.error(
+                f"LLM Cache directory {self.cache_dir} has no read/write access"
+            )
             raise ValueError(
-                f"Cache directory {self.cache_dir} has no read/write access"
+                f"LLM Cache directory {self.cache_dir} has no read/write access"
             )
 
         # Handle initialization state
@@ -249,7 +255,7 @@ class DiskCache:
             if not os.listdir(parent_dir):
                 os.rmdir(parent_dir)
         except OSError as e:
-            logger.warning("Failed to clean up cache file %s: %s", filepath, e)
+            logger.warning("Failed to clean up llm cache file %s: %s", filepath, e)
 
     def _calculate_penalty(
         self, requested_config: LLMModelConfig, cached_config: LLMModelConfig
@@ -320,7 +326,7 @@ class DiskCache:
                             file_path = curr_file_path
                     except Exception as e:
                         logger.warning(
-                            "Failed to read cache file %s for BEST_MATCH: %s",
+                            "Failed to read llm cache file %s for BEST_MATCH: %s",
                             curr_file_path,
                             e,
                         )
@@ -440,6 +446,12 @@ class LLMCache:
         self.disk_cache.put(
             request_hash, model_config_hash, model_config, response.response
         )
+        logger.debug(
+            "LLM cache for request id: %s, put: request_hash=%s, model_config_hash=%s",
+            request.id,
+            request_hash,
+            model_config_hash,
+        )
 
     def get(
         self, request: LLMRequest, model_config: LLMModelConfig
@@ -462,6 +474,12 @@ class LLMCache:
                 )
 
         if response:
+            logger.debug(
+                "LLM cache for request id: %s, hit: request_hash=%s, model_config_hash=%s",
+                request.id,
+                request_hash,
+                model_config_hash,
+            )
             return LLMResponse(response=response, id=request.id)
         return None
 

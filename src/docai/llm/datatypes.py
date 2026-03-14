@@ -1,79 +1,8 @@
 import uuid
 from abc import ABC
-from asyncio import Semaphore
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
-
-"""
-Section for Config Dataclasses
-"""
-
-
-@dataclass(frozen=True)
-class LLMModelConfig:
-    name: str
-    generation: Optional[dict[str, Any]] = None
-
-
-@dataclass(frozen=True)
-class LLMProviderConfig:
-    name: str
-    api_key: str
-
-
-@dataclass(frozen=True)
-class LLMProfileConfig:
-    provider: LLMProviderConfig
-    model: LLMModelConfig
-
-
-@dataclass(frozen=True)
-class LLMConcurrencyConfig:
-    max_concurrency: int
-    concurrency_semaphore: Semaphore
-    inflight_requests: Semaphore
-    concurrent_agents: Semaphore
-
-
-@dataclass(frozen=True)
-class LLMRetryConfig:
-    max_retries: int
-    retry_delay: int
-    retry_on: list[str] = field(default_factory=lambda: ["5..", "408", "429"])
-
-
-class LLMCacheModelConfigStrategy(Enum):
-    NEWEST = "newest"
-    BEST_MATCH = "best_match"
-    EXACT_MATCH = "exact_match"
-
-
-@dataclass(frozen=True)
-class LLMCacheConfig:
-    use_cache: bool
-    cache_dir: str
-    start_with_clean_cache: bool = False  # clean old entries from disk cache
-    max_disk_size: int = (
-        1_000_000_000  # space in bytes occupied by cache - deletes oldest entries first
-    )
-    max_age: float = 86_400  # max age of disk cache usable in seconds
-    max_lru_size: int = 1_000  # max number of entries in the lru cache
-    model_config_strategy: LLMCacheModelConfigStrategy = LLMCacheModelConfigStrategy.EXACT_MATCH  # don't need to match model config and can return newest, or best match or something else
-
-
-@dataclass(frozen=True)
-class LLMConfig:
-    profiles: list[LLMProfileConfig]
-    concurrency: LLMConcurrencyConfig
-    retry: LLMRetryConfig
-    cache: LLMCacheConfig
-    tools: Optional[dict[str, Any]] = None
-
-
-"""
-Section for Request Dataclasses
-"""
 
 
 class LLMRole(Enum):
