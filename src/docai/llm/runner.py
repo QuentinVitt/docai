@@ -8,7 +8,7 @@ from docai.llm.client import LLMClient
 from docai.llm.datatypes import LLMModelConfig, LLMRequest, LLMResponse, LLMRetryConfig
 from docai.llm.errors import LLMError
 
-logger = getLogger("docai_project")
+logger = getLogger(__name__)
 
 
 async def run(

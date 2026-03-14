@@ -5,7 +5,7 @@ from docai.documentation.datatypes import DocItemType, FileDocType
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_content
 
-logger = logging.getLogger("docai_project")
+logger = logging.getLogger(__name__)
 
 # Shared entity item schema (code + config extractors).
 # parent is optional: class name for methods, enclosing section for nested config keys.
@@ -116,7 +116,7 @@ Language: {lang}
 
 <file_content>
 ```{lang}
-{get_file_content(file)}
+{get_file_content("", file)}
 ```
 </file_content>
 
@@ -184,7 +184,7 @@ Format: {lang}
 
 <file_content>
 ```{lang}
-{get_file_content(file)}
+{get_file_content("", file)}
 ```
 </file_content>
 
@@ -271,7 +271,7 @@ Extension: {file_type}
 
 <file_content>
 ```{file_type}
-{get_file_content(file)}
+{get_file_content("", file)}
 ```
 </file_content>
 

@@ -1,36 +1,33 @@
+import asyncio
 import logging
 import sys
 
-from docai.config.loader import ConfigError, load_config
+from docai.config.datatypes import Config
+from docai.config.loader import load_config
 from docai.utils.logging_utils import setup_logging
 from docai.workflows import WORKFLOWS
 
-logger = logging.getLogger("docai_project")
+logger = logging.getLogger(__name__)
 
-def document(config):
-    logger.info("Start documenting %s", config.project_args.working_dir)
-    # First we do dependencies
-    # Then we do documentation for dependent-free dependencies - AI agent can access already documented files
-    pass
 
 def main():
 
     # load arguments
     try:
-        config = load_config()
-    except ConfigError as exc:
+        config: Config = load_config()
+    except Exception as exc:
         print(f"Configuration error: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    if not (config.cli_args.quiet or config.cli_args.silent):
-        print("Hello from DocAI!")
-
     # set up logging
-    setup_logging(config.cli_args, config.logger_args)
+    setup_logging(config.logging_config)
     logger.debug("Logger setup finished")
 
+    logger.info("Hello from DocAI!")
+
     # start the workflow
-    WORKFLOWS[config.project_args.action](config)
+    asyncio.run(WORKFLOWS[config.project_config.action](config))
+
 
 if __name__ == "__main__":
     main()

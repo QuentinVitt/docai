@@ -21,7 +21,7 @@ from docai.llm.datatypes import (
 from docai.llm.errors import LLMError
 from docai.llm.runner import run
 
-logger = getLogger("docai_project")
+logger = getLogger(__name__)
 
 
 class LLMService:

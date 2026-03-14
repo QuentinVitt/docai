@@ -20,7 +20,7 @@ from docai.llm.datatypes import (
     LLMResponse,
 )
 
-logger = getLogger("docai_project")
+logger = getLogger(__name__)
 
 
 class LRUCacheNode:

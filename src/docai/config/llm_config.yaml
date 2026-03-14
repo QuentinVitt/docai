@@ -1,33 +1,42 @@
 providers:
   google:
     api_key_env: GEMINI_API_KEY
-    # api_key: xxxxxx # can be set if the api key should not be stored in an environment variable # can also be set as an command line argument
+    # api_key: xxxxxx  # alternative to api_key_env
 
 models:
   gemini-2.5-flash:
-    model_name: gemini-2.5-flash
+    name: gemini-2.5-flash
     # generation:
     #   temperature: 0.2
     #   max_output_tokens: 2048
     #   top_p: 0.95
   gemini-1.5-pro:
-    model_name: gemini-1.5-pro
+    name: gemini-1.5-pro
     generation:
       temperature: 0.4
       max_output_tokens: 4096
 
 profiles:
-  default: # will be used as the default profile if no profile is specified
-    provider: google
-    model: gemini-2.5-flash
-  fallback: # will be used as the fallback profile if no fallback profile is specified
-    provider: google
-    model: gemini-2.5-flash
+  default:
+    - provider: google
+      model: gemini-2.5-flash
+    - provider: google # fallback
+      model: gemini-1.5-pro
   fast:
-    provider: google
-    model: gemini-2.5-flash
+    - provider: google
+      model: gemini-2.5-flash
 
 globals:
-  max_concurrency: 10 # if not specified, the default value is 1
-  max_retries: 5
-  retry_delay: 5000 # in ms
+  max_concurrent_requests: 10 # default is 10
+
+retry:
+  max_retries: 5 # default is 3
+  retry_delay: 5000 # in ms. default is 1000
+  retry_on: ["5xx", "408", "429"]
+
+cache:
+  cache_dir: .docai/cache/llm # default: .docai/cache/llm
+  max_disk_size: 1_000_000_000 # default: 1GB
+  max_age: 86400 # in sec. default: 1 day
+  max_lru_size: 1000 # default: 1000
+  model_config_strategy: newest # default: newest, also possible: best_match and exact_match

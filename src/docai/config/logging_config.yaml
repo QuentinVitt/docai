@@ -25,9 +25,9 @@ handlers:
     encoding: utf-8
 
 loggers:
-  docai_project: # The main logger for your application
-    level: INFO # Capture all messages here
-    handlers: [console] # Only the console by default
+  docai:
+    level: INFO
+    handlers: [console]
     propagate: False
 
 root:

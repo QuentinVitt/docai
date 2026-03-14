@@ -13,7 +13,7 @@ from docai.llm.datatypes import (
 from docai.llm.errors import LLMError
 from docai.llm.google_provider import GoogleClient
 
-logger = getLogger("docai_project")
+logger = getLogger(__name__)
 
 
 class LLMClient(Protocol):

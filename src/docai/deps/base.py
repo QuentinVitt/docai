@@ -8,7 +8,7 @@ from docai.deps.universal_extractor import (
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_content
 
-logger = logging.getLogger("docai_project")
+logger = logging.getLogger(__name__)
 
 
 async def set_files_dependencies(
@@ -86,7 +86,7 @@ async def get_dependencies_of_file(
                 raise ValueError("LLMService not provided")
             result = await universal_extract_dependencies(
                 file,
-                get_file_content(file),
+                get_file_content("", file),
                 file_info.get("file_type"),
                 all_files,
                 llm,

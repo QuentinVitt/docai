@@ -22,7 +22,7 @@ from docai.llm.datatypes import (
 )
 from docai.llm.errors import LLMClientError, LLMError, LLMServerError
 
-logger = logging.getLogger("docai_project")
+logger = logging.getLogger(__name__)
 
 
 class GoogleClient:

@@ -16,7 +16,7 @@ from docai.documentation.datatypes import (
     ProjectDoc,
 )
 
-logger = logging.getLogger("docai_project")
+logger = logging.getLogger(__name__)
 
 
 def _make_hash(*parts: str) -> str:
