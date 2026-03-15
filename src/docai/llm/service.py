@@ -150,7 +150,6 @@ class LLMService:
     async def generate_agent(
         self,
         prompt: str | LLMUserMessage | LLMRequest,
-        tool_executor: Callable[[LLMFunctionCall], Awaitable[LLMFunctionResponse]],
         system_prompt: Optional[str] = None,
         history: Optional[list[LLMMessage]] = None,
         allowed_tools: Optional[set[str]] = None,
@@ -220,7 +219,7 @@ class LLMService:
                     result.response.name,
                     request.id,
                 )
-                function_response = await tool_executor(result.response)
+                function_response = await self._execute_tool(result.response)
 
                 # Grow history with this turn, make function response the new prompt
                 request = LLMRequest(
@@ -238,3 +237,27 @@ class LLMService:
             )
 
         raise LLMError(612, f"Agent exceeded maximum turns ({max_turns})")
+
+    async def _execute_tool(self, tool_call: LLMFunctionCall) -> LLMFunctionResponse:
+        tools = self._config.tools
+        if tools is None or tool_call.name not in tools:
+            logger.debug(
+                "Called tool '%s' for llm function callnot found in registry",
+                tool_call.name,
+            )
+            return LLMFunctionResponse(
+                call=tool_call,
+                response={"error": f"Tool '{tool_call.name}' not found in registry"},
+            )
+
+        try:
+            result = tools[tool_call.name]["callable"](**tool_call.arguments)
+            return LLMFunctionResponse(call=tool_call, response={"result": result})
+        except Exception as e:
+            logger.debug(
+                "Tool '%s' raised an exception for llm function call: %s",
+                tool_call.name,
+                str(e),
+                exc_info=e,
+            )
+            return LLMFunctionResponse(call=tool_call, response={"error": str(e)})
