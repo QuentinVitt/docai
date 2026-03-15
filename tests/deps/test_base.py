@@ -140,11 +140,11 @@ async def test_set_files_dependencies_populates_dict(mock_llm):
         "b.py": {"file_type": "py"},
     }
 
-    async def fake_get_deps(file, file_info, all_files, llm):
+    async def fake_get_deps(project_path, file, file_info, all_files, llm):
         return file, {"a.py"} if file == "b.py" else set()
 
     with patch("docai.deps.base.get_dependencies_of_file", side_effect=fake_get_deps):
-        await set_files_dependencies(project_files, mock_llm)
+        await set_files_dependencies("/project", project_files, mock_llm)
 
     assert project_files["a.py"]["dependencies"] == set()
     assert project_files["b.py"]["dependencies"] == {"a.py"}
@@ -157,13 +157,13 @@ async def test_set_files_dependencies_skips_exceptions(mock_llm):
         "b.py": {"file_type": "py"},
     }
 
-    async def fake_get_deps(file, file_info, all_files, llm):
+    async def fake_get_deps(project_path, file, file_info, all_files, llm):
         if file == "a.py":
             raise RuntimeError("extraction failed")
         return file, set()
 
     with patch("docai.deps.base.get_dependencies_of_file", side_effect=fake_get_deps):
-        await set_files_dependencies(project_files, mock_llm)
+        await set_files_dependencies("/project", project_files, mock_llm)
 
     assert "dependencies" not in project_files["a.py"]
     assert project_files["b.py"]["dependencies"] == set()
@@ -178,11 +178,11 @@ async def test_set_files_dependencies_processes_all_files(mock_llm):
     }
     called_with = []
 
-    async def fake_get_deps(file, file_info, all_files, llm):
+    async def fake_get_deps(project_path, file, file_info, all_files, llm):
         called_with.append(file)
         return file, set()
 
     with patch("docai.deps.base.get_dependencies_of_file", side_effect=fake_get_deps):
-        await set_files_dependencies(project_files, mock_llm)
+        await set_files_dependencies("/project", project_files, mock_llm)
 
     assert set(called_with) == {"a.py", "b.py", "c.py"}

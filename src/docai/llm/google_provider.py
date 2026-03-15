@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any, Optional
 
@@ -70,11 +71,6 @@ class GoogleClient:
             await self._client.models.list()
             logger.debug("Google API credentials are valid.")
         except genai_errors.APIError as e:
-            logger.error(
-                "Google API credential validation failed with code %s: %s",
-                e.code,
-                e.message,
-            )
             if 400 <= e.code < 500:
                 raise LLMClientError(e.code, e.message)
             elif 500 <= e.code < 600:
@@ -82,7 +78,6 @@ class GoogleClient:
             else:
                 raise LLMError(e.code, e.message)
         except Exception as e:
-            logger.error("An unexpected error occurred during credential validation.")
             raise LLMError(601, str(e))
 
     @classmethod
@@ -220,9 +215,18 @@ class GoogleClient:
 
         # if there was no function call check if there was a normal response:
         if response.text and response.text:
+            if request.structured_output is not None:
+                try:
+                    content: str | dict = json.loads(response.text)
+                except json.JSONDecodeError as e:
+                    raise LLMError(
+                        611, f"Failed to parse structured response as JSON: {e}"
+                    )
+            else:
+                content = response.text
             return LLMResponse(
                 response=LLMAssistantMessage(
-                    content=response.text,
+                    content=content,
                     original_content=LLMOriginalContent(
                         provider="google", content=response.candidates[0].content
                     ),

@@ -1,23 +1,55 @@
+import json
 import logging
 
 from docai.config.datatypes import Config
-
-# from docai.deps.base import (
-#     create_dependencies_topologically_sorted,
-#     set_files_dependencies,
-# )
-# from docai.scanning.file_infos import get_file_type
-# from docai.scanning.project_infos import get_project_files
+from docai.deps.base import (
+    create_dependencies_topologically_sorted,
+    set_files_dependencies,
+)
+from docai.llm.errors import LLMError
+from docai.llm.service import LLMService
+from docai.scanning.file_infos import get_file_type
+from docai.scanning.project_infos import get_project_files
 
 logger = logging.getLogger(__name__)
 
 
 async def run(config: Config):
     logger.info("Documenting %s", config.project_config.working_dir)
-    return
-    # # 1. get all the information about the files
+    # 0. set up llm service
+    try:
+        llm: LLMService = await LLMService.create(config.llm_config)
+    except LLMError as e:
+        logger.error("Could not initialize LLM service: %s", e)
+        return
+    logger.debug("LLM service initialized successfully")
 
-    # # get all project files
+    # 1. get all the information about the files
+
+    # 1.1 get all project files
+    project_files = get_project_files(config.project_config.working_dir)
+
+    # 1.2 get file type for each project file
+    project_files_info: dict[str, dict] = {
+        file: {"file_type": get_file_type(config.project_config.working_dir, file)}
+        for file in project_files
+    }
+
+    # 1.3 get file dependencies for each project file
+    await set_files_dependencies(
+        config.project_config.working_dir, project_files_info, llm
+    )
+
+    # 1.4 build depdency graph
+
+    dependencies_topologicaly_sorted = create_dependencies_topologically_sorted(
+        project_files_info
+    )
+
+    print(dependencies_topologicaly_sorted)
+    return
+
+    # 1.2 get all project files
     # project_files: set[str] = get_project_files(config.project_args.working_dir)
     # project_files_info: dict[str, dict] = {
     #     file: {"file_type": get_file_type(file)} for file in project_files

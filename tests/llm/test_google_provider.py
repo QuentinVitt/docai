@@ -93,14 +93,6 @@ def custom_function_three():
 
 
 @pytest.mark.asyncio
-async def test_google_client_init_empty_key_fails():
-    """Tests that initialization fails if the API key is missing."""
-
-    with pytest.raises(ValueError):
-        GoogleClient(config=LLMProviderConfig(name="google", api_key=""))
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "api_key",
     ["invalid_api_key", "error", "something random", "xxxx-xxxx-xxxx-xxxx-xxxx"],
@@ -452,7 +444,7 @@ async def test_google_client_generation_structured_output(
 
         expected_response = LLMResponse(
             response=LLMAssistantMessage(
-                content='{"city": "Boston", "temperature": 72}',
+                content={"city": "Boston", "temperature": 72},
                 original_content=LLMOriginalContent(
                     provider="google",
                     content=response_from_generate.candidates[0].content,
@@ -462,6 +454,38 @@ async def test_google_client_generation_structured_output(
         )
 
         assert expected_response == response
+
+
+@pytest.mark.asyncio
+async def test_google_client_generation_structured_output_invalid_json(
+    valid_provider_config, simple_model_config
+):
+    client = GoogleClient(config=valid_provider_config)
+
+    request = LLMRequest(
+        prompt=LLMUserMessage(content="What is the weather in Boston?"),
+        structured_output={"type": "object"},
+    )
+
+    with patch.object(
+        client._client.models, "generate_content", new_callable=AsyncMock
+    ) as mock_generate_content:
+        response_from_generate = types.GenerateContentResponse(
+            candidates=[
+                types.Candidate(
+                    content=types.Content(
+                        parts=[types.Part(text="not valid json {{{")],
+                        role="model",
+                    )
+                )
+            ]
+        )
+        mock_generate_content.return_value = response_from_generate
+
+        with pytest.raises(LLMError) as exc_info:
+            await client.generate(request, simple_model_config)
+
+        assert exc_info.value.status_code == 611
 
 
 # model generation config variation test

@@ -42,16 +42,15 @@ class LLMService:
                 logger.debug("Created client for provider %s", profile.provider.name)
             except LLMError as e:
                 logger.error(
-                    "Failed to create client for provider %s",
+                    "Failed to create client for provider %s: %s",
                     profile.provider.name,
-                    exc_info=e,
+                    e,
                 )
 
         if not service._connections:
-            logger.error(
-                "Failed to create LLMService because no clients could be created"
+            raise LLMError(
+                608, "Failed to create LLMService: no clients could be initialized"
             )
-            raise LLMError(608, "Failed to create LLMService")
 
         return service
 

@@ -27,7 +27,7 @@ async def extract_dependencies(
     llm: LLMService,
 ) -> set[str]:
 
-    file_list_str = "\n".join(f for f in all_files if f != file)
+    file_list_str = "\n".join(sorted(f for f in all_files if f != file))
     lang = file_type if file_type else "unknown"
 
     prompt = f"""\

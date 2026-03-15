@@ -27,11 +27,11 @@ profiles:
       model: gemini-2.5-flash
 
 globals:
-  max_concurrent_requests: 10 # default is 10
+  max_concurrent_requests: 5 # default is 10
 
 retry:
   max_retries: 5 # default is 3
-  retry_delay: 5000 # in ms. default is 1000
+  retry_delay: 60000 # in ms. default is 1000
   retry_on: ["5xx", "408", "429"]
   max_validation_retries: 2 # default is 2
 

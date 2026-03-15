@@ -12,21 +12,25 @@ logger = logging.getLogger(__name__)
 
 
 async def set_files_dependencies(
-    project_files: dict[str, dict], llm: Optional[LLMService] = None
+    project_path: str, project_files: dict[str, dict], llm: Optional[LLMService] = None
 ):
     project_files_set = set(project_files.keys())
-    dependencies_list = await asyncio.gather(
-        *[
-            get_dependencies_of_file(f, project_files[f], project_files_set, llm)
-            for f in project_files_set
-        ],
-        return_exceptions=True,
-    )
 
-    for result in dependencies_list:
-        if isinstance(result, Exception):
+    async def _safe(f: str) -> tuple[str, set[str]] | None:
+        try:
+            return await get_dependencies_of_file(
+                project_path, f, project_files[f], project_files_set, llm
+            )
+        except Exception as e:
+            logger.warning("Failed to extract dependencies for '%s': %s", f, e)
+            return None
+
+    results = await asyncio.gather(*[_safe(f) for f in project_files_set])
+
+    for result in results:
+        if result is None:
             continue
-        file, deps = result  # type: ignore
+        file, deps = result
         project_files[file]["dependencies"] = deps
 
 
@@ -77,7 +81,11 @@ def create_dependencies_topologically_sorted(
 
 
 async def get_dependencies_of_file(
-    file: str, file_info: dict, all_files: set[str], llm: Optional[LLMService] = None
+    project_path: str,
+    file: str,
+    file_info: dict,
+    all_files: set[str],
+    llm: Optional[LLMService] = None,
 ) -> tuple[str, set[str]]:
 
     match file_info.get("file_type"):
@@ -86,7 +94,7 @@ async def get_dependencies_of_file(
                 raise ValueError("LLMService not provided")
             result = await universal_extract_dependencies(
                 file,
-                get_file_content("", file),
+                get_file_content(project_path, file),
                 file_info.get("file_type"),
                 all_files,
                 llm,
