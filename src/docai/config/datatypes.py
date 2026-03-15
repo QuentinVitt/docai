@@ -35,7 +35,8 @@ class LLMConcurrencyConfig:
 @dataclass(frozen=True)
 class LLMRetryConfig:
     max_retries: int
-    retry_delay: int
+    max_validation_retries: int
+    retry_delay: float  # seconds
     retry_on: list[str] = field(default_factory=lambda: ["5..", "408", "429"])
 
 

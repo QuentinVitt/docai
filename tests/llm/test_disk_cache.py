@@ -5,10 +5,10 @@ import time
 
 import pytest
 
-from docai.llm.cache import DiskCache, LLMCacheModelConfigStrategy
+from docai.config.datatypes import LLMCacheModelConfigStrategy, LLMModelConfig
+from docai.llm.cache import DiskCache
 from docai.llm.datatypes import (
     LLMAssistantMessage,
-    LLMModelConfig,
     LLMOriginalContent,
 )
 

@@ -3,17 +3,16 @@ from __future__ import annotations
 import asyncio
 import uuid
 from logging import getLogger
-from typing import AsyncIterable, AsyncIterator, Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Optional
 
+from docai.config.datatypes import LLMConfig, LLMModelConfig
 from docai.llm.cache import LLMCache
 from docai.llm.client import LLMClient, create_client
 from docai.llm.datatypes import (
     LLMAssistantMessage,
-    LLMConfig,
     LLMFunctionCall,
     LLMFunctionResponse,
     LLMMessage,
-    LLMModelConfig,
     LLMProviderMessage,
     LLMRequest,
     LLMUserMessage,
@@ -67,7 +66,11 @@ class LLMService:
             raise LLMError(609, "Failed to close LLM clients")
 
     async def _generate(
-        self, client: LLMClient, model_config: LLMModelConfig, request: LLMRequest
+        self,
+        client: LLMClient,
+        model_config: LLMModelConfig,
+        request: LLMRequest,
+        bypass_cache: bool = False,
     ) -> tuple[str | dict, LLMProviderMessage]:
         result = await run(
             self._cache,
@@ -76,6 +79,7 @@ class LLMService:
             client,
             self._config.retry,
             self._config.concurrency.concurrency_semaphore,
+            bypass_cache,
         )
         if isinstance(result.response, LLMAssistantMessage):
             return result.response.content, result.response
@@ -96,6 +100,7 @@ class LLMService:
         history: Optional[list[LLMMessage]] = None,
         structured_output: Optional[dict] = None,
         id: Optional[uuid.UUID] = None,
+        bypass_cache: bool = False,
     ) -> tuple[str | dict, LLMProviderMessage]:
 
         if isinstance(prompt, LLMRequest):
@@ -118,7 +123,7 @@ class LLMService:
         # go over all connections with request. return first hit
         for client, model_config in self._connections:
             try:
-                return await self._generate(client, model_config, request)
+                return await self._generate(client, model_config, request, bypass_cache)
             except Exception as e:
                 logger.error(
                     f"Failed to generate request {request}with {client}, {model_config}",
@@ -128,63 +133,19 @@ class LLMService:
         raise LLMError(610, "Failed to generate response with all connections")
 
     async def generate_batch(
-        self, requests: AsyncIterator[LLMRequest | dict]
-    ) -> AsyncIterable[tuple[str | dict, LLMProviderMessage] | Exception]:
-        inflight_sem = self._config.concurrency.inflight_requests
-        pending: set[asyncio.Task] = set()
+        self, requests: list[LLMRequest]
+    ) -> list[tuple[str | dict, LLMProviderMessage] | BaseException]:
+        sem = asyncio.Semaphore(self._config.concurrency.max_concurrency)
 
-        def _release_inflight(_t: asyncio.Task) -> None:
-            inflight_sem.release()
+        async def _bounded(r: LLMRequest):
+            async with sem:
+                return await self.generate(prompt=r)
 
-        try:
-            async for req_data in requests:
-                # 1. Backpressure on ingestion
-                await inflight_sem.acquire()
-
-                # 2. Parse request
-                try:
-                    req = (
-                        LLMRequest(**req_data)
-                        if isinstance(req_data, dict)
-                        else req_data
-                    )
-                except Exception as e:
-                    inflight_sem.release()
-                    yield e
-                    continue
-
-                # 3. Create task and track it
-                t = asyncio.create_task(self.generate(prompt=req))
-                t.add_done_callback(_release_inflight)
-                pending.add(t)
-
-                # 4. Yield anything that happens to be done
-                done = {x for x in pending if x.done()}
-                if done:
-                    pending -= done
-                    for task in done:
-                        try:
-                            yield task.result()
-                        except Exception as e:
-                            yield e
-
-            # 5. Flush remaining tasks after ingestion is complete
-            while pending:
-                done, pending = await asyncio.wait(
-                    pending, return_when=asyncio.FIRST_COMPLETED
-                )
-                for task in done:
-                    try:
-                        yield task.result()
-                    except Exception as e:
-                        yield e
-
-        finally:
-            # 6. Clean up if consumer breaks out of the loop early
-            for t in pending:
-                t.cancel()
-            if pending:
-                await asyncio.gather(*pending, return_exceptions=True)
+        return list(
+            await asyncio.gather(
+                *[_bounded(r) for r in requests], return_exceptions=True
+            )
+        )
 
     async def generate_agent(
         self,
@@ -196,6 +157,7 @@ class LLMService:
         structured_output: Optional[dict] = None,
         max_turns: int = 10,
         id: Optional[uuid.UUID] = None,
+        bypass_cache: bool = False,
     ) -> tuple[str | dict, LLMProviderMessage]:
 
         # Build initial request (same as generate)
@@ -231,6 +193,7 @@ class LLMService:
                         client,
                         self._config.retry,
                         self._config.concurrency.concurrency_semaphore,
+                        bypass_cache=bypass_cache,
                     )
                     break
                 except Exception as e:
@@ -270,6 +233,8 @@ class LLMService:
                 )
                 continue
 
-            raise LLMError(601, "Unsupported response type: " + str(type(result.response)))
+            raise LLMError(
+                601, "Unsupported response type: " + str(type(result.response))
+            )
 
         raise LLMError(612, f"Agent exceeded maximum turns ({max_turns})")

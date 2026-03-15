@@ -4,12 +4,11 @@ import pytest
 from google.genai import errors as genai_errors
 from google.genai import types
 
+from docai.config.datatypes import LLMModelConfig, LLMProviderConfig
 from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMFunctionCall,
-    LLMModelConfig,
     LLMOriginalContent,
-    LLMProviderConfig,
     LLMRequest,
     LLMResponse,
     LLMUserMessage,
@@ -160,7 +159,7 @@ async def test_google_client_set_tools(function_declarations, valid_provider_con
     tools, validate = {}, {}
     for function_declaration_json, function_declaration_type in function_declarations:
         name = function_declaration_json["name"]
-        tools[name] = function_declaration_json
+        tools[name] = {"schema": function_declaration_json, "callable": None}
         validate[name] = function_declaration_type
 
     client = GoogleClient(
@@ -338,7 +337,7 @@ async def test_google_client_generation_function_call(
     valid_provider_config, simple_model_config, custom_function_one
 ):
 
-    custom_tool_dict = {custom_function_one[0]["name"]: custom_function_one[0]}
+    custom_tool_dict = {custom_function_one[0]["name"]: {"schema": custom_function_one[0], "callable": None}}
 
     client = GoogleClient(config=valid_provider_config, custom_tools=custom_tool_dict)
 

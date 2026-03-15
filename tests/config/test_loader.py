@@ -380,7 +380,7 @@ def test_build_llm_config_retry_from_retry_section(monkeypatch, tmp_path):
     _patch_llm_yaml(monkeypatch, _valid_llm_yaml(api_key="k"))
     result = loader.build_llm_config(_make_args(), str(tmp_path))
     assert result.retry.max_retries == 2
-    assert result.retry.retry_delay == 500
+    assert result.retry.retry_delay == 0.5
 
 
 def test_build_llm_config_concurrency_from_globals(monkeypatch, tmp_path):

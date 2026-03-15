@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Any, Optional, Protocol
+from typing import Optional, Protocol
 
-# from docai.llm.google_provider
-from docai.llm.datatypes import (
-    LLMModelConfig,
-    LLMProviderConfig,
-    LLMRequest,
-    LLMResponse,
-)
+from docai.config.datatypes import LLMModelConfig, LLMProviderConfig
+from docai.llm.datatypes import LLMRequest, LLMResponse
 from docai.llm.errors import LLMError
 from docai.llm.google_provider import GoogleClient
 
@@ -21,7 +16,7 @@ class LLMClient(Protocol):
 
     @classmethod
     async def create(
-        cls, config: LLMProviderConfig, custom_tools: Optional[dict[str, Any]] = None
+        cls, config: LLMProviderConfig, custom_tools: Optional[dict[str, dict]] = None
     ) -> LLMClient: ...
 
     async def generate(
@@ -32,7 +27,7 @@ class LLMClient(Protocol):
 
 
 async def create_client(
-    config: LLMProviderConfig, tools: Optional[dict[str, Any]] = None
+    config: LLMProviderConfig, tools: Optional[dict[str, dict]] = None
 ) -> LLMClient:
 
     match config.name:

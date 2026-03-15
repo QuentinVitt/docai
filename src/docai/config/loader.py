@@ -256,7 +256,9 @@ def build_llm_config(args: argparse.Namespace, project_dir: str):
     retry = config.get("retry", {})
     retry_config = dt.LLMRetryConfig(
         max_retries=retry.get("max_retries", 3),
-        retry_delay=retry.get("retry_delay", 1000),
+        max_validation_retries=retry.get("max_validation_retries", 2),
+        retry_delay=retry.get("retry_delay", 1000)
+        / 1000,  # YAML is ms, runner uses seconds
         retry_on=retry.get("retry_on", ["5..", "408", "429"]),
     )
 

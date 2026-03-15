@@ -1,11 +1,9 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from google.genai._interactions.types import tool
-from google.genai.interactions import Tool
 
+from docai.config.datatypes import LLMProviderConfig
 from docai.llm.client import create_client
-from docai.llm.datatypes import LLMProviderConfig
 from docai.llm.errors import LLMError
 from docai.llm.google_provider import GoogleClient
 
@@ -13,8 +11,7 @@ from docai.llm.google_provider import GoogleClient
 @pytest.mark.asyncio
 @patch(
     "docai.llm.google_provider.GoogleClient._validate",
-    async_mock=True,
-    return_value=None,
+    new_callable=AsyncMock,
 )
 async def test_create_google_client(mock_validate):
     config = LLMProviderConfig(name="google", api_key="my_api_key")
@@ -27,12 +24,14 @@ async def test_create_google_client(mock_validate):
 @pytest.mark.asyncio
 @patch(
     "docai.llm.google_provider.GoogleClient._validate",
-    async_mock=True,
-    return_value=None,
+    new_callable=AsyncMock,
 )
 async def test_create_google_client_with_tools(mock_validate):
     config = LLMProviderConfig(name="google", api_key="my_api_key")
-    tools = {"write": {"name": "write"}, "read": {"name": "read"}}
+    tools = {
+        "write": {"schema": {"name": "write", "description": "Write something"}, "callable": None},
+        "read": {"schema": {"name": "read", "description": "Read something"}, "callable": None},
+    }
     client = await create_client(config, tools)
 
     assert isinstance(client, GoogleClient)

@@ -7,14 +7,13 @@ from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
 
+from docai.config.datatypes import LLMModelConfig, LLMProviderConfig
 from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMFunctionCall,
     LLMFunctionResponse,
     LLMMessage,
-    LLMModelConfig,
     LLMOriginalContent,
-    LLMProviderConfig,
     LLMProviderMessage,
     LLMRequest,
     LLMResponse,
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class GoogleClient:
     def __init__(
-        self, config: LLMProviderConfig, custom_tools: Optional[dict[str, Any]] = None
+        self, config: LLMProviderConfig, custom_tools: Optional[dict[str, dict]] = None
     ):
 
         try:
@@ -47,12 +46,12 @@ class GoogleClient:
 
         custom_tools = custom_tools or {}
         self._custom_tools = {}
-        for name, description in custom_tools.items():
-            self._custom_tools[name] = types.FunctionDeclaration(**description)
+        for name, info in custom_tools.items():
+            self._custom_tools[name] = types.FunctionDeclaration(**info["schema"])
 
-        self._provider_tools = {
-            "search": types.Tool(google_search=types.GoogleSearch())
-        }
+        # self._provider_tools = {
+        #     "search": types.Tool(google_search=types.GoogleSearch())
+        # }
 
         logger.debug("LLMClient for provider Google initialized")
 
@@ -111,13 +110,11 @@ class GoogleClient:
         # configure system prompt
         if request.system_prompt is not None:
             generation["system_instruction"] = request.system_prompt
-            logger.debug("System instruction set for request: %s", request.id)
 
         # configure structured output
         if request.structured_output is not None:
             generation["response_mime_type"] = "application/json"
             generation["response_json_schema"] = request.structured_output
-            logger.debug("System instruction set for request %s", request.id)
 
         # configure tools
         if request.allowed_tools:
@@ -142,16 +139,11 @@ class GoogleClient:
 
             if tools:
                 generation["tools"] = tools
-                logger.debug("Tools set for request %s", request.id)
 
         # configure content
         try:
             content = [_transform_content(message) for message in request.history]
             content.append(_transform_content(request.prompt))
-            logger.debug(
-                "Content transformed into provider specific format for request %s",
-                request.id,
-            )
         except genai_errors.APIError as e:
             raise LLMError(607, f"Failed to transform content: {e}")
 

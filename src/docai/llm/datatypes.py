@@ -2,7 +2,7 @@ import uuid
 from abc import ABC
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 
 class LLMRole(Enum):
@@ -85,6 +85,9 @@ class LLMRequest:
         None  # holds a registry of functions that are allowed to be called if empty: no function calls allowed
     )
     id: uuid.UUID = field(default_factory=uuid.uuid4)
+    response_validator: Optional[Callable[[str | dict], str | None]] = field(
+        default=None, compare=False
+    )
 
 
 @dataclass(frozen=True)

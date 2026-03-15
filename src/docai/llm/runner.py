@@ -3,9 +3,15 @@ import random
 import re
 from logging import getLogger
 
+from docai.config.datatypes import LLMModelConfig, LLMRetryConfig
 from docai.llm.cache import LLMCache
 from docai.llm.client import LLMClient
-from docai.llm.datatypes import LLMModelConfig, LLMRequest, LLMResponse, LLMRetryConfig
+from docai.llm.datatypes import (
+    LLMAssistantMessage,
+    LLMRequest,
+    LLMResponse,
+    LLMUserMessage,
+)
 from docai.llm.errors import LLMError
 
 logger = getLogger(__name__)
@@ -18,10 +24,12 @@ async def run(
     client: LLMClient,
     retry_policy: LLMRetryConfig,
     semaphore: asyncio.Semaphore,
+    bypass_cache: bool = False,
 ) -> LLMResponse:
-    result = cache.get(request, model_config)
-    if result:
-        return result
+    if not bypass_cache:
+        result = cache.get(request, model_config)
+        if result:
+            return result
 
     result = await _run(client, request, model_config, retry_policy, semaphore)
 
@@ -41,6 +49,50 @@ async def _run(
         try:
             async with semaphore:
                 result = await client.generate(request, model_config)
+
+            # Validation retry loop (only for assistant message responses)
+            validator = request.response_validator
+            if (
+                isinstance(result.response, LLMAssistantMessage)
+                and validator is not None
+            ):
+                current_req = request
+                for v in range(retry_policy.max_validation_retries + 1):
+                    error = validator(result.response.content)  # type: ignore
+                    if error is None:
+                        break
+                    if v == retry_policy.max_validation_retries:
+                        logger.error(
+                            "Validation exhausted for request %s after %d retries: %s",
+                            request.id,
+                            retry_policy.max_validation_retries,
+                            error,
+                        )
+                        raise LLMError(
+                            613,
+                            f"Validation failed after {retry_policy.max_validation_retries} retries for request {request.id}: {error}",
+                        )
+                    logger.warning(
+                        "Validation retry %d for request %s: %s",
+                        v + 1,
+                        request.id,
+                        error,
+                    )
+                    current_req = LLMRequest(
+                        prompt=LLMUserMessage(
+                            content=f"Your previous response was invalid. Fix the following issue and try again: {error}"
+                        ),
+                        system_prompt=current_req.system_prompt,
+                        history=list(current_req.history)
+                        + [current_req.prompt, result.response],
+                        allowed_tools=current_req.allowed_tools,
+                        structured_output=current_req.structured_output,
+                        id=current_req.id,
+                        response_validator=current_req.response_validator,
+                    )
+                    async with semaphore:
+                        result = await client.generate(current_req, model_config)
+
             return result
         except LLMError as e:
             logger.error(
