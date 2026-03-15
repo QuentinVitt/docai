@@ -37,7 +37,9 @@ def mock_response():
 
 @pytest.fixture
 def retry_policy():
-    return LLMRetryConfig(max_retries=3, retry_delay=1, retry_on=["5xx", "408"])
+    return LLMRetryConfig(
+        max_retries=3, max_validation_retries=1, retry_delay=1, retry_on=["5xx", "408"]
+    )
 
 
 # --- Tests for _status_code_matches ---
@@ -190,7 +192,9 @@ async def test_run_internal_exponential_backoff(
         side_effect=LLMError(status_code=503, response="Unavailable")
     )
     # Configure a custom policy with 5 retries and 2s base delay
-    policy = LLMRetryConfig(max_retries=5, retry_delay=2, retry_on=["5xx"])
+    policy = LLMRetryConfig(
+        max_retries=5, max_validation_retries=0, retry_delay=2, retry_on=["5xx"]
+    )
     semaphore = asyncio.Semaphore(1)
 
     with pytest.raises(LLMError):
@@ -268,7 +272,12 @@ async def test_run_bypass_cache_skips_cache_read(
     mock_internal_run.return_value = mock_response
 
     result = await run(
-        cache, mock_request, mock_model_config, client, retry_policy, semaphore,
+        cache,
+        mock_request,
+        mock_model_config,
+        client,
+        retry_policy,
+        semaphore,
         bypass_cache=True,
     )
 
@@ -288,7 +297,12 @@ async def test_run_bypass_cache_still_writes_cache(
     mock_internal_run.return_value = mock_response
 
     await run(
-        cache, mock_request, mock_model_config, client, retry_policy, semaphore,
+        cache,
+        mock_request,
+        mock_model_config,
+        client,
+        retry_policy,
+        semaphore,
         bypass_cache=True,
     )
 
@@ -307,7 +321,9 @@ async def test_run_internal_no_validator_returns_result(
     client.generate = AsyncMock(return_value=mock_response)
     semaphore = asyncio.Semaphore(1)
 
-    result = await _run(client, mock_request, mock_model_config, retry_policy, semaphore)
+    result = await _run(
+        client, mock_request, mock_model_config, retry_policy, semaphore
+    )
 
     assert result == mock_response
     client.generate.assert_called_once()

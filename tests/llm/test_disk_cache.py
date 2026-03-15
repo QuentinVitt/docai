@@ -30,7 +30,7 @@ def temp_cache_dir(tmp_path):
 
 
 def test_disk_cache_negative_age(temp_cache_dir):
-    with pytest.raises(ValueError, match="The maximum file age can't be negative"):
+    with pytest.raises(ValueError, match="The maximum llm file age can't be negative"):
         DiskCache(
             cache_dir=temp_cache_dir,
             start_with_clean_cache=False,
@@ -41,7 +41,9 @@ def test_disk_cache_negative_age(temp_cache_dir):
 
 
 def test_disk_cache_negative_size(temp_cache_dir):
-    with pytest.raises(ValueError, match="The maximum cache size can't be negative"):
+    with pytest.raises(
+        ValueError, match="The maximum llm diskcache size can't be negative"
+    ):
         DiskCache(
             cache_dir=temp_cache_dir,
             start_with_clean_cache=False,
