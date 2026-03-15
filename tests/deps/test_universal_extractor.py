@@ -91,7 +91,7 @@ async def test_current_file_excluded_from_project_files(mock_llm):
 
     _, kwargs = mock_llm.generate.call_args
     prompt = kwargs["prompt"]
-    expected_file_list = "\n".join(other_files)
+    expected_file_list = "\n".join(sorted(other_files))
     assert expected_file_list in prompt
 
 

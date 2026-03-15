@@ -10,6 +10,12 @@ models:
     #   temperature: 0.2
     #   max_output_tokens: 2048
     #   top_p: 0.95
+  gemini-2.5-flash-lite:
+    name: gemini-2.5-flash-lite
+    # generation:
+    #   temperature: 0.2
+    #   max_output_tokens: 2048
+    #   top_p: 0.95
   gemini-1.5-pro:
     name: gemini-1.5-pro
     generation:
@@ -19,9 +25,9 @@ models:
 profiles:
   default:
     - provider: google
-      model: gemini-2.5-flash
+      model: gemini-2.5-flash-lite
     - provider: google # fallback
-      model: gemini-1.5-pro
+      model: gemini-2.5-flash
   fast:
     - provider: google
       model: gemini-2.5-flash

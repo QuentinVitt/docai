@@ -41,28 +41,33 @@ async def run(config: Config):
     )
 
     # 1.4 build depdency graph
-
     dependencies_topologicaly_sorted = create_dependencies_topologically_sorted(
         project_files_info
     )
 
-    print(dependencies_topologicaly_sorted)
+    logger.info(
+        "Analyzed %d files across %d dependency levels",
+        len(project_files),
+        len(dependencies_topologicaly_sorted),
+    )
+
+    # 2. Create documentation objects
+
+    # 2.1 get doc file types
+
+    # 2.2 extract entity list
+
+    # 2.3 generate file/entity documentation with dependencies topological sorted
+
+    # 2.3.1 generate entity documentation
+
+    # 2.3.2 generate file documentation
+
+    # 2.4 generate package documentations
+
+    # 2.5 generate project documentation
+
     return
-
-    # 1.2 get all project files
-    # project_files: set[str] = get_project_files(config.project_args.working_dir)
-    # project_files_info: dict[str, dict] = {
-    #     file: {"file_type": get_file_type(file)} for file in project_files
-    # }
-
-    # # TODO: build LLMService from config.llm_args and pass as llm=
-    # # add dependent files to project files
-    # await set_files_dependencies(project_files_info)
-
-    # # Extract dependencies
-    # dependencies_topologicaly_sorted = create_dependencies_topologically_sorted(
-    #     project_files_info
-    # )
 
 
 # 2. Create documentation objects

@@ -4,7 +4,6 @@ import pytest
 
 from docai.utils import logging_utils
 
-
 BASE_CONFIG = {
     "version": 1,
     "formatters": {"brief": {"format": "%(levelname)s - %(message)s"}},
@@ -52,7 +51,9 @@ def test_setup_logging_does_not_mutate_input_config(monkeypatch):
     def _mutating_dictconfig(config):
         config["mutated"] = True  # would affect caller without deepcopy
 
-    monkeypatch.setattr(logging_utils.logging.config, "dictConfig", _mutating_dictconfig)
+    monkeypatch.setattr(
+        logging_utils.logging.config, "dictConfig", _mutating_dictconfig
+    )
     config = copy.deepcopy(BASE_CONFIG)
 
     logging_utils.setup_logging(config)
@@ -101,4 +102,4 @@ def test_setup_logging_other_oserror_is_raised(monkeypatch):
 
 def test_setup_logging_invalid_config_shape_exits():
     with pytest.raises(SystemExit):
-        logging_utils.setup_logging([])
+        logging_utils.setup_logging([])  # type: ignore

@@ -202,7 +202,7 @@ class DocumentationCache:
         self, project_name: str | None, source_path: str, doc: ProjectDoc
     ) -> None:
         key = self._project_key(project_name)
-        self._disk_write(key, "project", source_path, doc.model_dump())
+        self._disk_write(key, "project", source_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
 
     # ---------------------------------------------------------------------------
@@ -228,7 +228,7 @@ class DocumentationCache:
         self, package_path: str, doc: PackageDoc
     ) -> None:
         key = self._package_key(package_path)
-        self._disk_write(key, "package", package_path, doc.model_dump())
+        self._disk_write(key, "package", package_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
 
     # ---------------------------------------------------------------------------
@@ -252,7 +252,7 @@ class DocumentationCache:
 
     def set_file_documentation(self, file_path: str, doc: FileDoc) -> None:
         key = self._file_key(file_path)
-        self._disk_write(key, "file", file_path, doc.model_dump())
+        self._disk_write(key, "file", file_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
 
     # ---------------------------------------------------------------------------
@@ -297,5 +297,52 @@ class DocumentationCache:
         doc: DocItem,
     ) -> None:
         key = self._entity_key(file_path, entity_name, entity_type, parent)
-        self._disk_write(key, "entity", file_path, doc.model_dump())
+        self._disk_write(key, "entity", file_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
+
+    # ---------------------------------------------------------------------------
+    # Search / fuzzy lookup
+    # ---------------------------------------------------------------------------
+
+    def search_documentation(
+        self,
+        file_path: str,
+        entity_name: str | None = None,
+        entity_type: DocItemType | None = None,
+    ) -> tuple[FileDoc | None, list[DocItem]]:
+        """Return (file_doc, matched_items).
+
+        If entity_name is None, matched_items is empty — the caller receives the
+        full FileDoc (with all items in file_doc.items).
+
+        When entity_name is given, matching is attempted in priority order:
+          1. exact name  + correct type  (if entity_type provided)
+          2. exact name  (any type)
+          3. case-insensitive name  + correct type
+          4. case-insensitive name  (any type)
+          5. substring name  + correct type
+          6. substring name  (any type)
+        The first tier that yields at least one result is returned.
+        """
+        file_doc = self.get_file_documentation(file_path)
+        if file_doc is None or entity_name is None:
+            return file_doc, []
+
+        name_lower = entity_name.lower()
+        items = file_doc.items
+
+        def _type_ok(item: DocItem) -> bool:
+            return entity_type is None or item.type == entity_type
+
+        tiers: list[list[DocItem]] = [
+            [i for i in items if i.name == entity_name and _type_ok(i)],
+            [i for i in items if i.name == entity_name],
+            [i for i in items if i.name.lower() == name_lower and _type_ok(i)],
+            [i for i in items if i.name.lower() == name_lower],
+            [i for i in items if name_lower in i.name.lower() and _type_ok(i)],
+            [i for i in items if name_lower in i.name.lower()],
+        ]
+        for tier in tiers:
+            if tier:
+                return file_doc, tier
+        return file_doc, []

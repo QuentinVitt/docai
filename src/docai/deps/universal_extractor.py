@@ -3,6 +3,8 @@ Calls an LLM with a file to determine which other project files it depends on.
 Used as a fallback when no language-specific extractor is available.
 """
 
+from typing import Callable
+
 from docai.llm.service import LLMService
 
 _SYSTEM_PROMPT = """\
@@ -17,6 +19,22 @@ Rules:
 transitive ones).
 - If there are no project-internal dependencies, return an empty list.\
 """
+
+
+def _make_validator(all_files: set[str]) -> Callable[[str | dict], str | None]:
+    def validate(result: str | dict) -> str | None:
+        if not isinstance(result, dict):
+            return "Expected a JSON object"
+        invalid = [d for d in result.get("dependencies", []) if d not in all_files]
+        if invalid:
+            return (
+                f"The following paths are not in the project file list: "
+                f"{', '.join(invalid)}. Only return paths that appear exactly "
+                f"in the provided project_files list."
+            )
+        return None
+
+    return validate
 
 
 async def extract_dependencies(
@@ -73,6 +91,7 @@ Return the file paths exactly as they appear in the project_files list.\
         prompt=prompt,
         system_prompt=_SYSTEM_PROMPT,
         structured_output=structured_output,
+        response_validator=_make_validator(all_files),
     )
 
     if isinstance(result, dict):

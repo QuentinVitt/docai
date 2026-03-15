@@ -100,6 +100,7 @@ class LLMService:
         structured_output: Optional[dict] = None,
         id: Optional[uuid.UUID] = None,
         bypass_cache: bool = False,
+        response_validator: Optional[Callable[[str | dict], str | None]] = None,
     ) -> tuple[str | dict, LLMProviderMessage]:
 
         if isinstance(prompt, LLMRequest):
@@ -117,6 +118,8 @@ class LLMService:
                 request_args["structured_output"] = structured_output
             if id:
                 request_args["id"] = id
+            if response_validator:
+                request_args["response_validator"] = response_validator
             request = LLMRequest(**request_args)
 
         # go over all connections with request. return first hit
