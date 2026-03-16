@@ -159,7 +159,7 @@ class LLMService:
         max_turns: int = 10,
         id: Optional[uuid.UUID] = None,
         bypass_cache: bool = False,
-        tools: Optional[dict] = None,
+        response_validator: Optional[Callable[[str | dict], str | None]] = None,
     ) -> tuple[str | dict, LLMProviderMessage]:
 
         # Build initial request (same as generate)
@@ -180,6 +180,8 @@ class LLMService:
                 request_args["structured_output"] = structured_output
             if id:
                 request_args["id"] = id
+            if response_validator:
+                request_args["response_validator"] = response_validator
             request = LLMRequest(**request_args)
 
         # Agent loop: Reason → Act → Observe → repeat
@@ -222,7 +224,9 @@ class LLMService:
                     result.response.name,
                     request.id,
                 )
-                function_response = await self._execute_tool(result.response, tools)
+                function_response = await self._execute_tool(
+                    result.response, self._config.tools
+                )
 
                 # Grow history with this turn, make function response the new prompt
                 request = LLMRequest(
