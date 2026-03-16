@@ -198,19 +198,3 @@ class ProjectDoc(BaseModel):
         if self.packages:
             lines.append(f"  Packages: {', '.join(self.packages)}")
         return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-#  Config
-# ---------------------------------------------------------------------------
-
-
-class DocumentationCacheConfig(BaseModel):
-    """Configuration for the documentation disk cache."""
-
-    cache_dir: str
-    use_cache: bool = True
-    start_with_clean_cache: bool = False
-    max_disk_size: int = 1_000_000_000  # bytes; evicts oldest entries first
-    max_age: float = 86_400  # seconds; entries older than this are stale
-    max_ram_size: Optional[int] = None  # max items in RAM cache; None = unlimited

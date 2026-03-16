@@ -14,6 +14,9 @@ LOG_CONFIG_FILE = "logging_config.yaml"
 LLM_CONFIG_PACKAGE = "docai.config"
 LLM_CONFIG_FILE = "llm_config.yaml"
 
+PROJECT_CONFIG_PACKAGE = "docai.config"
+PROJECT_CONFIG_FILE = "project_config.yaml"
+
 
 class ConfigError(RuntimeError):
     pass
@@ -121,7 +124,31 @@ def build_project_config(args: argparse.Namespace) -> dt.ProjectConfig:
     except ValueError as exc:
         raise ConfigError(f"Unknown action: {args.action}") from exc
 
-    return dt.ProjectConfig(action=action, working_dir=working_dir)
+    try:
+        with resources.open_text(
+            PROJECT_CONFIG_PACKAGE, PROJECT_CONFIG_FILE
+        ) as config_test:
+            config = yaml.safe_load(config_test)
+    except FileNotFoundError as exc:
+        raise ConfigError(f"Configuration file '{LOG_CONFIG_FILE}' not found") from exc
+    except yaml.YAMLError as exc:
+        raise ConfigError(
+            f"Invalid configuration file '{LOG_CONFIG_FILE}': {exc}"
+        ) from exc
+
+    cache_config = config.get("cache", {})
+    documentation_cache = dt.DocumentationCacheConfig(
+        cache_dir=cache_config.get("cache_dir", ".docai/cache/documentation"),
+        use_cache=not args.no_cache,
+        start_with_clean_cache=args.new_cache,
+        max_disk_size=cache_config.get("max_disk_size", 1_000_000_000),
+        max_age=cache_config.get("max_age", 8_640_000),
+        max_ram_size=cache_config.get("max_ram_size", None),
+    )
+
+    return dt.ProjectConfig(
+        action=action, working_dir=working_dir, documentation_cache=documentation_cache
+    )
 
 
 def build_logger_config(args: argparse.Namespace) -> dict:

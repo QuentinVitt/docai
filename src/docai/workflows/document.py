@@ -8,6 +8,7 @@ from docai.deps.base import (
     set_files_dependencies,
 )
 from docai.documentation.base import create_file_documentation
+from docai.documentation.cache import DocumentationCache
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_type
@@ -18,13 +19,18 @@ logger = logging.getLogger(__name__)
 
 async def run(config: Config):
     logger.info("Documenting %s", config.project_config.working_dir)
-    # 0. set up llm service
+    # 0.1 set up llm service
     try:
         llm: LLMService = await LLMService.create(config.llm_config)
     except LLMError as e:
         logger.error("Could not initialize LLM service: %s", e)
         return
     logger.debug("LLM service initialized successfully")
+
+    # 0.2 set up documentation cache
+    cache = DocumentationCache(
+        config.project_config.documentation_cache, config.project_config.working_dir
+    )
 
     # 1. get all the information about the files
 
@@ -52,6 +58,7 @@ async def run(config: Config):
         len(project_files),
         len(dependencies_topologicaly_sorted),
     )
+    return
 
     # 2. Create documentation objects
     for file_set in dependencies_topologicaly_sorted:
@@ -64,6 +71,7 @@ async def run(config: Config):
                     file,
                     project_files_info[file],
                     llm,
+                    cache,
                 )
                 for file in file_set
             ]

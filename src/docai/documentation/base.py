@@ -1,6 +1,8 @@
 from typing import Optional
 
+from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import DocItemType, FileDocType
+from docai.documentation.entity_documentation import document_entity
 from docai.documentation.entity_extraction import get_entities
 from docai.llm.service import LLMService
 
@@ -90,7 +92,7 @@ file_type_map: dict[str, FileDocType] = {
 
 
 async def create_file_documentation(
-    project_path, file: str, file_info: dict, llm: Optional[LLMService]
+    project_path, file: str, file_info: dict, llm: LLMService, cache: DocumentationCache
 ):
     # Agent tasks:
     # 1. Identify all entities in the file
@@ -112,9 +114,19 @@ async def create_file_documentation(
 
     file_info["entities"] = entities
 
-    return
     # 3. Generate documentation for each entity
     for entity_name, entity_type, entity_parent in entities:
-        pass
+        doc_item = await document_entity(
+            project_path,
+            file,
+            file_info,
+            entity_name,
+            entity_type,
+            entity_parent,
+            llm,
+            cache,
+        )
+        print(doc_item)
+    return
 
     # 4. Generate documentation for the file

@@ -1,1 +1,5 @@
-max_concurrency: 50
+cache:
+  cache_dir: .docai/cache/documentation # default: .docai/cache/llm
+  max_disk_size: 1_000_000_000 # default: 1GB
+  max_age: 8640000 # in sec. default: 100 days
+  # max_ram_size: 10000 # default: None (no limit)

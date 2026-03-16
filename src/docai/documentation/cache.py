@@ -7,10 +7,10 @@ import time
 from collections import OrderedDict
 from typing import Optional
 
+from docai.config.datatypes import DocumentationCacheConfig
 from docai.documentation.datatypes import (
     DocItem,
     DocItemType,
-    DocumentationCacheConfig,
     FileDoc,
     PackageDoc,
     ProjectDoc,
@@ -25,10 +25,10 @@ def _make_hash(*parts: str) -> str:
 
 
 class DocumentationCache:
-    def __init__(self, config: DocumentationCacheConfig):
+    def __init__(self, config: DocumentationCacheConfig, project_path: str):
         self._ram: OrderedDict[str, object] = OrderedDict()
         self._max_ram_size: Optional[int] = config.max_ram_size
-        self.cache_dir = config.cache_dir
+        self.cache_dir = os.path.abspath(os.path.join(project_path, config.cache_dir))
         self.max_age = config.max_age
         self.max_disk_size = config.max_disk_size
 
@@ -184,9 +184,7 @@ class DocumentationCache:
     def _project_key(self, project_name: str | None) -> str:
         return _make_hash("project", project_name or "")
 
-    def get_project_documentation(
-        self, project_name: str | None
-    ) -> ProjectDoc | None:
+    def get_project_documentation(self, project_name: str | None) -> ProjectDoc | None:
         key = self._project_key(project_name)
         cached = self._ram_get(key)
         if cached is not None:
@@ -224,9 +222,7 @@ class DocumentationCache:
         self._ram_put(key, doc)
         return doc
 
-    def set_package_documentation(
-        self, package_path: str, doc: PackageDoc
-    ) -> None:
+    def set_package_documentation(self, package_path: str, doc: PackageDoc) -> None:
         key = self._package_key(package_path)
         self._disk_write(key, "package", package_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
