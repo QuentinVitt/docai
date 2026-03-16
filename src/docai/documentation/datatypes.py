@@ -17,6 +17,9 @@ class Parameter(BaseModel):
     type_hint: Optional[str] = None
     description: str
 
+    def __str__(self) -> str:
+        return f"{self.name}{f': {self.type_hint}' if self.type_hint else ''} - {self.description}"
+
 
 class Attribute(BaseModel):
     """A field or attribute on a class or datatype."""
@@ -25,6 +28,9 @@ class Attribute(BaseModel):
     type_hint: Optional[str] = None
     description: str
 
+    def __str__(self) -> str:
+        return f"{self.name}{f': {self.type_hint}' if self.type_hint else ''} - {self.description}"
+
 
 class ReturnValue(BaseModel):
     """The return value of a callable."""
@@ -32,12 +38,18 @@ class ReturnValue(BaseModel):
     type_hint: Optional[str] = None
     description: str
 
+    def __str__(self) -> str:
+        return f"{f': {self.type_hint} - ' if self.type_hint else ''}{self.description}"
+
 
 class RaisesEntry(BaseModel):
     """An exception that a callable may raise."""
 
     exception: str
     description: str
+
+    def __str__(self) -> str:
+        return f"{self.exception} - {self.description}"
 
 
 # ---------------------------------------------------------------------------
@@ -51,6 +63,9 @@ class DocItemType(Enum):
     CLASS = "class"
     DATATYPE = "datatype"  # dataclass, TypedDict, named tuple, struct, etc.
     CONSTANT = "constant"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class DocItem(BaseModel):
@@ -72,6 +87,21 @@ class DocItem(BaseModel):
     # Classes and datatypes
     attributes: list[Attribute] = []
     dunder_methods: list[str] = []  # e.g. ["__str__", "__repr__", "__eq__"]
+
+    def __str__(self) -> str:
+        match self.type:
+            case DocItemType.FUNCTION:
+                return f"""function {self.name}:
+                    {self.description}
+                    ---
+                    parameters:
+                        {"\n".join(str(p) for p in self.parameters) if self.parameters else "None"}
+                    returns: {self.returns}
+                    raises: {", ".join(r.exception for r in self.raises)}
+                    side_effects: {self.side_effects}
+                    """
+            case _:
+                return "not implemented"
 
 
 # ---------------------------------------------------------------------------
@@ -135,5 +165,5 @@ class DocumentationCacheConfig(BaseModel):
     use_cache: bool = True
     start_with_clean_cache: bool = False
     max_disk_size: int = 1_000_000_000  # bytes; evicts oldest entries first
-    max_age: float = 86_400             # seconds; entries older than this are stale
+    max_age: float = 86_400  # seconds; entries older than this are stale
     max_ram_size: Optional[int] = None  # max items in RAM cache; None = unlimited

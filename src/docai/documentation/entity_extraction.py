@@ -38,6 +38,103 @@ _STRUCTURED_OUTPUT_ENTITIES: dict = {
 }
 
 
+_CONFIG_ENTITY_TYPES: frozenset[str] = frozenset({"datatype", "constant"})
+
+
+def _check_entity_list(entities: list[dict], *, code_only: bool) -> list[str]:
+    """Return a list of error strings (empty = valid)."""
+    errors: list[str] = []
+    for e in entities:
+        if not isinstance(e, dict):
+            continue
+        name: str = str(e.get("name", "")).strip()
+        etype: str = e.get("type", "")
+        parent = e.get("parent")
+
+        if not name:
+            errors.append("an entity has an empty name")
+            continue
+
+        if code_only and name.startswith("_"):
+            errors.append(
+                f"'{name}' starts with '_' — private/internal entities must be skipped"
+            )
+
+        if etype == "method" and not parent:
+            errors.append(
+                f"method '{name}' is missing 'parent' — set it to the containing class name"
+            )
+
+        if code_only and etype != "method" and parent:
+            errors.append(
+                f"'{name}' (type '{etype}') must not have 'parent' — "
+                f"only methods should have a parent in code files"
+            )
+
+    return errors
+
+
+def _validate_code_entities(result: str | dict) -> str | None:
+    if not isinstance(result, dict):
+        return "Expected a JSON object"
+    entities = result.get("entities", [])
+    if not isinstance(entities, list):
+        return "'entities' must be a list"
+    errors = _check_entity_list(entities, code_only=True)
+    return ("Entity validation errors: " + "; ".join(errors)) if errors else None
+
+
+def _validate_config_entities(result: str | dict) -> str | None:
+    if not isinstance(result, dict):
+        return "Expected a JSON object"
+    entities = result.get("entities", [])
+    if not isinstance(entities, list):
+        return "'entities' must be a list"
+    errors = _check_entity_list(entities, code_only=False)
+    invalid_types = [
+        e["type"]
+        for e in entities
+        if isinstance(e, dict) and e.get("type") not in _CONFIG_ENTITY_TYPES
+    ]
+    if invalid_types:
+        errors.append(
+            f"config files may only contain 'datatype' and 'constant' types; "
+            f"found: {', '.join(dict.fromkeys(invalid_types))}"
+        )
+    return ("Entity validation errors: " + "; ".join(errors)) if errors else None
+
+
+def _validate_unknown_entities(result: str | dict) -> str | None:
+    if not isinstance(result, dict):
+        return "Expected a JSON object"
+    doc_type = result.get("doc_type")
+    if doc_type not in ("code", "config", "other"):
+        return f"'doc_type' must be 'code', 'config', or 'other'; got: {doc_type!r}"
+    entities = result.get("entities", [])
+    if not isinstance(entities, list):
+        return "'entities' must be a list"
+    if doc_type == "other" and entities:
+        return (
+            "doc_type is 'other' but entities list is not empty — "
+            "return an empty entities list for 'other' files"
+        )
+    if doc_type == "code":
+        errors = _check_entity_list(entities, code_only=True)
+    else:  # config
+        errors = _check_entity_list(entities, code_only=False)
+        invalid_types = [
+            e["type"]
+            for e in entities
+            if isinstance(e, dict) and e.get("type") not in _CONFIG_ENTITY_TYPES
+        ]
+        if invalid_types:
+            errors.append(
+                f"config files may only contain 'datatype' and 'constant' types; "
+                f"found: {', '.join(dict.fromkeys(invalid_types))}"
+            )
+    return ("Entity validation errors: " + "; ".join(errors)) if errors else None
+
+
 def _parse_entities(raw: list[dict]) -> list[tuple[str, DocItemType, str | None]]:
     return [
         (e["name"], DocItemType(e["type"]), e.get("parent"))
@@ -47,7 +144,7 @@ def _parse_entities(raw: list[dict]) -> list[tuple[str, DocItemType, str | None]
 
 
 async def get_entities(
-    file: str, file_info: dict, llm: Optional[LLMService]
+    project_path: str, file: str, file_info: dict, llm: Optional[LLMService]
 ) -> list[tuple[str, DocItemType, str | None]]:
 
     match file_info.get("doc_type"):
@@ -55,12 +152,14 @@ async def get_entities(
             if not llm:
                 logger.error("LLMService is required for code entities")
                 raise ValueError("LLMService is required for code entities")
-            return await get_entities_from_code_file(file, file_info, llm)
+            return await get_entities_from_code_file(project_path, file, file_info, llm)
         case FileDocType.CONFIG:
             if not llm:
                 logger.error("LLMService is required for config entities")
                 raise ValueError("LLMService is required for config entities")
-            return await get_entities_from_config_file(file, file_info, llm)
+            return await get_entities_from_config_file(
+                project_path, file, file_info, llm
+            )
         case FileDocType.DOCS:
             return []
         case FileDocType.OTHER:
@@ -73,7 +172,9 @@ async def get_entities(
                 raise ValueError(
                     "LLMService is required for unknown file type entities"
                 )
-            return await get_entities_from_unknown_file(file, file_info, llm)
+            return await get_entities_from_unknown_file(
+                project_path, file, file_info, llm
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +190,7 @@ _SYSTEM_PROMPT_CODE_ENTITIES = (
 
 
 async def get_entities_from_code_file(
-    file: str, file_info: dict, llm: LLMService
+    project_path: str, file: str, file_info: dict, llm: LLMService
 ) -> list[tuple[str, DocItemType, str | None]]:
     lang = file_info.get("file_type", "unknown")
     prompt = f"""\
@@ -116,7 +217,7 @@ Language: {lang}
 
 <file_content>
 ```{lang}
-{get_file_content("", file)}
+{get_file_content(project_path, file)}
 ```
 </file_content>
 
@@ -142,6 +243,7 @@ Output:
         prompt=prompt,
         system_prompt=_SYSTEM_PROMPT_CODE_ENTITIES,
         structured_output=_STRUCTURED_OUTPUT_ENTITIES,
+        response_validator=_validate_code_entities,
     )
     return _parse_entities(
         result.get("entities", []) if isinstance(result, dict) else []
@@ -161,7 +263,7 @@ _SYSTEM_PROMPT_CONFIG_ENTITIES = (
 
 
 async def get_entities_from_config_file(
-    file: str, file_info: dict, llm: LLMService
+    project_path: str, file: str, file_info: dict, llm: LLMService
 ) -> list[tuple[str, DocItemType, str | None]]:
     lang = file_info.get("file_type", "unknown")
     prompt = f"""\
@@ -184,7 +286,7 @@ Format: {lang}
 
 <file_content>
 ```{lang}
-{get_file_content("", file)}
+{get_file_content(project_path, file)}
 ```
 </file_content>
 
@@ -209,6 +311,7 @@ Output:
         prompt=prompt,
         system_prompt=_SYSTEM_PROMPT_CONFIG_ENTITIES,
         structured_output=_STRUCTURED_OUTPUT_ENTITIES,
+        response_validator=_validate_config_entities,
     )
     return _parse_entities(
         result.get("entities", []) if isinstance(result, dict) else []
@@ -244,7 +347,7 @@ _STRUCTURED_OUTPUT_UNKNOWN_ENTITIES: dict = {
 
 
 async def get_entities_from_unknown_file(
-    file: str, file_info: dict, llm: LLMService
+    project_path: str, file: str, file_info: dict, llm: LLMService
 ) -> list[tuple[str, DocItemType, str | None]]:
     file_type = file_info.get("file_type", "unknown")
     prompt = f"""\
@@ -271,7 +374,7 @@ Extension: {file_type}
 
 <file_content>
 ```{file_type}
-{get_file_content("", file)}
+{get_file_content(project_path, file)}
 ```
 </file_content>
 
@@ -296,6 +399,7 @@ Example C — plain text file:
         prompt=prompt,
         system_prompt=_SYSTEM_PROMPT_UNKNOWN_ENTITIES,
         structured_output=_STRUCTURED_OUTPUT_UNKNOWN_ENTITIES,
+        response_validator=_validate_unknown_entities,
     )
     if not isinstance(result, dict):
         return []

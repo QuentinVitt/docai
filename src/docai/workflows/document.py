@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -6,6 +7,7 @@ from docai.deps.base import (
     create_dependencies_topologically_sorted,
     set_files_dependencies,
 )
+from docai.documentation.base import create_file_documentation
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_type
@@ -52,10 +54,26 @@ async def run(config: Config):
     )
 
     # 2. Create documentation objects
+    for file_set in dependencies_topologicaly_sorted:
+        # 2.1 get doc file types
 
-    # 2.1 get doc file types
+        await asyncio.gather(
+            *[
+                create_file_documentation(
+                    config.project_config.working_dir,
+                    file,
+                    project_files_info[file],
+                    llm,
+                )
+                for file in file_set
+            ]
+        )
+        break
 
-    # 2.2 extract entity list
+    def default(obj):
+        return str(obj)  # or list(obj) if order doesn't matter
+
+    print(json.dumps(project_files_info, indent=4, default=default))
 
     # 2.3 generate file/entity documentation with dependencies topological sorted
 

@@ -90,7 +90,7 @@ file_type_map: dict[str, FileDocType] = {
 
 
 async def create_file_documentation(
-    file: str, file_info: dict, llm: Optional[LLMService]
+    project_path, file: str, file_info: dict, llm: Optional[LLMService]
 ):
     # Agent tasks:
     # 1. Identify all entities in the file
@@ -103,13 +103,16 @@ async def create_file_documentation(
 
     # 1. Identify doc file type
     file_type = file_info.get("file_type", "unknown")
-    file_info["doc_type"] = file_type_map.get(file_type)
+    file_info["file_doc_type"] = file_type_map.get(file_type)
 
     # 2. Get entities from the file
     entities: list[tuple[str, DocItemType, str | None]] = await get_entities(
-        file, file_info, llm
+        project_path, file, file_info, llm
     )
 
+    file_info["entities"] = entities
+
+    return
     # 3. Generate documentation for each entity
     for entity_name, entity_type, entity_parent in entities:
         pass

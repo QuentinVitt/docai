@@ -159,6 +159,7 @@ class LLMService:
         max_turns: int = 10,
         id: Optional[uuid.UUID] = None,
         bypass_cache: bool = False,
+        tools: Optional[dict] = None,
     ) -> tuple[str | dict, LLMProviderMessage]:
 
         # Build initial request (same as generate)
@@ -221,7 +222,7 @@ class LLMService:
                     result.response.name,
                     request.id,
                 )
-                function_response = await self._execute_tool(result.response)
+                function_response = await self._execute_tool(result.response, tools)
 
                 # Grow history with this turn, make function response the new prompt
                 request = LLMRequest(
@@ -240,8 +241,10 @@ class LLMService:
 
         raise LLMError(612, f"Agent exceeded maximum turns ({max_turns})")
 
-    async def _execute_tool(self, tool_call: LLMFunctionCall) -> LLMFunctionResponse:
-        tools = self._config.tools
+    async def _execute_tool(
+        self, tool_call: LLMFunctionCall, tools_override: Optional[dict] = None
+    ) -> LLMFunctionResponse:
+        tools = tools_override if tools_override is not None else self._config.tools
         if tools is None or tool_call.name not in tools:
             logger.debug(
                 "Called tool '%s' for llm function callnot found in registry",

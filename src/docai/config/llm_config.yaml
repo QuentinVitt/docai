@@ -25,9 +25,9 @@ models:
 profiles:
   default:
     - provider: google
-      model: gemini-2.5-flash-lite
-    - provider: google # fallback
       model: gemini-2.5-flash
+    - provider: google # fallback
+      model: gemini-2.5-flash-lite
   fast:
     - provider: google
       model: gemini-2.5-flash
