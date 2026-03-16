@@ -18,7 +18,8 @@ class Parameter(BaseModel):
     description: str
 
     def __str__(self) -> str:
-        return f"{self.name}{f': {self.type_hint}' if self.type_hint else ''} - {self.description}"
+        type_part = f" ({self.type_hint})" if self.type_hint else ""
+        return f"{self.name}{type_part}: {self.description}"
 
 
 class Attribute(BaseModel):
@@ -29,7 +30,8 @@ class Attribute(BaseModel):
     description: str
 
     def __str__(self) -> str:
-        return f"{self.name}{f': {self.type_hint}' if self.type_hint else ''} - {self.description}"
+        type_part = f" ({self.type_hint})" if self.type_hint else ""
+        return f"{self.name}{type_part}: {self.description}"
 
 
 class ReturnValue(BaseModel):
@@ -39,7 +41,8 @@ class ReturnValue(BaseModel):
     description: str
 
     def __str__(self) -> str:
-        return f"{f': {self.type_hint} - ' if self.type_hint else ''}{self.description}"
+        type_part = f"({self.type_hint}) " if self.type_hint else ""
+        return f"{type_part}{self.description}"
 
 
 class RaisesEntry(BaseModel):
@@ -49,7 +52,7 @@ class RaisesEntry(BaseModel):
     description: str
 
     def __str__(self) -> str:
-        return f"{self.exception} - {self.description}"
+        return f"{self.exception}: {self.description}"
 
 
 # ---------------------------------------------------------------------------
@@ -89,19 +92,35 @@ class DocItem(BaseModel):
     dunder_methods: list[str] = []  # e.g. ["__str__", "__repr__", "__eq__"]
 
     def __str__(self) -> str:
-        match self.type:
-            case DocItemType.FUNCTION:
-                return f"""function {self.name}:
-                    {self.description}
-                    ---
-                    parameters:
-                        {"\n".join(str(p) for p in self.parameters) if self.parameters else "None"}
-                    returns: {self.returns}
-                    raises: {", ".join(r.exception for r in self.raises)}
-                    side_effects: {self.side_effects}
-                    """
-            case _:
-                return "not implemented"
+        parent_part = f" ({self.parent})" if self.parent else ""
+        lines = [
+            f"{self.type} {self.name}{parent_part}:",
+            f"  {self.description}",
+        ]
+
+        if self.type in (DocItemType.FUNCTION, DocItemType.METHOD):
+            if self.parameters:
+                lines.append("  Parameters:")
+                for p in self.parameters:
+                    lines.append(f"    - {p}")
+            if self.returns:
+                lines.append(f"  Returns: {self.returns}")
+            if self.raises:
+                lines.append("  Raises:")
+                for r in self.raises:
+                    lines.append(f"    - {r}")
+            if self.side_effects:
+                lines.append(f"  Side effects: {self.side_effects}")
+
+        if self.type in (DocItemType.CLASS, DocItemType.DATATYPE):
+            if self.attributes:
+                lines.append("  Attributes:")
+                for a in self.attributes:
+                    lines.append(f"    - {a}")
+            if self.dunder_methods:
+                lines.append(f"  Dunder methods: {', '.join(self.dunder_methods)}")
+
+        return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -116,6 +135,9 @@ class FileDocType(Enum):
     OTHER = "other"  # any other human-authored text file
     SKIPPED = "skipped"  # binary, generated, or lock files — not documented
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class FileDoc(BaseModel):
     """Documentation for a single file."""
@@ -124,6 +146,17 @@ class FileDoc(BaseModel):
     type: FileDocType
     description: str  # empty string for SKIPPED
     items: list[DocItem] = []  # populated only for CODE files
+
+    def __str__(self) -> str:
+        lines = [f"file: {self.path} ({self.type})"]
+        if self.description:
+            lines.append(f"  {self.description}")
+        if self.items:
+            lines.append("  Entities:")
+            for item in self.items:
+                parent_part = f", parent: {item.parent}" if item.parent else ""
+                lines.append(f"    - {item.name} ({item.type}{parent_part})")
+        return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +172,14 @@ class PackageDoc(BaseModel):
     files: list[str] = []  # paths of direct FileDoc children
     packages: list[str] = []  # paths of direct PackageDoc children
 
+    def __str__(self) -> str:
+        lines = [f"package: {self.path}", f"  {self.description}"]
+        if self.files:
+            lines.append(f"  Files: {', '.join(self.files)}")
+        if self.packages:
+            lines.append(f"  Sub-packages: {', '.join(self.packages)}")
+        return "\n".join(lines)
+
 
 # ---------------------------------------------------------------------------
 # Project level
@@ -151,6 +192,12 @@ class ProjectDoc(BaseModel):
     name: str
     description: str
     packages: list[str] = []  # paths of top-level PackageDoc children
+
+    def __str__(self) -> str:
+        lines = [f"project: {self.name}", f"  {self.description}"]
+        if self.packages:
+            lines.append(f"  Packages: {', '.join(self.packages)}")
+        return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
