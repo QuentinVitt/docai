@@ -7,7 +7,7 @@ from docai.deps.base import (
     create_dependencies_topologically_sorted,
     set_files_dependencies,
 )
-from docai.documentation.base import create_file_documentation
+from docai.documentation.base import identify_entities, set_file_doc_type
 from docai.documentation.cache import DocumentationCache
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
@@ -58,30 +58,56 @@ async def run(config: Config):
         len(project_files),
         len(dependencies_topologicaly_sorted),
     )
-    return
 
     # 2. Create documentation objects
-    for file_set in dependencies_topologicaly_sorted:
-        # 2.1 get doc file types
 
-        await asyncio.gather(
-            *[
-                create_file_documentation(
-                    config.project_config.working_dir,
-                    file,
-                    project_files_info[file],
-                    llm,
-                    cache,
-                )
-                for file in file_set
-            ]
-        )
-        break
+    # 2.1 set file doc type for each project file
+    for file_info in project_files_info.values():
+        set_file_doc_type(file_info)
+
+    # 2.2 extract entities from each project file
+
+    await asyncio.gather(
+        *[
+            identify_entities(
+                config.project_config.working_dir,
+                file,
+                project_files_info[file],
+                llm,
+                cache,
+            )
+            for file in project_files
+        ]
+    )
 
     def default(obj):
         return str(obj)  # or list(obj) if order doesn't matter
 
     print(json.dumps(project_files_info, indent=4, default=default))
+
+    return
+
+    # for file_set in dependencies_topologicaly_sorted:
+    #     # 2.1 get doc file types
+
+    #     await asyncio.gather(
+    #         *[
+    #             create_file_documentation(
+    #                 config.project_config.working_dir,
+    #                 file,
+    #                 project_files_info[file],
+    #                 llm,
+    #                 cache,
+    #             )
+    #             for file in file_set
+    #         ]
+    #     )
+    #     break
+
+    # def default(obj):
+    #     return str(obj)  # or list(obj) if order doesn't matter
+
+    # print(json.dumps(project_files_info, indent=4, default=default))
 
     # 2.3 generate file/entity documentation with dependencies topological sorted
 
@@ -92,8 +118,6 @@ async def run(config: Config):
     # 2.4 generate package documentations
 
     # 2.5 generate project documentation
-
-    return
 
 
 # 2. Create documentation objects

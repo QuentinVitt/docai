@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from docai.documentation.datatypes import DocItemType, FileDocType
+from docai.documentation.datatypes import DocItemRef, DocItemType, FileDocType
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_content
 
@@ -71,6 +71,9 @@ def _check_entity_list(entities: list[dict], *, code_only: bool) -> list[str]:
                 f"only methods should have a parent in code files"
             )
 
+        if etype not in {"function", "method", "class", "datatype", "constant"}:
+            errors.append(f"'{name}' (type '{etype}') is not a supported entity type")
+
     return errors
 
 
@@ -135,9 +138,9 @@ def _validate_unknown_entities(result: str | dict) -> str | None:
     return ("Entity validation errors: " + "; ".join(errors)) if errors else None
 
 
-def _parse_entities(raw: list[dict]) -> list[tuple[str, DocItemType, str | None]]:
+def _parse_entities(raw: list[dict]) -> list[DocItemRef]:
     return [
-        (e["name"], DocItemType(e["type"]), e.get("parent"))
+        DocItemRef(name=e["name"], type=DocItemType(e["type"]), parent=e.get("parent"))
         for e in raw
         if "name" in e and "type" in e
     ]
@@ -145,7 +148,7 @@ def _parse_entities(raw: list[dict]) -> list[tuple[str, DocItemType, str | None]
 
 async def get_entities(
     project_path: str, file: str, file_info: dict, llm: Optional[LLMService]
-) -> list[tuple[str, DocItemType, str | None]]:
+) -> list[DocItemRef]:
 
     match file_info.get("doc_type"):
         case FileDocType.CODE:
@@ -191,7 +194,7 @@ _SYSTEM_PROMPT_CODE_ENTITIES = (
 
 async def get_entities_from_code_file(
     project_path: str, file: str, file_info: dict, llm: LLMService
-) -> list[tuple[str, DocItemType, str | None]]:
+) -> list[DocItemRef]:
     lang = file_info.get("file_type", "unknown")
     prompt = f"""\
 Identify all documentable entities in the following {lang} source file.
@@ -264,7 +267,7 @@ _SYSTEM_PROMPT_CONFIG_ENTITIES = (
 
 async def get_entities_from_config_file(
     project_path: str, file: str, file_info: dict, llm: LLMService
-) -> list[tuple[str, DocItemType, str | None]]:
+) -> list[DocItemRef]:
     lang = file_info.get("file_type", "unknown")
     prompt = f"""\
 Identify all named keys and sections in the following {lang} configuration file.
@@ -348,7 +351,7 @@ _STRUCTURED_OUTPUT_UNKNOWN_ENTITIES: dict = {
 
 async def get_entities_from_unknown_file(
     project_path: str, file: str, file_info: dict, llm: LLMService
-) -> list[tuple[str, DocItemType, str | None]]:
+) -> list[DocItemRef]:
     file_type = file_info.get("file_type", "unknown")
     prompt = f"""\
 Classify and extract entities from the following file.
@@ -408,5 +411,7 @@ Example C — plain text file:
     resolved = result.get("doc_type")
     if resolved:
         file_info["doc_type"] = FileDocType(resolved)
+    else:
+        logger.warning(f"LLM returned doc_type: None for file {file}")
 
     return _parse_entities(result.get("entities", []))

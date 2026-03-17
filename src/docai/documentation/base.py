@@ -1,7 +1,5 @@
-from typing import Optional
-
 from docai.documentation.cache import DocumentationCache
-from docai.documentation.datatypes import DocItemType, FileDocType
+from docai.documentation.datatypes import DocItemRef, DocItemType, FileDocType
 from docai.documentation.entity_documentation import document_entity
 from docai.documentation.entity_extraction import get_entities
 from docai.llm.service import LLMService
@@ -89,6 +87,30 @@ file_type_map: dict[str, FileDocType] = {
     "lock": FileDocType.SKIPPED,
     "log": FileDocType.SKIPPED,
 }
+
+
+def set_file_doc_type(file_info: dict):
+    file_type = file_info.get("file_type", "unknown")
+    file_info["file_doc_type"] = file_type_map.get(file_type)
+
+
+async def identify_entities(
+    project_path: str,
+    file: str,
+    file_info: dict,
+    llm: LLMService,
+    cache: DocumentationCache,
+):
+
+    # 1. Check cache first
+    file_doc = cache.get_file_documentation(file)
+    if file_doc:
+        file_info["entities"] = file_doc.items
+
+    # 2. Generate entities if not in cache
+    entities: list[DocItemRef] = await get_entities(project_path, file, file_info, llm)
+
+    file_info["entities"] = entities
 
 
 async def create_file_documentation(
