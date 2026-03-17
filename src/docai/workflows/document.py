@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+from collections import defaultdict
 
 from docai.config.datatypes import Config
 from docai.deps.base import (
@@ -15,6 +16,9 @@ from docai.documentation.base import (
 )
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import FileDocType
+from docai.documentation.package_documentation import document_package
+from docai.documentation.project_documentation import document_project
+from docai.output.markdown import write_markdown_docs
 from docai.llm.agent_tools import make_tool_registry
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
@@ -126,9 +130,26 @@ async def run(config: Config):
 
     # A directory is a package if it has documentable files or multiple child packages.
     # Single-child ancestors with no own files are passthroughs — skip them.
-    packages = {
-        d for d in all_dirs if d in dirs_with_files or direct_child_count.get(d, 0) > 1
+    packages: dict[str, dict] = {
+        d: {"files": [], "sub_packages": []}
+        for d in all_dirs
+        if d in dirs_with_files or direct_child_count.get(d, 0) > 1
     }
+
+    # Populate direct files (non-skipped only)
+    for file, file_info in project_files_info.items():
+        parent = os.path.dirname(file)
+        if parent in packages and file_info.get("file_doc_type") not in (
+            None,
+            FileDocType.SKIPPED,
+        ):
+            packages[parent]["files"].append(file)
+
+    # Populate direct sub-packages
+    for pkg_path in packages:
+        parent = os.path.dirname(pkg_path)
+        if parent in packages:
+            packages[parent]["sub_packages"].append(pkg_path)
 
     total_packages = len(packages)
 
@@ -148,56 +169,43 @@ async def run(config: Config):
             ]
         )
 
+    # 2.5 write package documentation (bottom-up: deepest packages first)
+    packages_by_depth: dict[int, list[str]] = defaultdict(list)
+    for pkg_path in packages:
+        packages_by_depth[pkg_path.count(os.sep)].append(pkg_path)
+
+    for depth in sorted(packages_by_depth.keys(), reverse=True):
+        await asyncio.gather(
+            *[
+                document_package(
+                    config.project_config.working_dir,
+                    pkg_path,
+                    packages[pkg_path],
+                    llm,
+                    cache,
+                )
+                for pkg_path in packages_by_depth[depth]
+            ]
+        )
+
+    # 2.6 write project documentation
+    project_name = os.path.basename(config.project_config.working_dir)
+    top_level_packages = [p for p in packages if os.path.dirname(p) not in packages]
+    await document_project(
+        config.project_config.working_dir,
+        project_name,
+        top_level_packages,
+        llm,
+        cache,
+    )
+
+    # 3. write the documentation in human readable format
+    write_markdown_docs(
+        config.project_config.working_dir,
+        project_name,
+        packages,
+        project_files_info,
+        cache,
+    )
+
     return
-
-    # for file_set in dependencies_topologicaly_sorted:
-    #     # 2.1 get doc file types
-
-    #     await asyncio.gather(
-    #         *[
-    #             create_file_documentation(
-    #                 config.project_config.working_dir,
-    #                 file,
-    #                 project_files_info[file],
-    #                 llm,
-    #                 cache,
-    #             )
-    #             for file in file_set
-    #         ]
-    #     )
-    #     break
-
-    # def default(obj):
-    #     return str(obj)  # or list(obj) if order doesn't matter
-
-    # print(json.dumps(project_files_info, indent=4, default=default))
-
-    # 2.3 generate file/entity documentation with dependencies topological sorted
-
-    # 2.3.1 generate entity documentation
-
-    # 2.3.2 generate file documentation
-
-    # 2.4 generate package documentations
-
-    # 2.5 generate project documentation
-
-
-# 2. Create documentation objects
-# save documentation in cache but also get those no longer needed into disk
-
-# document Objects internal representation
-# for files in dependencie_list:
-# build async generator for the prompts
-# stream the doc results and save them in the cache
-# we first need to think about how we want to represent the documentation internally:
-# first: divide between files: each file gets its own documentation file. In this file we have different sections for different documentations
-#
-
-# doc: name, type, the actuall documentation: input, output, brief description, side_effects that can be triggered etc.
-
-
-# write interal documentation presentation into external representation.
-
-
-# The documentation Dataclass:
