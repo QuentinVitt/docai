@@ -71,6 +71,26 @@ class DocItemType(Enum):
         return self.value
 
 
+class DocItemRef(BaseModel):
+    """Minimal identity reference to a code entity; full docs live in the entity cache."""
+
+    name: str
+    type: DocItemType
+    parent: Optional[str] = None
+
+    def __str__(self) -> str:
+        parent_part = f", parent: {self.parent}" if self.parent else ""
+        return f"{self.name} ({self.type}{parent_part})"
+
+
+class EntityQuery(BaseModel):
+    """Filter for searching entities within a file; all fields are optional constraints."""
+
+    name: Optional[str] = None
+    type: Optional[DocItemType] = None
+    parent: Optional[str] = None
+
+
 class DocItem(BaseModel):
     """Documentation for a single code element (function, class, etc.)."""
 
@@ -145,7 +165,7 @@ class FileDoc(BaseModel):
     path: str
     type: FileDocType
     description: str  # empty string for SKIPPED
-    items: list[DocItem] = []  # populated only for CODE files
+    items: list[DocItemRef] = []  # index of entities; full docs live in entity cache
 
     def __str__(self) -> str:
         lines = [f"file: {self.path} ({self.type})"]
@@ -154,8 +174,7 @@ class FileDoc(BaseModel):
         if self.items:
             lines.append("  Entities:")
             for item in self.items:
-                parent_part = f", parent: {item.parent}" if item.parent else ""
-                lines.append(f"    - {item.name} ({item.type}{parent_part})")
+                lines.append(f"    - {item}")
         return "\n".join(lines)
 
 

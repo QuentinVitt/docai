@@ -10,7 +10,9 @@ from typing import Optional
 from docai.config.datatypes import DocumentationCacheConfig
 from docai.documentation.datatypes import (
     DocItem,
+    DocItemRef,
     DocItemType,
+    EntityQuery,
     FileDoc,
     PackageDoc,
     ProjectDoc,
@@ -255,25 +257,15 @@ class DocumentationCache:
     # Entity
     # ---------------------------------------------------------------------------
 
-    def _entity_key(
-        self,
-        file_path: str,
-        entity_name: str,
-        entity_type: DocItemType,
-        parent: str | None,
-    ) -> str:
+    def _entity_key(self, file_path: str, ref: DocItemRef) -> str:
         return _make_hash(
-            "entity", file_path, entity_type.value, parent or "", entity_name
+            "entity", file_path, ref.type.value, ref.parent or "", ref.name
         )
 
     def get_entity_documentation(
-        self,
-        file_path: str,
-        entity_name: str,
-        entity_type: DocItemType,
-        parent: str | None,
+        self, file_path: str, ref: DocItemRef
     ) -> DocItem | None:
-        key = self._entity_key(file_path, entity_name, entity_type, parent)
+        key = self._entity_key(file_path, ref)
         cached = self._ram_get(key)
         if cached is not None:
             return cached  # type: ignore
@@ -285,14 +277,9 @@ class DocumentationCache:
         return doc
 
     def set_entity_documentation(
-        self,
-        file_path: str,
-        entity_name: str,
-        entity_type: DocItemType,
-        parent: str | None,
-        doc: DocItem,
+        self, file_path: str, ref: DocItemRef, doc: DocItem
     ) -> None:
-        key = self._entity_key(file_path, entity_name, entity_type, parent)
+        key = self._entity_key(file_path, ref)
         self._disk_write(key, "entity", file_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
 
@@ -300,45 +287,92 @@ class DocumentationCache:
     # Search / fuzzy lookup
     # ---------------------------------------------------------------------------
 
+    def _fuzzy_match_refs(
+        self,
+        refs: list[DocItemRef],
+        entity_name: str,
+        entity_type: DocItemType | None = None,
+        parent: str | None = None,
+    ) -> list[DocItemRef]:
+        """Return the highest-priority tier of refs matching entity_name.
+
+        Per name-match level (exact → case-insensitive → substring), priority is:
+          type + parent > parent only > type only > neither
+        None values for entity_type / parent mean "no constraint".
+        """
+        name_lower = entity_name.lower()
+
+        def _type_ok(ref: DocItemRef) -> bool:
+            return entity_type is None or ref.type == entity_type
+
+        def _parent_ok(ref: DocItemRef) -> bool:
+            return parent is None or ref.parent == parent
+
+        def _tiers():
+            yield [r for r in refs if r.name == entity_name and _type_ok(r) and _parent_ok(r)]
+            yield [r for r in refs if r.name == entity_name and _parent_ok(r)]
+            yield [r for r in refs if r.name == entity_name and _type_ok(r)]
+            yield [r for r in refs if r.name == entity_name]
+            yield [r for r in refs if r.name.lower() == name_lower and _type_ok(r) and _parent_ok(r)]
+            yield [r for r in refs if r.name.lower() == name_lower and _parent_ok(r)]
+            yield [r for r in refs if r.name.lower() == name_lower and _type_ok(r)]
+            yield [r for r in refs if r.name.lower() == name_lower]
+            yield [r for r in refs if name_lower in r.name.lower() and _type_ok(r) and _parent_ok(r)]
+            yield [r for r in refs if name_lower in r.name.lower() and _parent_ok(r)]
+            yield [r for r in refs if name_lower in r.name.lower() and _type_ok(r)]
+            yield [r for r in refs if name_lower in r.name.lower()]
+
+        for tier in _tiers():
+            if tier:
+                return tier
+        return []
+
     def search_documentation(
         self,
         file_path: str,
-        entity_name: str | None = None,
-        entity_type: DocItemType | None = None,
+        queries: list[EntityQuery] | None = None,
     ) -> tuple[FileDoc | None, list[DocItem]]:
-        """Return (file_doc, matched_items).
+        """Return (file_doc, matched_items) with full DocItem objects.
 
-        If entity_name is None, matched_items is empty — the caller receives the
-        full FileDoc (with all items in file_doc.items).
+        queries=None: loads and returns all DocItems for the file.
+        queries=[...]: runs each query and returns the union, deduplicated by
+                       (name, type, parent).
 
-        When entity_name is given, matching is attempted in priority order:
-          1. exact name  + correct type  (if entity_type provided)
-          2. exact name  (any type)
-          3. case-insensitive name  + correct type
-          4. case-insensitive name  (any type)
-          5. substring name  + correct type
-          6. substring name  (any type)
-        The first tier that yields at least one result is returned.
+        Per query:
+          - name=None: filter refs by type/parent directly (no fuzzy matching).
+          - name given: fuzzy-match against refs using type and parent as hints.
         """
         file_doc = self.get_file_documentation(file_path)
-        if file_doc is None or entity_name is None:
-            return file_doc, []
+        if file_doc is None:
+            return None, []
 
-        name_lower = entity_name.lower()
-        items = file_doc.items
+        refs = file_doc.items
 
-        def _type_ok(item: DocItem) -> bool:
-            return entity_type is None or item.type == entity_type
+        if queries is None:
+            docs: list[DocItem] = []
+            for ref in refs:
+                doc = self.get_entity_documentation(file_path, ref)
+                if doc is not None:
+                    docs.append(doc)
+            return file_doc, docs
 
-        tiers: list[list[DocItem]] = [
-            [i for i in items if i.name == entity_name and _type_ok(i)],
-            [i for i in items if i.name == entity_name],
-            [i for i in items if i.name.lower() == name_lower and _type_ok(i)],
-            [i for i in items if i.name.lower() == name_lower],
-            [i for i in items if name_lower in i.name.lower() and _type_ok(i)],
-            [i for i in items if name_lower in i.name.lower()],
-        ]
-        for tier in tiers:
-            if tier:
-                return file_doc, tier
-        return file_doc, []
+        seen: set[tuple[str, str, str | None]] = set()
+        docs = []
+        for query in queries:
+            if query.name is None:
+                matched = [
+                    r for r in refs
+                    if (query.type is None or r.type == query.type)
+                    and (query.parent is None or r.parent == query.parent)
+                ]
+            else:
+                matched = self._fuzzy_match_refs(refs, query.name, query.type, query.parent)
+            for ref in matched:
+                identity = (ref.name, ref.type.value, ref.parent)
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                doc = self.get_entity_documentation(file_path, ref)
+                if doc is not None:
+                    docs.append(doc)
+        return file_doc, docs
