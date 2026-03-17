@@ -18,10 +18,10 @@ from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import FileDocType
 from docai.documentation.package_documentation import document_package
 from docai.documentation.project_documentation import document_project
-from docai.output.markdown import write_markdown_docs
 from docai.llm.agent_tools import make_tool_registry
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
+from docai.output.markdown import write_markdown_docs
 from docai.scanning.file_infos import get_file_type
 from docai.scanning.project_infos import get_project_files
 
@@ -49,18 +49,20 @@ async def run(config: Config):
     # 1.1 get all project files
     project_files = get_project_files(config.project_config.working_dir)
 
-    # 1.2 get file type for each project file
+    # 1.2 get file type and doc type for each project file
     project_files_info: dict[str, dict] = {
         file: {"file_type": get_file_type(config.project_config.working_dir, file)}
         for file in project_files
     }
+    for file_info in project_files_info.values():
+        set_file_doc_type(file_info)
 
-    # 1.3 get file dependencies for each project file
+    # 1.3 get file dependencies for each project file (skip binary/skipped files)
     await set_files_dependencies(
         config.project_config.working_dir, project_files_info, llm
     )
 
-    # 1.4 build depdency graph
+    # 1.4 build dependency graph
     dependencies_topologically_sorted = create_dependencies_topologically_sorted(
         project_files_info
     )
@@ -71,11 +73,10 @@ async def run(config: Config):
         len(dependencies_topologically_sorted),
     )
 
-    # 2. Create documentation objects
+    def default(obj):
+        return str(obj)  # or list(obj) if order doesn't matter
 
-    # 2.1 set file doc type for each project file
-    for file_info in project_files_info.values():
-        set_file_doc_type(file_info)
+    # 2. Create documentation objects
 
     # 2.2 extract entities from each project file
 
@@ -92,11 +93,10 @@ async def run(config: Config):
         ]
     )
 
-    def default(obj):
-        return str(obj)  # or list(obj) if order doesn't matter
+    # print(json.dumps(project_files_info, indent=4, default=default))
+    # print(dependencies_topologically_sorted)
 
-    print(json.dumps(project_files_info, indent=4, default=default))
-
+    # return
     # 2.3 count how many entities / files / packages we have to document for progress bar.
     # A "package" is a directory that directly contains at least one documentable file.
     # Ancestor directories that only pass through to a single child package are excluded.

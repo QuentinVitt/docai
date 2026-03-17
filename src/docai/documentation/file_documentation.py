@@ -242,7 +242,16 @@ async def document_file(
     doc_context = _build_doc_context(project_path, file, file_info, cache)
     tool_registry = make_tool_registry(project_path, cache)
 
-    args = (project_path, file, file_info, entities, doc_context, llm, tool_registry, cache)
+    args = (
+        project_path,
+        file,
+        file_info,
+        entities,
+        doc_context,
+        llm,
+        tool_registry,
+        cache,
+    )
 
     match file_doc_type:
         case FileDocType.CODE:
@@ -259,13 +268,15 @@ async def document_file(
                 items=[],
             )
             cache.set_file_documentation(file, file_doc)
-            logger.debug("Skipped documentation for file %s (type=%s)", file, file_doc_type)
+            logger.debug(
+                "Skipped documentation for file %s (type=%s)", file, file_doc_type
+            )
             return file_doc
 
     file_doc = FileDoc(
         path=file,
         type=file_doc_type,
-        description=description,
+        description=description,  # type: ignore
         items=entities,
     )
     cache.set_file_documentation(file, file_doc)

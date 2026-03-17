@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import (

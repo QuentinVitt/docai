@@ -74,6 +74,26 @@ class LLMFunctionResponse(LLMInternalMessage):
 
 
 @dataclass(frozen=True)
+class LLMFunctionCallBatch(LLMProviderMessage):
+    """Multiple parallel function calls from a single model turn."""
+
+    calls: tuple[LLMFunctionCall, ...]
+
+    def __str__(self):
+        return f"Function Call Batch: [{', '.join(c.name for c in self.calls)}]"
+
+
+@dataclass(frozen=True)
+class LLMFunctionResponseBatch(LLMInternalMessage):
+    """Responses to a batch of parallel function calls, sent as a single user turn."""
+
+    responses: tuple[LLMFunctionResponse, ...]
+
+    def __str__(self):
+        return f"Function Response Batch: [{', '.join(r.call.name for r in self.responses)}]"
+
+
+@dataclass(frozen=True)
 class LLMRequest:
     prompt: LLMInternalMessage
     system_prompt: Optional[str] = None

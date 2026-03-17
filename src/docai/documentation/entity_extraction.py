@@ -150,7 +150,7 @@ async def get_entities(
     project_path: str, file: str, file_info: dict, llm: Optional[LLMService]
 ) -> list[DocItemRef]:
 
-    match file_info.get("doc_type"):
+    match file_info.get("file_doc_type"):
         case FileDocType.CODE:
             if not llm:
                 logger.error("LLMService is required for code entities")

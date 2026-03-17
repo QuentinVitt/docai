@@ -11,7 +11,9 @@ from docai.llm.client import LLMClient, create_client
 from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMFunctionCall,
+    LLMFunctionCallBatch,
     LLMFunctionResponse,
+    LLMFunctionResponseBatch,
     LLMMessage,
     LLMProviderMessage,
     LLMRequest,
@@ -226,7 +228,7 @@ class LLMService:
             if isinstance(result.response, LLMAssistantMessage):
                 return result.response.content, result.response
 
-            # Act + Observe: tool call — execute and continue
+            # Act + Observe: single tool call — execute and continue
             if isinstance(result.response, LLMFunctionCall):
                 logger.debug(
                     "Agent turn %d: calling tool '%s' for request %s",
@@ -234,13 +236,31 @@ class LLMService:
                     result.response.name,
                     request.id,
                 )
-                function_response = await self._execute_tool(
-                    result.response, self._tools
-                )
-
-                # Grow history with this turn, make function response the new prompt
+                function_response = await self._execute_tool(result.response, self._tools)
                 request = LLMRequest(
                     prompt=function_response,
+                    system_prompt=request.system_prompt,
+                    history=list(request.history) + [request.prompt, result.response],
+                    allowed_tools=request.allowed_tools,
+                    structured_output=request.structured_output,
+                    id=request.id,
+                )
+                continue
+
+            # Act + Observe: parallel tool calls — execute all and continue
+            if isinstance(result.response, LLMFunctionCallBatch):
+                logger.debug(
+                    "Agent turn %d: calling %d tools in parallel for request %s",
+                    turn + 1,
+                    len(result.response.calls),
+                    request.id,
+                )
+                responses = await asyncio.gather(
+                    *[self._execute_tool(call, self._tools) for call in result.response.calls]
+                )
+                batch_response = LLMFunctionResponseBatch(responses=tuple(responses))
+                request = LLMRequest(
+                    prompt=batch_response,
                     system_prompt=request.system_prompt,
                     history=list(request.history) + [request.prompt, result.response],
                     allowed_tools=request.allowed_tools,

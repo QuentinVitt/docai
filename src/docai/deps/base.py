@@ -5,6 +5,7 @@ from typing import Optional
 from docai.deps.universal_extractor import (
     extract_dependencies as universal_extract_dependencies,
 )
+from docai.documentation.datatypes import FileDocType
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_content
 

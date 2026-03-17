@@ -12,7 +12,9 @@ from docai.config.datatypes import LLMModelConfig, LLMProviderConfig
 from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMFunctionCall,
+    LLMFunctionCallBatch,
     LLMFunctionResponse,
+    LLMFunctionResponseBatch,
     LLMMessage,
     LLMOriginalContent,
     LLMProviderMessage,
@@ -204,32 +206,33 @@ class GoogleClient:
 
         # check if there was a function call:
         if response.function_calls:
-            if len(response.function_calls) > 1:
-                logger.error("Multiple function calls returned from Google API")
-                raise LLMError(603, "Multiple function calls returned from Google API")
-            elif not response.function_calls[0].name:
-                logger.error("No function name returned from Google API")
-                raise LLMError(603, "No function name returned from Google API")
-            elif (
-                request.allowed_tools is None
-                or response.function_calls[0].name not in request.allowed_tools
-            ):
-                logger.error("Function call not allowed")
-                raise LLMError(603, "Function call not allowed")
-            elif not response.function_calls[0].args:
-                logger.error("No function arguments returned from Google API")
-                raise LLMError(603, "No function arguments returned from Google API")
-            else:
-                return LLMResponse(
-                    response=LLMFunctionCall(
-                        name=response.function_calls[0].name,
-                        arguments=response.function_calls[0].args,
-                        original_content=LLMOriginalContent(
-                            provider="google", content=response.candidates[0].content
-                        ),
-                    ),
-                    id=request.id,
+            original_content = LLMOriginalContent(
+                provider="google", content=response.candidates[0].content
+            )
+            calls: list[LLMFunctionCall] = []
+            for fc in response.function_calls:
+                if not fc.name:
+                    raise LLMError(603, "No function name returned from Google API")
+                if request.allowed_tools is None or fc.name not in request.allowed_tools:
+                    raise LLMError(603, f"Function call not allowed: {fc.name}")
+                calls.append(
+                    LLMFunctionCall(
+                        name=fc.name,
+                        arguments=fc.args or {},
+                        original_content=original_content,
+                    )
                 )
+
+            if len(calls) == 1:
+                return LLMResponse(response=calls[0], id=request.id)
+
+            return LLMResponse(
+                response=LLMFunctionCallBatch(
+                    calls=tuple(calls),
+                    original_content=original_content,
+                ),
+                id=request.id,
+            )
 
         # if there was no function call check if there was a normal response:
         if response.text:
@@ -287,11 +290,19 @@ def _transform_content(content: LLMMessage) -> types.Content:
             )
 
         case LLMFunctionResponse(call=call, response=response):
-            function_response_part = types.Part.from_function_response(
-                name=call.name,
-                response=response,
+            return types.Content(
+                role="user",
+                parts=[types.Part.from_function_response(name=call.name, response=response)],
             )
-            return types.Content(role="user", parts=[function_response_part])
+
+        case LLMFunctionResponseBatch(responses=responses):
+            return types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_function_response(name=r.call.name, response=r.response)
+                    for r in responses
+                ],
+            )
 
         case _:
             raise TypeError(
