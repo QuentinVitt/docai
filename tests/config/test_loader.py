@@ -389,14 +389,6 @@ def test_build_llm_config_concurrency_from_globals(monkeypatch, tmp_path):
     assert result.concurrency.max_concurrency == 7
 
 
-def test_build_llm_config_tools_registry_present(monkeypatch, tmp_path):
-    _patch_llm_yaml(monkeypatch, _valid_llm_yaml(api_key="k"))
-    result = loader.build_llm_config(_make_args(), str(tmp_path))
-    assert result.tools is not None
-    assert "get_file_tree" in result.tools
-    assert "read_file" in result.tools
-
-
 @pytest.mark.parametrize("missing", ["profiles", "models", "providers", "globals"])
 def test_build_llm_config_missing_required_section(monkeypatch, tmp_path, missing):
     config = yaml.safe_load(_valid_llm_yaml(api_key="k"))

@@ -32,12 +32,15 @@ class LLMService:
         self._cache = LLMCache(self._config.cache)
 
     @classmethod
-    async def create(cls, config: LLMConfig) -> LLMService:
+    async def create(
+        cls, config: LLMConfig, tools: Optional[dict[str, dict]] = None
+    ) -> LLMService:
         """Creates and initializes an LLMService with clients for each profile."""
         service = cls(config)
+        service._tools = tools
         for profile in config.profiles:
             try:
-                client = await create_client(profile.provider)
+                client = await create_client(profile.provider, tools)
                 service._connections.append((client, profile.model))
                 logger.debug("Created client for provider %s", profile.provider.name)
             except LLMError as e:
@@ -162,14 +165,18 @@ class LLMService:
         response_validator: Optional[Callable[[str | dict], str | None]] = None,
     ) -> tuple[str | dict, LLMProviderMessage]:
 
-        # Build initial request (same as generate)
+        # Build initial request.
+        # When tools + structured output are both requested, embed the JSON schema
+        # in the prompt text instead of using the provider's structured output mode
+        # (Google API doesn't support both simultaneously).
         if isinstance(prompt, LLMRequest):
             request = prompt
         else:
-            request_args = {
-                "prompt": LLMUserMessage(content=prompt)
-                if isinstance(prompt, str)
-                else prompt,
+            prompt_msg = (
+                LLMUserMessage(content=prompt) if isinstance(prompt, str) else prompt
+            )
+            request_args: dict = {
+                "prompt": prompt_msg,
                 "history": history if history else [],
             }
             if system_prompt:
@@ -225,7 +232,7 @@ class LLMService:
                     request.id,
                 )
                 function_response = await self._execute_tool(
-                    result.response, self._config.tools
+                    result.response, self._tools
                 )
 
                 # Grow history with this turn, make function response the new prompt
@@ -248,7 +255,7 @@ class LLMService:
     async def _execute_tool(
         self, tool_call: LLMFunctionCall, tools_override: Optional[dict] = None
     ) -> LLMFunctionResponse:
-        tools = tools_override if tools_override is not None else self._config.tools
+        tools = tools_override if tools_override is not None else self._tools
         if tools is None or tool_call.name not in tools:
             logger.debug(
                 "Called tool '%s' for llm function callnot found in registry",

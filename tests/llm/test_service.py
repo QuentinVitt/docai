@@ -58,7 +58,7 @@ def _make_profile(provider_name="google") -> LLMProfileConfig:
     )
 
 
-def _make_config(profiles=None, tools=None) -> LLMConfig:
+def _make_config(profiles=None) -> LLMConfig:
     return LLMConfig(
         profiles=profiles or [],
         concurrency=LLMConcurrencyConfig(
@@ -67,7 +67,6 @@ def _make_config(profiles=None, tools=None) -> LLMConfig:
         ),
         retry=LLMRetryConfig(max_retries=3, retry_delay=0.1, max_validation_retries=2),
         cache=MagicMock(),
-        tools=tools,
     )
 
 
@@ -82,9 +81,11 @@ def make_service():
     LLMCache is patched so no disk I/O occurs."""
 
     def _make(num_connections=1, tools=None):
-        config = _make_config(tools=tools)
+        config = _make_config()
         with patch("docai.llm.service.LLMCache"):
             service = LLMService(config)
+
+        service._tools = tools
 
         model_config = LLMModelConfig(name="test-model")
         clients = []

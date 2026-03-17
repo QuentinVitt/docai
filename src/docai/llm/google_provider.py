@@ -50,9 +50,8 @@ class GoogleClient:
         for name, info in custom_tools.items():
             self._custom_tools[name] = types.FunctionDeclaration(**info["schema"])
 
-        # self._provider_tools = {
-        #     "search": types.Tool(google_search=types.GoogleSearch())
-        # }
+        self._provider_tools: dict[str, types.Tool] = {}
+        # Example: self._provider_tools["search"] = types.Tool(google_search=types.GoogleSearch())
 
         logger.debug("LLMClient for provider Google initialized")
 
@@ -106,8 +105,8 @@ class GoogleClient:
         if request.system_prompt is not None:
             generation["system_instruction"] = request.system_prompt
 
-        # configure structured output
-        if request.structured_output is not None:
+        # configure structured output (incompatible with function calling in Google API)
+        if request.structured_output is not None and not request.allowed_tools:
             generation["response_mime_type"] = "application/json"
             generation["response_json_schema"] = request.structured_output
 
@@ -141,6 +140,25 @@ class GoogleClient:
             content.append(_transform_content(request.prompt))
         except genai_errors.APIError as e:
             raise LLMError(607, f"Failed to transform content: {e}")
+
+        # Inject schema into user message when tools+structured_output are both set
+        # (Google API doesn't support response_mime_type + function calling simultaneously)
+        if (
+            request.allowed_tools
+            and request.structured_output is not None
+            and isinstance(request.prompt, LLMUserMessage)
+        ):
+            schema_instruction = (
+                "\n\nWhen done using tools, provide your final answer as valid JSON "
+                "(no markdown fences) matching this schema:\n"
+                "<output_schema>\n"
+                + json.dumps(request.structured_output, indent=2)
+                + "\n</output_schema>"
+            )
+            injected_prompt = LLMUserMessage(
+                content=request.prompt.content + schema_instruction
+            )
+            content[-1] = _transform_content(injected_prompt)
 
         try:
             response = await self._client.models.generate_content(
@@ -214,19 +232,10 @@ class GoogleClient:
                 )
 
         # if there was no function call check if there was a normal response:
-        if response.text and response.text:
-            if request.structured_output is not None:
-                try:
-                    content: str | dict = json.loads(response.text)
-                except json.JSONDecodeError as e:
-                    raise LLMError(
-                        611, f"Failed to parse structured response as JSON: {e}"
-                    )
-            else:
-                content = response.text
+        if response.text:
             return LLMResponse(
                 response=LLMAssistantMessage(
-                    content=content,
+                    content=response.text,
                     original_content=LLMOriginalContent(
                         provider="google", content=response.candidates[0].content
                     ),

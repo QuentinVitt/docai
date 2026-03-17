@@ -131,9 +131,7 @@ async def create_file_documentation(
             project_path,
             file,
             file_info,
-            entity_name,
-            entity_type,
-            entity_parent,
+            entity,
             llm,
             cache,
         )

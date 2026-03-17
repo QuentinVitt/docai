@@ -1,4 +1,5 @@
 import asyncio
+import json
 import random
 import re
 from logging import getLogger
@@ -50,48 +51,61 @@ async def _run(
             async with semaphore:
                 result = await client.generate(request, model_config)
 
-            # Validation retry loop (only for assistant message responses)
-            validator = request.response_validator
-            if (
-                isinstance(result.response, LLMAssistantMessage)
-                and validator is not None
-            ):
-                current_req = request
-                for v in range(retry_policy.max_validation_retries + 1):
-                    error = validator(result.response.content)  # type: ignore
-                    if error is None:
-                        break
-                    if v == retry_policy.max_validation_retries:
-                        logger.error(
-                            "Validation exhausted for request %s after %d retries: %s",
+            # Validation retry loop: parse JSON + run validator, feeding errors back
+            if isinstance(result.response, LLMAssistantMessage):
+                validator = request.response_validator
+                needs_json = (
+                    request.structured_output is not None
+                    and isinstance(result.response.content, str)
+                )
+                if needs_json or validator is not None:
+                    current_req = request
+                    for v in range(retry_policy.max_validation_retries + 1):
+                        # Step 1: parse JSON if needed
+                        error: str | None = None
+                        if (
+                            request.structured_output is not None
+                            and isinstance(result.response.content, str)
+                        ):
+                            result, error = _parse_structured_response(result)
+
+                        # Step 2: run validator if JSON parsed successfully
+                        if error is None and validator is not None:
+                            error = validator(result.response.content)
+
+                        if error is None:
+                            break
+                        if v == retry_policy.max_validation_retries:
+                            logger.error(
+                                "Validation exhausted for request %s after %d retries: %s",
+                                request.id,
+                                retry_policy.max_validation_retries,
+                                error,
+                            )
+                            raise LLMError(
+                                613,
+                                f"Validation failed after {retry_policy.max_validation_retries} retries for request {request.id}: {error}",
+                            )
+                        logger.warning(
+                            "Validation retry %d for request %s: %s",
+                            v + 1,
                             request.id,
-                            retry_policy.max_validation_retries,
                             error,
                         )
-                        raise LLMError(
-                            613,
-                            f"Validation failed after {retry_policy.max_validation_retries} retries for request {request.id}: {error}",
+                        current_req = LLMRequest(
+                            prompt=LLMUserMessage(
+                                content=f"Your previous response was invalid. Fix the following issue and try again: {error}"
+                            ),
+                            system_prompt=current_req.system_prompt,
+                            history=list(current_req.history)
+                            + [current_req.prompt, result.response],
+                            allowed_tools=current_req.allowed_tools,
+                            structured_output=current_req.structured_output,
+                            id=current_req.id,
+                            response_validator=current_req.response_validator,
                         )
-                    logger.warning(
-                        "Validation retry %d for request %s: %s",
-                        v + 1,
-                        request.id,
-                        error,
-                    )
-                    current_req = LLMRequest(
-                        prompt=LLMUserMessage(
-                            content=f"Your previous response was invalid. Fix the following issue and try again: {error}"
-                        ),
-                        system_prompt=current_req.system_prompt,
-                        history=list(current_req.history)
-                        + [current_req.prompt, result.response],
-                        allowed_tools=current_req.allowed_tools,
-                        structured_output=current_req.structured_output,
-                        id=current_req.id,
-                        response_validator=current_req.response_validator,
-                    )
-                    async with semaphore:
-                        result = await client.generate(current_req, model_config)
+                        async with semaphore:
+                            result = await client.generate(current_req, model_config)
 
             return result
         except LLMError as e:
@@ -133,6 +147,33 @@ async def _run(
         611,
         f"Failed to generate result for llm for request: {request.id}. All tries failed",
     )
+
+
+def _parse_structured_response(result: LLMResponse) -> tuple[LLMResponse, str | None]:
+    """Parse JSON from a text response.
+
+    Returns (new_response, None) on success, or (original_response, error_msg) on failure.
+    """
+    assert isinstance(result.response, LLMAssistantMessage)
+    text = result.response.content
+    assert isinstance(text, str)
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        # Strip markdown fences and retry
+        stripped = re.sub(r"^```(?:json)?\s*\n?", "", text.strip())
+        stripped = re.sub(r"\n?```\s*$", "", stripped)
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError as e:
+            return result, f"Response is not valid JSON: {e}"
+    return LLMResponse(
+        response=LLMAssistantMessage(
+            content=parsed,
+            original_content=result.response.original_content,
+        ),
+        id=result.id,
+    ), None
 
 
 def _status_code_matches(patterns: list[str], status_code: int) -> bool:

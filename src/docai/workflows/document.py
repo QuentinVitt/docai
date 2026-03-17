@@ -8,9 +8,14 @@ from docai.deps.base import (
     create_dependencies_topologically_sorted,
     set_files_dependencies,
 )
-from docai.documentation.base import identify_entities, set_file_doc_type
+from docai.documentation.base import (
+    create_file_documentation,
+    identify_entities,
+    set_file_doc_type,
+)
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import FileDocType
+from docai.llm.agent_tools import make_tool_registry
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_type
@@ -21,18 +26,19 @@ logger = logging.getLogger(__name__)
 
 async def run(config: Config):
     logger.info("Documenting %s", config.project_config.working_dir)
-    # 0.1 set up llm service
+    # 0.1 set up documentation cache
+    cache = DocumentationCache(
+        config.project_config.documentation_cache, config.project_config.working_dir
+    )
+
+    # 0.2 create tool registry and llm service
+    tool_registry = make_tool_registry(config.project_config.working_dir, cache)
     try:
-        llm: LLMService = await LLMService.create(config.llm_config)
+        llm: LLMService = await LLMService.create(config.llm_config, tool_registry)
     except LLMError as e:
         logger.error("Could not initialize LLM service: %s", e)
         return
     logger.debug("LLM service initialized successfully")
-
-    # 0.2 set up documentation cache
-    cache = DocumentationCache(
-        config.project_config.documentation_cache, config.project_config.working_dir
-    )
 
     # 1. get all the information about the files
 
@@ -121,18 +127,26 @@ async def run(config: Config):
     # A directory is a package if it has documentable files or multiple child packages.
     # Single-child ancestors with no own files are passthroughs — skip them.
     packages = {
-        d for d in all_dirs
-        if d in dirs_with_files or direct_child_count.get(d, 0) > 1
+        d for d in all_dirs if d in dirs_with_files or direct_child_count.get(d, 0) > 1
     }
 
     total_packages = len(packages)
 
     # 2.4 document entities and files for each project file
 
-
     for file_set in dependencies_topologically_sorted:
-        ...
-
+        await asyncio.gather(
+            *[
+                create_file_documentation(
+                    config.project_config.working_dir,
+                    file,
+                    project_files_info[file],
+                    llm,
+                    cache,
+                )
+                for file in file_set
+            ]
+        )
 
     return
 

@@ -6,7 +6,6 @@ from importlib import resources
 import yaml
 
 import docai.config.datatypes as dt
-from docai.llm.agent_tools import make_tool_registry
 
 LOG_CONFIG_PACKAGE = "docai.config"
 LOG_CONFIG_FILE = "logging_config.yaml"
@@ -304,15 +303,11 @@ def build_llm_config(args: argparse.Namespace, project_dir: str):
         ),
     )
 
-    # set up tools
-    tool_registry = make_tool_registry(project_dir)
-
     return dt.LLMConfig(
         profiles=connections,
         concurrency=concurrency_config,
         retry=retry_config,
         cache=cache_config,
-        tools=tool_registry,
     )
 
 

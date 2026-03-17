@@ -65,7 +65,6 @@ class LLMConfig:
     concurrency: LLMConcurrencyConfig
     retry: LLMRetryConfig
     cache: LLMCacheConfig
-    tools: Optional[dict[str, dict]] = None
 
 
 # ---------------------------------------------------------------------------
