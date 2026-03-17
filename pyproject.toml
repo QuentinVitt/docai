@@ -11,6 +11,7 @@ dependencies = [
     "logging>=0.4.9.6",
     "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
+    "rich-progress>=0.4.0",
 ]
 
 [project.scripts]

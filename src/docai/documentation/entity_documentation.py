@@ -7,6 +7,7 @@ from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import (
     Attribute,
     DocItem,
+    DocItemRef,
     DocItemType,
     FileDocType,
     Parameter,
@@ -216,12 +217,10 @@ def _build_doc_context(
         if file_doc is None:
             continue
         section_lines = [str(file_doc)]
-        for item in file_doc.items:
-            if item.name not in file_content:
+        for entity in file_doc.items:
+            if entity.name not in file_content:
                 continue
-            entity_doc = cache.get_entity_documentation(
-                dep, item.name, item.type, item.parent
-            )
+            entity_doc = cache.get_entity_documentation(dep, entity)
             if entity_doc is not None:
                 section_lines.append(str(entity_doc))
         sections.append("\n".join(section_lines))
@@ -304,24 +303,22 @@ async def _document_code_callable(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     doc_context: str,
     llm: LLMService,
     tool_registry: dict,
 ) -> DocItem:
     file_type = file_info.get("file_type", "unknown")
     lang = _lang(file_type)
-    kind = "method" if entity_parent else "function"
-    parent_line = f"Class: {entity_parent}\n" if entity_parent else ""
+    kind = "method" if entity.parent else "function"
+    parent_line = f"Class: {entity.parent}\n" if entity.parent else ""
     file_content = get_file_content(project_path, file)
 
     prompt = f"""\
 Document the following {kind}.
 
 <entity>
-Name: {entity_name}
+Name: {entity.name}
 {parent_line}File: {file} ({lang})
 </entity>
 
@@ -348,9 +345,9 @@ If you need to look up how this function is called or used elsewhere, use the av
     )
     assert isinstance(result, dict)
     return DocItem(
-        name=entity_name,
-        type=entity_type,
-        parent=entity_parent,
+        name=entity.name,
+        type=entity.type,
+        parent=entity.parent,
         description=result["description"],
         parameters=[Parameter(**p) for p in result.get("parameters", [])],
         returns=ReturnValue(**result["returns"]) if result.get("returns") else None,
@@ -363,9 +360,7 @@ async def _document_code_class(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     doc_context: str,
     llm: LLMService,
     tool_registry: dict,
@@ -378,7 +373,7 @@ async def _document_code_class(
 Document the following class.
 
 <entity>
-Name: {entity_name}
+Name: {entity.name}
 File: {file} ({lang})
 </entity>
 
@@ -404,9 +399,9 @@ implemented (e.g. __init__, __repr__). If you need additional context, use the a
     )
     assert isinstance(result, dict)
     return DocItem(
-        name=entity_name,
-        type=entity_type,
-        parent=entity_parent,
+        name=entity.name,
+        type=entity.type,
+        parent=entity.parent,
         description=result["description"],
         attributes=[Attribute(**a) for a in result.get("attributes", [])],
         dunder_methods=result.get("dunder_methods", []),
@@ -417,9 +412,7 @@ async def _document_code_datatype(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     doc_context: str,
     llm: LLMService,
     tool_registry: dict,
@@ -432,7 +425,7 @@ async def _document_code_datatype(
 Document the following datatype.
 
 <entity>
-Name: {entity_name}
+Name: {entity.name}
 File: {file} ({lang})
 </entity>
 
@@ -458,9 +451,9 @@ If you need additional context, use the available tools."""
     )
     assert isinstance(result, dict)
     return DocItem(
-        name=entity_name,
-        type=entity_type,
-        parent=entity_parent,
+        name=entity.name,
+        type=entity.type,
+        parent=entity.parent,
         description=result["description"],
         attributes=[Attribute(**a) for a in result.get("attributes", [])],
     )
@@ -470,9 +463,7 @@ async def _document_code_constant(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     doc_context: str,
     llm: LLMService,
     tool_registry: dict,
@@ -485,7 +476,7 @@ async def _document_code_constant(
 Document the following module-level constant.
 
 <entity>
-Name: {entity_name}
+Name: {entity.name}
 File: {file} ({lang})
 </entity>
 
@@ -494,6 +485,10 @@ File: {file} ({lang})
 {file_content}
 ```
 </file_content>
+
+<dependency_context>
+{doc_context}
+</dependency_context>
 
 Provide a concise description of the constant's purpose and semantics."""
 
@@ -506,9 +501,9 @@ Provide a concise description of the constant's purpose and semantics."""
     )
     assert isinstance(result, dict)
     return DocItem(
-        name=entity_name,
-        type=entity_type,
-        parent=entity_parent,
+        name=entity.name,
+        type=entity.type,
+        parent=entity.parent,
         description=result["description"],
     )
 
@@ -517,9 +512,7 @@ async def _document_config_section(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     doc_context: str,
     llm: LLMService,
     tool_registry: dict,
@@ -530,7 +523,7 @@ async def _document_config_section(
 Document the following configuration section.
 
 <entity>
-Name: {entity_name}
+Name: {entity.name}
 File: {file}
 </entity>
 
@@ -549,9 +542,9 @@ Provide a concise description of what this section controls."""
     )
     assert isinstance(result, dict)
     return DocItem(
-        name=entity_name,
-        type=entity_type,
-        parent=entity_parent,
+        name=entity.name,
+        type=entity.type,
+        parent=entity.parent,
         description=result["description"],
     )
 
@@ -560,9 +553,7 @@ async def _document_config_key(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     doc_context: str,
     llm: LLMService,
     tool_registry: dict,
@@ -572,12 +563,12 @@ async def _document_config_key(
     except Exception:
         file_content = "(unavailable)"
 
-    parent_line = f"Section: {entity_parent}\n" if entity_parent else ""
+    parent_line = f"Section: {entity.parent}\n" if entity.parent else ""
     prompt = f"""\
 Document the following configuration key.
 
 <entity>
-Name: {entity_name}
+Name: {entity.name}
 {parent_line}File: {file}
 </entity>
 
@@ -601,9 +592,9 @@ Provide: description, the type of value accepted, and the default value if one e
     if result.get("default") is not None:
         description += f" (default: {result['default']})"
     return DocItem(
-        name=entity_name,
-        type=entity_type,
-        parent=entity_parent,
+        name=entity.name,
+        type=entity.type,
+        parent=entity.parent,
         description=description,
     )
 
@@ -617,9 +608,7 @@ async def document_entity(
     project_path: str,
     file: str,
     file_info: dict,
-    entity_name: str,
-    entity_type: DocItemType,
-    entity_parent: Optional[str],
+    entity: DocItemRef,
     llm: LLMService,
     cache: DocumentationCache,
 ) -> DocItem:
@@ -628,11 +617,9 @@ async def document_entity(
     Returns the cached DocItem if one already exists, otherwise calls the LLM
     and stores the result before returning.
     """
-    cached = cache.get_entity_documentation(
-        file, entity_name, entity_type, entity_parent
-    )
+    cached = cache.get_entity_documentation(file, entity)
     if cached is not None:
-        logger.debug("Entity %s/%s found in cache", file, entity_name)
+        logger.debug("Entity %s/%s found in cache", file, entity.name)
         return cached
 
     file_doc_type = file_info.get("file_doc_type")
@@ -644,15 +631,13 @@ async def document_entity(
         project_path,
         file,
         file_info,
-        entity_name,
-        entity_type,
-        entity_parent,
+        entity,
         doc_context,
         llm,
         tool_registry,
     )
 
-    match file_doc_type, entity_type:
+    match file_doc_type, entity.type:
         case FileDocType.CODE, DocItemType.FUNCTION | DocItemType.METHOD:
             doc_item = await _document_code_callable(*args)
         case FileDocType.CODE, DocItemType.CLASS:
@@ -669,15 +654,13 @@ async def document_entity(
             logger.error(
                 "Unsupported combination: file_type=%s, entity_type=%s",
                 file_doc_type,
-                entity_type.value,
+                entity.type.value,
             )
             raise ValueError(
                 f"Unsupported combination: file_type={file_doc_type}, "
-                f"entity_type={entity_type.value!r}"
+                f"entity_type={entity.type.value!r}"
             )
 
-    cache.set_entity_documentation(
-        file, entity_name, entity_type, entity_parent, doc_item
-    )
-    logger.debug("Documented entity %s/%s", file, entity_name)
+    cache.set_entity_documentation(file, entity, doc_item)
+    logger.debug("Documented entity %s/%s", file, entity.name)
     return doc_item

@@ -125,19 +125,8 @@ async def create_file_documentation(
     # - get project structure/tree
     # - get file/function/method/etc. documentation when available
 
-    # 1. Identify doc file type
-    file_type = file_info.get("file_type", "unknown")
-    file_info["file_doc_type"] = file_type_map.get(file_type)
-
-    # 2. Get entities from the file
-    entities: list[tuple[str, DocItemType, str | None]] = await get_entities(
-        project_path, file, file_info, llm
-    )
-
-    file_info["entities"] = entities
-
     # 3. Generate documentation for each entity
-    for entity_name, entity_type, entity_parent in entities:
+    for entity in file_info["entities"]:
         doc_item = await document_entity(
             project_path,
             file,
