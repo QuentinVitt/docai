@@ -381,56 +381,6 @@ async def test_generate_bypass_cache_forwarded(mock_run, make_service):
 
 
 # ---------------------------------------------------------------------------
-# generate_batch()
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.asyncio
-@patch("docai.llm.service.run", new_callable=AsyncMock)
-async def test_generate_batch_all_succeed(mock_run, make_service):
-    service, _, _ = make_service()
-    responses = [_make_assistant_response(f"r{i}") for i in range(3)]
-    mock_run.side_effect = responses
-    requests = [LLMRequest(prompt=LLMUserMessage(content=f"q{i}")) for i in range(3)]
-
-    results = await service.generate_batch(requests)
-
-    assert len(results) == 3
-    assert all(isinstance(r, tuple) for r in results)
-    assert [r[0] for r in results] == ["r0", "r1", "r2"]
-
-
-@pytest.mark.asyncio
-@patch("docai.llm.service.run", new_callable=AsyncMock)
-async def test_generate_batch_partial_failure(mock_run, make_service):
-    service, _, _ = make_service()
-    mock_run.side_effect = [
-        _make_assistant_response("r0"),
-        LLMError(500, "server error"),
-        _make_assistant_response("r2"),
-    ]
-    requests = [LLMRequest(prompt=LLMUserMessage(content=f"q{i}")) for i in range(3)]
-
-    results = await service.generate_batch(requests)
-
-    assert len(results) == 3
-    assert isinstance(results[0], tuple) and results[0][0] == "r0"
-    assert isinstance(results[1], LLMError)  # LLMError(610) from connection exhaustion
-    assert isinstance(results[2], tuple) and results[2][0] == "r2"
-
-
-@pytest.mark.asyncio
-@patch("docai.llm.service.run", new_callable=AsyncMock)
-async def test_generate_batch_empty_list(mock_run, make_service):
-    service, _, _ = make_service()
-
-    results = await service.generate_batch([])
-
-    assert results == []
-    mock_run.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
 # generate_agent() — prompt building
 # ---------------------------------------------------------------------------
 

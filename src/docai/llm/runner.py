@@ -54,9 +54,8 @@ async def _run(
             # Validation retry loop: parse JSON + run validator, feeding errors back
             if isinstance(result.response, LLMAssistantMessage):
                 validator = request.response_validator
-                needs_json = (
-                    request.structured_output is not None
-                    and isinstance(result.response.content, str)
+                needs_json = request.structured_output is not None and isinstance(
+                    result.response.content, str
                 )
                 if needs_json or validator is not None:
                     current_req = request
@@ -65,13 +64,13 @@ async def _run(
                         error: str | None = None
                         if (
                             request.structured_output is not None
-                            and isinstance(result.response.content, str)
+                            and isinstance(result.response.content, str)  # type: ignore
                         ):
                             result, error = _parse_structured_response(result)
 
                         # Step 2: run validator if JSON parsed successfully
                         if error is None and validator is not None:
-                            error = validator(result.response.content)
+                            error = validator(result.response.content)  # type: ignore
 
                         if error is None:
                             break

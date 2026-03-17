@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from logging import getLogger
-from typing import Awaitable, Callable, Optional
+from typing import Callable, Optional
 
 from docai.config.datatypes import LLMConfig, LLMModelConfig
 from docai.llm.cache import LLMCache
@@ -30,6 +30,9 @@ class LLMService:
 
         # set up cache
         self._cache = LLMCache(self._config.cache)
+
+        # set up tools
+        self._tools: Optional[dict[str, dict]] = None
 
     @classmethod
     async def create(

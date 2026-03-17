@@ -1,7 +1,10 @@
+import asyncio
+
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import DocItemRef, DocItemType, FileDocType
 from docai.documentation.entity_documentation import document_entity
 from docai.documentation.entity_extraction import get_entities
+from docai.documentation.file_documentation import document_file
 from docai.llm.service import LLMService
 
 file_type_map: dict[str, FileDocType] = {
@@ -116,26 +119,13 @@ async def identify_entities(
 async def create_file_documentation(
     project_path, file: str, file_info: dict, llm: LLMService, cache: DocumentationCache
 ):
-    # Agent tasks:
-    # 1. Identify all entities in the file
-    # 2. For each entity: generate documentation
-    # 3. generate documentation for the file
-    # Agent abilities:
-    # - read files
-    # - get project structure/tree
-    # - get file/function/method/etc. documentation when available
+    # 1. Document all entities in parallel
+    await asyncio.gather(
+        *[
+            document_entity(project_path, file, file_info, entity, llm, cache)
+            for entity in file_info["entities"]
+        ]
+    )
 
-    # 3. Generate documentation for each entity
-    for entity in file_info["entities"]:
-        doc_item = await document_entity(
-            project_path,
-            file,
-            file_info,
-            entity,
-            llm,
-            cache,
-        )
-        print(doc_item)
-    return
-
-    # 4. Generate documentation for the file
+    # 2. Document the file itself
+    await document_file(project_path, file, file_info, llm, cache)
