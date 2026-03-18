@@ -183,7 +183,7 @@ class DiskCache:
                 f"The maximum llm disk cache size can't be negative: {self.max_disk_size}"
             )
             raise ValueError(
-                f"The maximum llm diskcache size can't be negative: {self.max_disk_size}"
+                f"The maximum llm disk cache size can't be negative: {self.max_disk_size}"
             )
 
         # Directory Setup
@@ -446,12 +446,6 @@ class LLMCache:
         self.disk_cache.put(
             request_hash, model_config_hash, model_config, response.response
         )
-        logger.debug(
-            "LLM cache for request id: %s, put: request_hash=%s, model_config_hash=%s",
-            request.id,
-            request_hash,
-            model_config_hash,
-        )
 
     def get(
         self, request: LLMRequest, model_config: LLMModelConfig
@@ -474,12 +468,6 @@ class LLMCache:
                 )
 
         if response:
-            logger.debug(
-                "LLM cache for request id: %s, hit: request_hash=%s, model_config_hash=%s",
-                request.id,
-                request_hash,
-                model_config_hash,
-            )
             return LLMResponse(response=response, id=request.id)
         return None
 

@@ -95,7 +95,9 @@ def _render_file(file_doc: FileDoc, entity_docs: list[DocItem]) -> str:
     for t in order:
         group = [d for d in entity_docs if d.type == t]
         if group:
-            sections[t.value.capitalize() + ("s" if not t.value.endswith("s") else "")] = group
+            sections[
+                t.value.capitalize() + ("s" if not t.value.endswith("s") else "")
+            ] = group
 
     for section_title, items in sections.items():
         lines.append("")
@@ -185,7 +187,10 @@ def write_markdown_docs(
     project_doc = cache.get_project_documentation(project_name)
     if project_doc is not None:
         top_level_packages = [p for p in packages if os.path.dirname(p) not in packages]
-        _write(os.path.join(output_dir, "project.md"), _render_project(project_doc, top_level_packages))
+        _write(
+            os.path.join(output_dir, "project.md"),
+            _render_project(project_doc, top_level_packages),
+        )
 
     # Write package.md for each package
     for pkg_path, _pkg_info in packages.items():
@@ -194,7 +199,10 @@ def write_markdown_docs(
             continue
         pkg_out_dir = os.path.join(output_dir, pkg_path)
         os.makedirs(pkg_out_dir, exist_ok=True)
-        _write(os.path.join(pkg_out_dir, "package.md"), _render_package(pkg_doc, output_dir))
+        _write(
+            os.path.join(pkg_out_dir, "package.md"),
+            _render_package(pkg_doc, output_dir),
+        )
 
     # Write {stem}.md for each documented file
     for file_path, file_info in project_files_info.items():

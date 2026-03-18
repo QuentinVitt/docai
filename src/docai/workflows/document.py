@@ -1,8 +1,10 @@
 import asyncio
-import json
 import logging
 import os
 from collections import defaultdict
+from time import sleep
+
+from rich.console import Console
 
 from docai.config.datatypes import Config
 from docai.deps.base import (
@@ -26,59 +28,70 @@ from docai.scanning.file_infos import get_file_type
 from docai.scanning.project_infos import get_project_files
 
 logger = logging.getLogger(__name__)
+console = Console()
 
 
 async def run(config: Config):
     logger.info("Documenting %s", config.project_config.working_dir)
-    # 0.1 set up documentation cache
-    cache = DocumentationCache(
-        config.project_config.documentation_cache, config.project_config.working_dir
-    )
+    with console.status("[bold dark_orange]Setting up documentation ..."):
+        # 0.1 set up documentation cache
+        try:
+            cache = DocumentationCache(
+                config.project_config.documentation_cache,
+                config.project_config.working_dir,
+            )
+        except Exception as e:
+            logger.critical("Could not initialize documentation cache: %s", e)
+            return
 
-    # 0.2 create tool registry and llm service
-    tool_registry = make_tool_registry(config.project_config.working_dir, cache)
-    try:
-        llm: LLMService = await LLMService.create(config.llm_config, tool_registry)
-    except LLMError as e:
-        logger.error("Could not initialize LLM service: %s", e)
-        return
-    logger.debug("LLM service initialized successfully")
+        logger.debug("Documentation cache setup successfully")
 
-    # 1. get all the information about the files
+        # 0.2 create tool registry and llm service
+        tool_registry = make_tool_registry(config.project_config.working_dir, cache)
+        try:
+            llm: LLMService = await LLMService.create(config.llm_config, tool_registry)
+        except LLMError as e:
+            logger.critical("Could not initialize LLM service: %s", e)
+            return
 
-    # 1.1 get all project files
-    project_files = get_project_files(config.project_config.working_dir)
+        logger.debug("LLM service setup successfully")
+        sleep(1)
 
-    # 1.2 get file type and doc type for each project file
-    project_files_info: dict[str, dict] = {
-        file: {"file_type": get_file_type(config.project_config.working_dir, file)}
-        for file in project_files
-    }
-    for file_info in project_files_info.values():
-        set_file_doc_type(file_info)
+    logger.info("Setup finished")
 
-    # 1.3 get file dependencies for each project file (skip binary/skipped files)
-    await set_files_dependencies(
-        config.project_config.working_dir, project_files_info, llm
-    )
+    return
 
-    # 1.4 build dependency graph
-    dependencies_topologically_sorted = create_dependencies_topologically_sorted(
-        project_files_info
-    )
+    with console.status("[bold dark_orange]Gathering project information ..."):
+        # 1. get all the information about the files
+
+        # 1.1 get all project files
+        project_files = get_project_files(config.project_config.working_dir)
+
+        # 1.2 get file type and doc type for each project file
+        project_files_info: dict[str, dict] = {
+            file: {"file_type": get_file_type(config.project_config.working_dir, file)}
+            for file in project_files
+        }
+        for file_info in project_files_info.values():
+            set_file_doc_type(file_info)
+
+        # 1.3 get file dependencies for each project file (skip binary/skipped files)
+        await set_files_dependencies(
+            config.project_config.working_dir, project_files_info, llm
+        )
+
+        # 1.4 build dependency graph
+        dependencies_topologically_sorted = create_dependencies_topologically_sorted(
+            project_files_info
+        )
 
     logger.info(
-        "Analyzed %d files across %d dependency levels",
+        "Project information gathered successfully: %d files across %d dependency levels",
         len(project_files),
         len(dependencies_topologically_sorted),
     )
 
-    def default(obj):
-        return str(obj)  # or list(obj) if order doesn't matter
-
-    # 2. Create documentation objects
-
-    # 2.2 extract entities from each project file
+    return
 
     await asyncio.gather(
         *[
@@ -109,7 +122,10 @@ async def run(config: Config):
     # directories that directly contain at least one documentable file
     dirs_with_files: set[str] = set()
     for file, file_info in project_files_info.items():
-        if file_info.get("file_doc_type") not in (None, FileDocType.SKIPPED):
+        if file_info.get("file_doc_type") not in (
+            None,
+            FileDocType.SKIPPED,
+        ):
             parent = os.path.dirname(file)
             if parent:
                 dirs_with_files.add(parent)
@@ -117,7 +133,7 @@ async def run(config: Config):
     # Pass 1: collect all candidate directories (leaf packages + all ancestors)
     all_dirs: set[str] = set()
     for d in dirs_with_files:
-        while d:
+        while d and d not in all_dirs and d != config.project_config.working_dir:
             all_dirs.add(d)
             d = os.path.dirname(d)
 
@@ -145,13 +161,25 @@ async def run(config: Config):
         ):
             packages[parent]["files"].append(file)
 
-    # Populate direct sub-packages
+    # Populate direct sub-packages (walk up past passthrough dirs to find nearest ancestor)
     for pkg_path in packages:
-        parent = os.path.dirname(pkg_path)
-        if parent in packages:
-            packages[parent]["sub_packages"].append(pkg_path)
+        ancestor = os.path.dirname(pkg_path)
+        while ancestor and ancestor not in packages:
+            ancestor = os.path.dirname(ancestor)
+        if ancestor in packages:
+            packages[ancestor]["sub_packages"].append(pkg_path)
 
     total_packages = len(packages)
+
+    logger.info(
+        "Identified %d entities across %d files and %d packages",
+        total_entities,
+        total_files,
+        total_packages,
+    )
+    # 2. Create documentation objects
+
+    # 2.2 extract entities from each project file
 
     # 2.4 document entities and files for each project file
 
@@ -199,6 +227,11 @@ async def run(config: Config):
         cache,
     )
 
+    logger.info(
+        "Project documentation generated successfully - writing documentation to %s",
+        os.path.join(config.project_config.working_dir, "docs"),
+    )
+
     # 3. write the documentation in human readable format
     write_markdown_docs(
         config.project_config.working_dir,
@@ -208,4 +241,5 @@ async def run(config: Config):
         cache,
     )
 
+    logger.info("Documentation written successfully")
     return

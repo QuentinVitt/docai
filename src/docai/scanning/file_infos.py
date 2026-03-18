@@ -15,15 +15,13 @@ def get_file_type(project_path: str, path: str) -> str | None:
 
     _, file_extension = os.path.splitext(file)
     if file_extension != "":
-        logger.debug("File type of '%s' identified via extension", file)
         return file_extension[1:]
 
     kind = filetype.guess(file)
     if kind is not None:
-        logger.debug("File type of '%s' identified via magic numbers", file)
         return kind.extension
 
-    logger.debug("File type of '%s' could not be determined", file)
+    logger.warning("File type of '%s' could not be determined", file)
     return None
 
 

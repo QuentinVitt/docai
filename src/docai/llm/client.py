@@ -34,7 +34,7 @@ async def create_client(
         case "google":
             return await GoogleClient.create(config, tools)
         case _:
-            logger.error("Provider '%s' is not supported", config.name)
+            logger.error("LLM Provider '%s' is not supported", config.name)
             raise LLMError(
                 600,
                 f"Provider in LLMClient initialization not found: {config.name}",

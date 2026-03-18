@@ -1,7 +1,7 @@
 import asyncio
 
 from docai.documentation.cache import DocumentationCache
-from docai.documentation.datatypes import DocItemRef, DocItemType, FileDocType
+from docai.documentation.datatypes import DocItemRef, FileDocType
 from docai.documentation.entity_documentation import document_entity
 from docai.documentation.entity_extraction import get_entities
 from docai.documentation.file_documentation import document_file

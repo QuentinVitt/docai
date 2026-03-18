@@ -229,8 +229,7 @@ async def test_generate_internal_bypass_cache_forwarded(mock_run, make_service):
     request = LLMRequest(prompt=LLMUserMessage(content="test"))
     await service._generate(clients[0], model_config, request, bypass_cache=True)
 
-    # bypass_cache passed as 7th positional arg
-    assert mock_run.call_args.args[6] is True
+    assert mock_run.call_args.kwargs.get("bypass_cache") is True
 
 
 # ---------------------------------------------------------------------------
@@ -377,7 +376,7 @@ async def test_generate_bypass_cache_forwarded(mock_run, make_service):
 
     await service.generate("hello", bypass_cache=True)
 
-    assert mock_run.call_args.args[6] is True
+    assert mock_run.call_args.kwargs.get("bypass_cache") is True
 
 
 # ---------------------------------------------------------------------------

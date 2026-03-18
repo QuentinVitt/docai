@@ -20,6 +20,7 @@ from docai.llm.datatypes import (
     LLMProviderMessage,
     LLMRequest,
     LLMResponse,
+    LLMSystemMessage,
     LLMUserMessage,
 )
 from docai.llm.errors import LLMClientError, LLMError, LLMServerError
@@ -55,8 +56,6 @@ class GoogleClient:
         self._provider_tools: dict[str, types.Tool] = {}
         # Example: self._provider_tools["search"] = types.Tool(google_search=types.GoogleSearch())
 
-        logger.debug("LLMClient for provider Google initialized")
-
     async def _validate(self) -> None:
         """
         Performs a lightweight API call to validate the provided credentials.
@@ -70,7 +69,6 @@ class GoogleClient:
             # Get the async iterator for models and try to pull the first item.
             # This is a lightweight way to validate credentials and connectivity.
             await self._client.models.list()
-            logger.debug("Google API credentials are valid.")
         except genai_errors.APIError as e:
             if 400 <= e.code < 500:
                 raise LLMClientError(e.code, e.message)
@@ -92,11 +90,9 @@ class GoogleClient:
 
     async def close(self) -> None:
         if self._closed:
-            logger.debug("Google client already closed")
             return
         await self._client.aclose()
         self._closed = True
-        logger.debug("Google client closed")
 
     async def generate(
         self, request: LLMRequest, config: LLMModelConfig
@@ -123,11 +119,6 @@ class GoogleClient:
                 elif tool in self._provider_tools:
                     tools.append(self._provider_tools[tool])
                 else:
-                    logger.error(
-                        "Tool '%s' from allowed_tools not found in for request %s",
-                        tool,
-                        request.id,
-                    )
                     raise LLMError(606, f"Tool '{tool}' not found")
 
             if funcs:
@@ -170,29 +161,12 @@ class GoogleClient:
             )
         except genai_errors.APIError as e:
             if 400 <= e.code < 500:
-                logger.error(
-                    "Google API client error for request %s (code %s): %s",
-                    request.id,
-                    e.code,
-                    str(e),
-                )
                 raise LLMClientError(e.code, e.message if e.message else "")
             if 500 <= e.code < 600:
-                logger.error(
-                    "Google API server error for request %s (code %s): %s",
-                    request.id,
-                    e.code,
-                    str(e),
-                )
                 raise LLMServerError(e.code, e.message if e.message else "")
             raise LLMError(e.code, e.message if e.message else "")
 
         except Exception as e:
-            logger.exception(
-                "Unexpected error during Google call for request %s: %s",
-                request.id,
-                str(e),
-            )
             raise LLMError(601, str(e))
 
         # check if there is a content:
@@ -201,7 +175,6 @@ class GoogleClient:
             or not response.candidates
             or not response.candidates[0]
         ):
-            logger.error("No content returned from Google API")
             raise LLMError(603, "No content returned from Google API")
 
         # check if there was a function call:
@@ -213,7 +186,10 @@ class GoogleClient:
             for fc in response.function_calls:
                 if not fc.name:
                     raise LLMError(603, "No function name returned from Google API")
-                if request.allowed_tools is None or fc.name not in request.allowed_tools:
+                if (
+                    request.allowed_tools is None
+                    or fc.name not in request.allowed_tools
+                ):
                     raise LLMError(603, f"Function call not allowed: {fc.name}")
                 calls.append(
                     LLMFunctionCall(
@@ -228,7 +204,7 @@ class GoogleClient:
 
             return LLMResponse(
                 response=LLMFunctionCallBatch(
-                    calls=tuple(calls),
+                    calls=calls,
                     original_content=original_content,
                 ),
                 id=request.id,
@@ -246,13 +222,8 @@ class GoogleClient:
                 id=request.id,
             )
 
-        logger.error(
-            "Response for request %s did not contain any text content: %s",
-            request.id,
-            str(response),
-        )
         raise LLMError(
-            603, "response didn't contain any content.\nResponse: " + str(response)
+            603, "LLM response didn't contain any content.\nResponse: " + str(response)
         )
 
 
@@ -273,6 +244,9 @@ def _transform_content(content: LLMMessage) -> types.Content:
         case LLMUserMessage(content=c):
             return types.UserContent(parts=[types.Part.from_text(text=c)])
 
+        case LLMSystemMessage(content=c):
+            return types.UserContent(parts=[types.Part.from_text(text=c)])
+
         case LLMAssistantMessage(content=c):
             return types.Content(
                 role="model",
@@ -289,17 +263,29 @@ def _transform_content(content: LLMMessage) -> types.Content:
                 ]
             )
 
+        case LLMFunctionCallBatch(calls=calls):
+            return types.ModelContent(
+                parts=[
+                    types.Part.from_function_call(name=c.name, args=c.arguments)
+                    for c in calls
+                ]
+            )
+
         case LLMFunctionResponse(call=call, response=response):
             return types.Content(
                 role="user",
-                parts=[types.Part.from_function_response(name=call.name, response=response)],
+                parts=[
+                    types.Part.from_function_response(name=call.name, response=response)
+                ],
             )
 
         case LLMFunctionResponseBatch(responses=responses):
             return types.Content(
                 role="user",
                 parts=[
-                    types.Part.from_function_response(name=r.call.name, response=r.response)
+                    types.Part.from_function_response(
+                        name=r.call.name, response=r.response
+                    )
                     for r in responses
                 ],
             )

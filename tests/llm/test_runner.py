@@ -166,7 +166,7 @@ async def test_run_internal_max_retries_exceeded(
         await _run(client, mock_request, mock_model_config, retry_policy, semaphore)
 
     assert exc_info.value.status_code == 611
-    assert "All tries failed" in exc_info.value.response  # type: ignore
+    assert "attempts failed" in exc_info.value.response  # type: ignore
     assert client.generate.call_count == 3
     assert mock_sleep.call_count == 3
 

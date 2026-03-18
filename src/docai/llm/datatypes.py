@@ -48,6 +48,16 @@ class LLMUserMessage(LLMInternalMessage):
 
 
 @dataclass(frozen=True)
+class LLMSystemMessage(LLMInternalMessage):
+    """Internal system feedback (validation errors, etc.) sent back to the model."""
+
+    content: str
+
+    def __str__(self):
+        return f"System: {self.content}"
+
+
+@dataclass(frozen=True)
 class LLMAssistantMessage(LLMProviderMessage):
     content: str | dict
 
@@ -77,7 +87,7 @@ class LLMFunctionResponse(LLMInternalMessage):
 class LLMFunctionCallBatch(LLMProviderMessage):
     """Multiple parallel function calls from a single model turn."""
 
-    calls: tuple[LLMFunctionCall, ...]
+    calls: list[LLMFunctionCall]
 
     def __str__(self):
         return f"Function Call Batch: [{', '.join(c.name for c in self.calls)}]"
@@ -87,7 +97,7 @@ class LLMFunctionCallBatch(LLMProviderMessage):
 class LLMFunctionResponseBatch(LLMInternalMessage):
     """Responses to a batch of parallel function calls, sent as a single user turn."""
 
-    responses: tuple[LLMFunctionResponse, ...]
+    responses: list[LLMFunctionResponse]
 
     def __str__(self):
         return f"Function Response Batch: [{', '.join(r.call.name for r in self.responses)}]"

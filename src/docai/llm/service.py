@@ -47,15 +47,15 @@ class LLMService:
             try:
                 client = await create_client(profile.provider, tools)
                 service._connections.append((client, profile.model))
-                logger.debug("Created client for provider %s", profile.provider.name)
             except LLMError as e:
-                logger.error(
+                logger.warning(
                     "Failed to create client for provider %s: %s",
                     profile.provider.name,
                     e,
                 )
 
         if not service._connections:
+            logger.error("Failed to create LLMService: no clients could be initialized")
             raise LLMError(
                 608, "Failed to create LLMService: no clients could be initialized"
             )
@@ -86,7 +86,7 @@ class LLMService:
             client,
             self._config.retry,
             self._config.concurrency.concurrency_semaphore,
-            bypass_cache,
+            bypass_cache=bypass_cache,
         )
         if isinstance(result.response, LLMAssistantMessage):
             return result.response.content, result.response
@@ -96,6 +96,16 @@ class LLMService:
                     "name": result.response.name,
                     "arguments": result.response.arguments,
                 }
+            }, result.response
+        elif isinstance(result.response, LLMFunctionCallBatch):
+            return {
+                "function_calls": [
+                    {
+                        "name": call.name,
+                        "arguments": call.arguments,
+                    }
+                    for call in result.response.calls
+                ]
             }, result.response
 
         raise LLMError(601, "Unsupported response type: " + str(type(result.response)))
@@ -135,27 +145,12 @@ class LLMService:
             try:
                 return await self._generate(client, model_config, request, bypass_cache)
             except Exception as e:
-                logger.error(
-                    f"Failed to generate request {request}with {client}, {model_config}",
+                logger.warning(
+                    f"Failed to generate request {request} with {client}, {model_config}",
                     exc_info=e,
                 )
-
+        logger.error(f"Failed to generate request {request} with all connections")
         raise LLMError(610, "Failed to generate response with all connections")
-
-    async def generate_batch(
-        self, requests: list[LLMRequest]
-    ) -> list[tuple[str | dict, LLMProviderMessage] | BaseException]:
-        sem = asyncio.Semaphore(self._config.concurrency.max_concurrency)
-
-        async def _bounded(r: LLMRequest):
-            async with sem:
-                return await self.generate(prompt=r)
-
-        return list(
-            await asyncio.gather(
-                *[_bounded(r) for r in requests], return_exceptions=True
-            )
-        )
 
     async def generate_agent(
         self,
@@ -198,49 +193,35 @@ class LLMService:
 
         # Agent loop: Reason → Act → Observe → repeat
         for turn in range(max_turns):
-            # Try all connections, return on first success (same as generate)
-            result = None
             for client, model_config in self._connections:
                 try:
-                    result = await run(
-                        self._cache,
-                        request,
-                        model_config,
-                        client,
-                        self._config.retry,
-                        self._config.concurrency.concurrency_semaphore,
-                        bypass_cache=bypass_cache,
+                    parsed_result, raw_result = await self._generate(
+                        client, model_config, request, bypass_cache
                     )
                     break
                 except Exception as e:
-                    logger.error(
+                    logger.warning(
                         "Agent turn %d failed with %s, %s",
                         turn + 1,
                         client,
                         model_config,
                         exc_info=e,
                     )
-
-            if result is None:
+            else:
+                logger.error("Agent turn %d failed with all connections", turn + 1)
                 raise LLMError(610, "Failed to generate response with all connections")
 
             # Reason: text response — agent is done
-            if isinstance(result.response, LLMAssistantMessage):
-                return result.response.content, result.response
+            if isinstance(raw_result, LLMAssistantMessage):
+                return parsed_result, raw_result
 
             # Act + Observe: single tool call — execute and continue
-            if isinstance(result.response, LLMFunctionCall):
-                logger.debug(
-                    "Agent turn %d: calling tool '%s' for request %s",
-                    turn + 1,
-                    result.response.name,
-                    request.id,
-                )
-                function_response = await self._execute_tool(result.response, self._tools)
+            if isinstance(raw_result, LLMFunctionCall):
+                function_response = await self._execute_tool(raw_result)
                 request = LLMRequest(
                     prompt=function_response,
                     system_prompt=request.system_prompt,
-                    history=list(request.history) + [request.prompt, result.response],
+                    history=list(request.history) + [request.prompt, raw_result],
                     allowed_tools=request.allowed_tools,
                     structured_output=request.structured_output,
                     id=request.id,
@@ -248,37 +229,29 @@ class LLMService:
                 continue
 
             # Act + Observe: parallel tool calls — execute all and continue
-            if isinstance(result.response, LLMFunctionCallBatch):
-                logger.debug(
-                    "Agent turn %d: calling %d tools in parallel for request %s",
-                    turn + 1,
-                    len(result.response.calls),
-                    request.id,
-                )
+            if isinstance(raw_result, LLMFunctionCallBatch):
                 responses = await asyncio.gather(
-                    *[self._execute_tool(call, self._tools) for call in result.response.calls]
+                    *[self._execute_tool(call) for call in raw_result.calls]
                 )
-                batch_response = LLMFunctionResponseBatch(responses=tuple(responses))
+                batch_response = LLMFunctionResponseBatch(responses=list(responses))
                 request = LLMRequest(
                     prompt=batch_response,
                     system_prompt=request.system_prompt,
-                    history=list(request.history) + [request.prompt, result.response],
+                    history=list(request.history) + [request.prompt, raw_result],
                     allowed_tools=request.allowed_tools,
                     structured_output=request.structured_output,
                     id=request.id,
                 )
                 continue
 
-            raise LLMError(
-                601, "Unsupported response type: " + str(type(result.response))
-            )
+            logger.error(f"Unsupported response type: {type(raw_result)}")
+            raise LLMError(601, "Unsupported response type: " + str(type(raw_result)))
 
+        logger.error(f"Agent exceeded maximum turns ({max_turns})")
         raise LLMError(612, f"Agent exceeded maximum turns ({max_turns})")
 
-    async def _execute_tool(
-        self, tool_call: LLMFunctionCall, tools_override: Optional[dict] = None
-    ) -> LLMFunctionResponse:
-        tools = tools_override if tools_override is not None else self._tools
+    async def _execute_tool(self, tool_call: LLMFunctionCall) -> LLMFunctionResponse:
+        tools = self._tools
         if tools is None or tool_call.name not in tools:
             logger.debug(
                 "Called tool '%s' for llm function callnot found in registry",
