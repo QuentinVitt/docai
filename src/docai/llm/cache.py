@@ -16,6 +16,7 @@ from docai.config.datatypes import (
 from docai.llm.datatypes import (
     LLMAssistantMessage,
     LLMFunctionCall,
+    LLMFunctionCallBatch,
     LLMOriginalContent,
     LLMProviderMessage,
     LLMRequest,
@@ -436,6 +437,12 @@ class LLMCache:
         self, request: LLMRequest, model_config: LLMModelConfig, response: LLMResponse
     ) -> None:
         if not self.use_cache:
+            return
+
+        # Function call responses carry model-specific thought_signatures that
+        # are not portable across models. Skip caching them entirely to prevent
+        # a fallback model from receiving a cached response without a signature.
+        if isinstance(response.response, (LLMFunctionCall, LLMFunctionCallBatch)):
             return
 
         request_hash, model_config_hash = self._get_cache_hashes(request, model_config)

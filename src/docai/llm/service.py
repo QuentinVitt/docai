@@ -191,66 +191,70 @@ class LLMService:
                 request_args["response_validator"] = response_validator
             request = LLMRequest(**request_args)
 
-        # Agent loop: Reason → Act → Observe → repeat
-        for turn in range(max_turns):
-            for client, model_config in self._connections:
-                try:
+        # Agent loop: outer loop over connections, inner loop over turns.
+        # Running all turns against one connection before trying the next ensures
+        # conversation history is always consistent with one model — critical for
+        # thinking models whose thought_signatures are model-specific.
+        for client, model_config in self._connections:
+            current_request = request
+            try:
+                for turn in range(max_turns):
                     parsed_result, raw_result = await self._generate(
-                        client, model_config, request, bypass_cache
+                        client, model_config, current_request, bypass_cache
                     )
-                    break
-                except Exception as e:
-                    logger.warning(
-                        "Agent turn %d failed with %s, %s",
-                        turn + 1,
-                        client,
-                        model_config,
-                        exc_info=e,
-                    )
-            else:
-                logger.error("Agent turn %d failed with all connections", turn + 1)
-                raise LLMError(610, "Failed to generate response with all connections")
 
-            # Reason: text response — agent is done
-            if isinstance(raw_result, LLMAssistantMessage):
-                return parsed_result, raw_result
+                    # Reason: text response — agent is done
+                    if isinstance(raw_result, LLMAssistantMessage):
+                        return parsed_result, raw_result
 
-            # Act + Observe: single tool call — execute and continue
-            if isinstance(raw_result, LLMFunctionCall):
-                function_response = await self._execute_tool(raw_result)
-                request = LLMRequest(
-                    prompt=function_response,
-                    system_prompt=request.system_prompt,
-                    history=list(request.history) + [request.prompt, raw_result],
-                    allowed_tools=request.allowed_tools,
-                    structured_output=request.structured_output,
-                    response_validator=request.response_validator,
-                    id=request.id,
+                    # Act + Observe: single tool call — execute and continue
+                    if isinstance(raw_result, LLMFunctionCall):
+                        function_response = await self._execute_tool(raw_result)
+                        current_request = LLMRequest(
+                            prompt=function_response,
+                            system_prompt=current_request.system_prompt,
+                            history=list(current_request.history) + [current_request.prompt, raw_result],
+                            allowed_tools=current_request.allowed_tools,
+                            structured_output=current_request.structured_output,
+                            response_validator=current_request.response_validator,
+                            id=current_request.id,
+                        )
+                        continue
+
+                    # Act + Observe: parallel tool calls — execute all and continue
+                    if isinstance(raw_result, LLMFunctionCallBatch):
+                        responses = await asyncio.gather(
+                            *[self._execute_tool(call) for call in raw_result.calls]
+                        )
+                        batch_response = LLMFunctionResponseBatch(responses=list(responses))
+                        current_request = LLMRequest(
+                            prompt=batch_response,
+                            system_prompt=current_request.system_prompt,
+                            history=list(current_request.history) + [current_request.prompt, raw_result],
+                            allowed_tools=current_request.allowed_tools,
+                            structured_output=current_request.structured_output,
+                            response_validator=current_request.response_validator,
+                            id=current_request.id,
+                        )
+                        continue
+
+                    raise LLMError(601, "Unsupported response type: " + str(type(raw_result)))
+
+                logger.warning(
+                    "Agent exceeded maximum turns (%d) with %s, %s — trying next connection",
+                    max_turns, client, model_config,
                 )
-                continue
 
-            # Act + Observe: parallel tool calls — execute all and continue
-            if isinstance(raw_result, LLMFunctionCallBatch):
-                responses = await asyncio.gather(
-                    *[self._execute_tool(call) for call in raw_result.calls]
+            except LLMError as e:
+                if e.status_code == 601:
+                    raise
+                logger.warning(
+                    "Agent failed with %s, %s — trying next connection",
+                    client, model_config, exc_info=e,
                 )
-                batch_response = LLMFunctionResponseBatch(responses=list(responses))
-                request = LLMRequest(
-                    prompt=batch_response,
-                    system_prompt=request.system_prompt,
-                    history=list(request.history) + [request.prompt, raw_result],
-                    allowed_tools=request.allowed_tools,
-                    structured_output=request.structured_output,
-                    response_validator=request.response_validator,
-                    id=request.id,
-                )
-                continue
 
-            logger.error(f"Unsupported response type: {type(raw_result)}")
-            raise LLMError(601, "Unsupported response type: " + str(type(raw_result)))
-
-        logger.error(f"Agent exceeded maximum turns ({max_turns})")
-        raise LLMError(612, f"Agent exceeded maximum turns ({max_turns})")
+        logger.error("Agent failed with all connections")
+        raise LLMError(610, "Agent failed with all connections")
 
     async def _execute_tool(self, tool_call: LLMFunctionCall) -> LLMFunctionResponse:
         tools = self._tools

@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 from collections import defaultdict
-from time import sleep
 
 from rich.progress import Progress
 

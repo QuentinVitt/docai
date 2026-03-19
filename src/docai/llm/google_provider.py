@@ -183,7 +183,12 @@ class GoogleClient:
                 provider="google", content=response.candidates[0].content
             )
             calls: list[LLMFunctionCall] = []
-            for fc in response.function_calls:
+            # Iterate over parts directly: thought_signature is a Part field,
+            # not a FunctionCall field, so response.function_calls loses it.
+            for part in response.candidates[0].content.parts:  # type: ignore
+                if part.function_call is None:
+                    continue
+                fc = part.function_call
                 if not fc.name:
                     raise LLMError(603, "No function name returned from Google API")
                 if (
@@ -196,6 +201,7 @@ class GoogleClient:
                         name=fc.name,
                         arguments=fc.args or {},
                         original_content=original_content,
+                        thought_signature=part.thought_signature,
                     )
                 )
 
@@ -250,15 +256,15 @@ def _transform_content(content: LLMMessage) -> types.Content:
         case LLMAssistantMessage(content=c):
             return types.Content(
                 role="model",
-                parts=[types.Part.from_text(text=c)],
+                parts=[types.Part.from_text(text=str(c))],
             )
 
-        case LLMFunctionCall(name=fnc_name, arguments=fnc_args):
+        case LLMFunctionCall(name=fnc_name, arguments=fnc_args, thought_signature=sig):
             return types.ModelContent(
                 parts=[
-                    types.Part.from_function_call(
-                        name=fnc_name,
-                        args=fnc_args,
+                    types.Part(
+                        function_call=types.FunctionCall(name=fnc_name, args=fnc_args),
+                        thought_signature=sig,
                     )
                 ]
             )
@@ -266,7 +272,10 @@ def _transform_content(content: LLMMessage) -> types.Content:
         case LLMFunctionCallBatch(calls=calls):
             return types.ModelContent(
                 parts=[
-                    types.Part.from_function_call(name=c.name, args=c.arguments)
+                    types.Part(
+                        function_call=types.FunctionCall(name=c.name, args=c.arguments),
+                        thought_signature=c.thought_signature,
+                    )
                     for c in calls
                 ]
             )

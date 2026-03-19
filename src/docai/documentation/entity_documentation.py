@@ -182,6 +182,9 @@ def _validate_code_class_doc(result: str | dict) -> str | None:
             return "Attribute is missing 'name'."
         if not a.get("description", "").strip():
             return f"Attribute '{a['name']}' is missing 'description'."
+    for m in result.get("dunder_methods", []):
+        if not isinstance(m, str):
+            return "dunder_methods must be a list of strings, not objects."
     return None
 
 

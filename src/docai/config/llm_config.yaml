@@ -4,6 +4,18 @@ providers:
     # api_key: xxxxxx  # alternative to api_key_env
 
 models:
+  gemini-3-flash-preview:
+    name: gemini-3-flash-preview
+    # generation:
+    #   temperature: 0.2
+    #   max_output_tokens: 2048
+    #   top_p: 0.95
+  gemini-2.5-pro:
+    name: gemini-2.5-pro
+    # generation:
+    #   temperature: 0.2
+    #   max_output_tokens: 2048
+    #   top_p: 0.95
   gemini-2.5-flash:
     name: gemini-2.5-flash
     # generation:
@@ -27,10 +39,10 @@ profiles:
     - provider: google
       model: gemini-2.5-flash
     - provider: google # fallback
-      model: gemini-2.5-flash-lite
+      model: gemini-2.5-pro
   fast:
     - provider: google
-      model: gemini-2.5-flash
+      model: gemini-2.5-flash-lite
 
 globals:
   max_concurrent_requests: 5 # default is 10

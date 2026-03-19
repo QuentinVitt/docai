@@ -69,6 +69,7 @@ class LLMAssistantMessage(LLMProviderMessage):
 class LLMFunctionCall(LLMProviderMessage):
     name: str
     arguments: dict[str, Any] = field(default_factory=dict)
+    thought_signature: bytes | None = None
 
     def __str__(self):
         return f"Function Call: {self.name}({', '.join(f'{k}={v}' for k, v in self.arguments.items())})"
