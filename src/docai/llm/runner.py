@@ -100,7 +100,7 @@ async def _validate_response(
     for attempt in range(retry_policy.max_validation_retries + 1):
         error: str | None = None
 
-        if request.structured_output is not None and isinstance(
+        if current_req.structured_output is not None and isinstance(
             result.response.content,  # type: ignore
             str,
         ):  # type: ignore

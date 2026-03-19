@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 from time import sleep
 
-from rich.console import Console
+from rich.progress import Progress
 
 from docai.config.datatypes import Config
 from docai.deps.base import (
@@ -26,9 +26,10 @@ from docai.llm.service import LLMService
 from docai.output.markdown import write_markdown_docs
 from docai.scanning.file_infos import get_file_type
 from docai.scanning.project_infos import get_project_files
+from docai.utils.logging_utils import get_console
 
 logger = logging.getLogger(__name__)
-console = Console()
+console = get_console()
 
 
 async def run(config: Config):
@@ -55,17 +56,15 @@ async def run(config: Config):
             return
 
         logger.debug("LLM service setup successfully")
-        sleep(1)
 
     logger.info("Setup finished")
-
-    return
 
     with console.status("[bold dark_orange]Gathering project information ..."):
         # 1. get all the information about the files
 
         # 1.1 get all project files
         project_files = get_project_files(config.project_config.working_dir)
+        logger.debug("%d project files idenified", len(project_files))
 
         # 1.2 get file type and doc type for each project file
         project_files_info: dict[str, dict] = {
@@ -74,27 +73,37 @@ async def run(config: Config):
         }
         for file_info in project_files_info.values():
             set_file_doc_type(file_info)
+        logger.debug("Project file types identified")
 
         # 1.3 get file dependencies for each project file (skip binary/skipped files)
+    with Progress() as progress:
+        task = progress.add_task(
+            "[cyan]Identifying file dependencies...", total=len(project_files)
+        )
         await set_files_dependencies(
-            config.project_config.working_dir, project_files_info, llm
+            config.project_config.working_dir, project_files_info, llm, progress, task
         )
 
+    with console.status("[bold dark_orange]Gathering project information ..."):
         # 1.4 build dependency graph
         dependencies_topologically_sorted = create_dependencies_topologically_sorted(
             project_files_info
         )
+        logger.debug("File dependency graph built")
 
-    logger.info(
-        "Project information gathered successfully: %d files across %d dependency levels",
-        len(project_files),
-        len(dependencies_topologically_sorted),
-    )
+        # logger.info(
+        #     "Project information gathered successfully: %d files across %d dependency levels",
+        #     len(project_files),
+        #     len(dependencies_topologically_sorted),
+        # )
 
-    return
+    with Progress() as progress:
+        # 1.5 identify entities for each file
+        task = progress.add_task(
+            "[cyan]Identifying entities...", total=len(project_files)
+        )
 
-    await asyncio.gather(
-        *[
+        coros = [
             identify_entities(
                 config.project_config.working_dir,
                 file,
@@ -104,79 +113,86 @@ async def run(config: Config):
             )
             for file in project_files
         ]
-    )
 
-    # print(json.dumps(project_files_info, indent=4, default=default))
-    # print(dependencies_topologically_sorted)
+        async def _track(coro, progress, task):
+            result = await coro
+            progress.advance(task)
+            return result
 
-    # return
-    # 2.3 count how many entities / files / packages we have to document for progress bar.
-    # A "package" is a directory that directly contains at least one documentable file.
-    # Ancestor directories that only pass through to a single child package are excluded.
+        await asyncio.gather(*[_track(coro, progress, task) for coro in coros])
 
-    total_entities = sum(
-        len(file_info.get("entities", [])) for file_info in project_files_info.values()
-    )
-    total_files = len(project_files)
+    with console.status("[bold dark_orange]Gathering project information ..."):
+        total_entities = sum(
+            len(file_info.get("entities", []))
+            for file_info in project_files_info.values()
+        )
+        total_files = len(project_files)
 
-    # directories that directly contain at least one documentable file
-    dirs_with_files: set[str] = set()
-    for file, file_info in project_files_info.items():
-        if file_info.get("file_doc_type") not in (
-            None,
-            FileDocType.SKIPPED,
-        ):
+        # 1.6 count how many entities / files / packages we have to document for progress bar.
+        # A "package" is a directory that directly contains at least one documentable file.
+        # Ancestor directories that only pass through to a single child package are excluded.
+
+        # directories that directly contain at least one documentable file
+        dirs_with_files: set[str] = set()
+        for file, file_info in project_files_info.items():
+            if file_info.get("file_doc_type") not in (
+                None,
+                FileDocType.SKIPPED,
+            ):
+                parent = os.path.dirname(file)
+                if parent:
+                    dirs_with_files.add(parent)
+
+        # Pass 1: collect all candidate directories (leaf packages + all ancestors)
+        all_dirs: set[str] = set()
+        for d in dirs_with_files:
+            while d and d not in all_dirs and d != config.project_config.working_dir:
+                all_dirs.add(d)
+                d = os.path.dirname(d)
+
+        # Pass 2: count direct child packages per directory
+        direct_child_count: dict[str, int] = {}
+        for d in all_dirs:
+            parent = os.path.dirname(d)
+            if parent and parent in all_dirs:
+                direct_child_count[parent] = direct_child_count.get(parent, 0) + 1
+
+        # A directory is a package if it has documentable files or multiple child packages.
+        # Single-child ancestors with no own files are passthroughs — skip them.
+        packages: dict[str, dict] = {
+            d: {"files": [], "sub_packages": []}
+            for d in all_dirs
+            if d in dirs_with_files or direct_child_count.get(d, 0) > 1
+        }
+
+        # Populate direct files (non-skipped only)
+        for file, file_info in project_files_info.items():
             parent = os.path.dirname(file)
-            if parent:
-                dirs_with_files.add(parent)
+            if parent in packages and file_info.get("file_doc_type") not in (
+                None,
+                FileDocType.SKIPPED,
+            ):
+                packages[parent]["files"].append(file)
 
-    # Pass 1: collect all candidate directories (leaf packages + all ancestors)
-    all_dirs: set[str] = set()
-    for d in dirs_with_files:
-        while d and d not in all_dirs and d != config.project_config.working_dir:
-            all_dirs.add(d)
-            d = os.path.dirname(d)
+        # Populate direct sub-packages (walk up past passthrough dirs to find nearest ancestor)
+        for pkg_path in packages:
+            ancestor = os.path.dirname(pkg_path)
+            while ancestor and ancestor not in packages:
+                ancestor = os.path.dirname(ancestor)
+            if ancestor in packages:
+                packages[ancestor]["sub_packages"].append(pkg_path)
 
-    # Pass 2: count direct child packages per directory
-    direct_child_count: dict[str, int] = {}
-    for d in all_dirs:
-        parent = os.path.dirname(d)
-        if parent and parent in all_dirs:
-            direct_child_count[parent] = direct_child_count.get(parent, 0) + 1
+        logger.debug("%d packages identified", len(packages))
 
-    # A directory is a package if it has documentable files or multiple child packages.
-    # Single-child ancestors with no own files are passthroughs — skip them.
-    packages: dict[str, dict] = {
-        d: {"files": [], "sub_packages": []}
-        for d in all_dirs
-        if d in dirs_with_files or direct_child_count.get(d, 0) > 1
-    }
-
-    # Populate direct files (non-skipped only)
-    for file, file_info in project_files_info.items():
-        parent = os.path.dirname(file)
-        if parent in packages and file_info.get("file_doc_type") not in (
-            None,
-            FileDocType.SKIPPED,
-        ):
-            packages[parent]["files"].append(file)
-
-    # Populate direct sub-packages (walk up past passthrough dirs to find nearest ancestor)
-    for pkg_path in packages:
-        ancestor = os.path.dirname(pkg_path)
-        while ancestor and ancestor not in packages:
-            ancestor = os.path.dirname(ancestor)
-        if ancestor in packages:
-            packages[ancestor]["sub_packages"].append(pkg_path)
-
-    total_packages = len(packages)
+        total_packages = len(packages)
 
     logger.info(
-        "Identified %d entities across %d files and %d packages",
+        "Analyzed project: Identified %d entities across %d files and %d packages",
         total_entities,
         total_files,
         total_packages,
     )
+
     # 2. Create documentation objects
 
     # 2.2 extract entities from each project file
@@ -197,6 +213,7 @@ async def run(config: Config):
             ]
         )
 
+    return
     # 2.5 write package documentation (bottom-up: deepest packages first)
     packages_by_depth: dict[int, list[str]] = defaultdict(list)
     for pkg_path in packages:

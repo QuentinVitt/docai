@@ -2,6 +2,8 @@ import asyncio
 import logging
 from typing import Optional
 
+from rich.progress import Progress, TaskID
+
 from docai.deps.universal_extractor import (
     extract_dependencies as universal_extract_dependencies,
 )
@@ -12,18 +14,25 @@ logger = logging.getLogger(__name__)
 
 
 async def set_files_dependencies(
-    project_path: str, project_files: dict[str, dict], llm: Optional[LLMService] = None
+    project_path: str,
+    project_files: dict[str, dict],
+    llm: Optional[LLMService] = None,
+    progress: Optional[Progress] = None,
+    progress_task: Optional[TaskID] = None,
 ):
     project_files_set = set(project_files.keys())
 
     async def _safe(f: str) -> tuple[str, set[str]] | None:
         try:
-            return await get_dependencies_of_file(
+            result = await get_dependencies_of_file(
                 project_path, f, project_files[f], project_files_set, llm
             )
         except Exception as e:
             logger.warning("Failed to extract dependencies for '%s': %s", f, e)
             return None
+        if progress is not None and progress_task is not None:
+            progress.advance(progress_task)
+        return result
 
     results = await asyncio.gather(*[_safe(f) for f in project_files_set])
 

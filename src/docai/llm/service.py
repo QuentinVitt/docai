@@ -224,6 +224,7 @@ class LLMService:
                     history=list(request.history) + [request.prompt, raw_result],
                     allowed_tools=request.allowed_tools,
                     structured_output=request.structured_output,
+                    response_validator=request.response_validator,
                     id=request.id,
                 )
                 continue
@@ -240,6 +241,7 @@ class LLMService:
                     history=list(request.history) + [request.prompt, raw_result],
                     allowed_tools=request.allowed_tools,
                     structured_output=request.structured_output,
+                    response_validator=request.response_validator,
                     id=request.id,
                 )
                 continue
