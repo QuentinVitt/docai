@@ -144,10 +144,9 @@ class LLMService:
         for client, model_config in self._connections:
             try:
                 return await self._generate(client, model_config, request, bypass_cache)
-            except Exception as e:
+            except Exception:
                 logger.warning(
                     f"Failed to generate request {request} with {client}, {model_config}",
-                    exc_info=e,
                 )
         logger.error(f"Failed to generate request {request} with all connections")
         raise LLMError(610, "Failed to generate response with all connections")
@@ -213,7 +212,8 @@ class LLMService:
                         current_request = LLMRequest(
                             prompt=function_response,
                             system_prompt=current_request.system_prompt,
-                            history=list(current_request.history) + [current_request.prompt, raw_result],
+                            history=list(current_request.history)
+                            + [current_request.prompt, raw_result],
                             allowed_tools=current_request.allowed_tools,
                             structured_output=current_request.structured_output,
                             response_validator=current_request.response_validator,
@@ -226,11 +226,14 @@ class LLMService:
                         responses = await asyncio.gather(
                             *[self._execute_tool(call) for call in raw_result.calls]
                         )
-                        batch_response = LLMFunctionResponseBatch(responses=list(responses))
+                        batch_response = LLMFunctionResponseBatch(
+                            responses=list(responses)
+                        )
                         current_request = LLMRequest(
                             prompt=batch_response,
                             system_prompt=current_request.system_prompt,
-                            history=list(current_request.history) + [current_request.prompt, raw_result],
+                            history=list(current_request.history)
+                            + [current_request.prompt, raw_result],
                             allowed_tools=current_request.allowed_tools,
                             structured_output=current_request.structured_output,
                             response_validator=current_request.response_validator,
@@ -238,22 +241,28 @@ class LLMService:
                         )
                         continue
 
-                    raise LLMError(601, "Unsupported response type: " + str(type(raw_result)))
+                    raise LLMError(
+                        601, "Unsupported response type: " + str(type(raw_result))
+                    )
 
                 logger.warning(
                     "Agent exceeded maximum turns (%d) with %s, %s — trying next connection",
-                    max_turns, client, model_config,
+                    max_turns,
+                    client,
+                    model_config,
                 )
 
             except LLMError as e:
                 if e.status_code == 601:
                     raise
                 logger.warning(
-                    "Agent failed with %s, %s — trying next connection",
-                    client, model_config, exc_info=e,
+                    "Agent failed with %s, %s for request %s — trying next connection",
+                    client,
+                    model_config,
+                    request.id,
                 )
 
-        logger.error("Agent failed with all connections")
+        logger.error("Agent failed with all connections for request %s", request.id)
         raise LLMError(610, "Agent failed with all connections")
 
     async def _execute_tool(self, tool_call: LLMFunctionCall) -> LLMFunctionResponse:

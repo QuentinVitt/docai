@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import logging
+from typing import Optional
+
+from rich.progress import Progress, TaskID
 
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import PackageDoc
@@ -59,6 +62,8 @@ async def document_package(
     package_info: dict,
     llm: LLMService,
     cache: DocumentationCache,
+    progress: Optional[Progress] = None,
+    task_id: Optional[TaskID] = None,
 ) -> PackageDoc:
     """Generate and cache package-level documentation.
 
@@ -87,9 +92,13 @@ async def document_package(
         if pkg_doc is not None:
             sub_package_contexts.append(str(pkg_doc))
 
-    files_section = "\n\n".join(file_contexts) if file_contexts else "No documented files."
+    files_section = (
+        "\n\n".join(file_contexts) if file_contexts else "No documented files."
+    )
     sub_packages_section = (
-        "\n\n".join(sub_package_contexts) if sub_package_contexts else "No sub-packages."
+        "\n\n".join(sub_package_contexts)
+        if sub_package_contexts
+        else "No sub-packages."
     )
 
     prompt = f"""\
@@ -129,4 +138,6 @@ If you need additional context, use the available tools."""
     )
     cache.set_package_documentation(package_path, package_doc)
     logger.debug("Documented package %s", package_path)
+    if progress is not None and task_id is not None:
+        progress.advance(task_id)
     return package_doc

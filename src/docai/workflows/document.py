@@ -75,12 +75,12 @@ async def run(config: Config):
         logger.debug("Project file types identified")
 
         # 1.3 get file dependencies for each project file (skip binary/skipped files)
-    with Progress() as progress:
+    with Progress(console=console) as progress:
         task = progress.add_task(
             "[cyan]Identifying file dependencies...", total=len(project_files)
         )
         await set_files_dependencies(
-            config.project_config.working_dir, project_files_info, llm, progress, task
+            config.project_config.working_dir, project_files_info, llm, progress, task, cache
         )
 
     with console.status("[bold dark_orange]Gathering project information ..."):
@@ -96,7 +96,7 @@ async def run(config: Config):
         #     len(dependencies_topologically_sorted),
         # )
 
-    with Progress() as progress:
+    with Progress(console=console) as progress:
         # 1.5 identify entities for each file
         task = progress.add_task(
             "[cyan]Identifying entities...", total=len(project_files)
@@ -198,64 +198,77 @@ async def run(config: Config):
 
     # 2.4 document entities and files for each project file
 
-    for file_set in dependencies_topologically_sorted:
-        await asyncio.gather(
-            *[
-                create_file_documentation(
-                    config.project_config.working_dir,
-                    file,
-                    project_files_info[file],
-                    llm,
-                    cache,
-                )
-                for file in file_set
-            ]
+    with Progress(console=console) as progress:
+        file_task = progress.add_task("[cyan]Documenting files...", total=total_files)
+
+        for file_set in dependencies_topologically_sorted:
+            await asyncio.gather(
+                *[
+                    create_file_documentation(
+                        config.project_config.working_dir,
+                        file,
+                        project_files_info[file],
+                        llm,
+                        cache,
+                        progress,
+                        file_task,
+                    )
+                    for file in file_set
+                ]
+            )
+
+    with Progress(console=console) as progress:
+        task_id = progress.add_task(
+            "[cyan]Documenting packages...", total=len(packages)
         )
 
-    return
-    # 2.5 write package documentation (bottom-up: deepest packages first)
-    packages_by_depth: dict[int, list[str]] = defaultdict(list)
-    for pkg_path in packages:
-        packages_by_depth[pkg_path.count(os.sep)].append(pkg_path)
+        # 2.5 write package documentation (bottom-up: deepest packages first)
+        packages_by_depth: dict[int, list[str]] = defaultdict(list)
+        for pkg_path in packages:
+            packages_by_depth[pkg_path.count(os.sep)].append(pkg_path)
 
-    for depth in sorted(packages_by_depth.keys(), reverse=True):
-        await asyncio.gather(
-            *[
-                document_package(
-                    config.project_config.working_dir,
-                    pkg_path,
-                    packages[pkg_path],
-                    llm,
-                    cache,
-                )
-                for pkg_path in packages_by_depth[depth]
-            ]
+        for depth in sorted(packages_by_depth.keys(), reverse=True):
+            await asyncio.gather(
+                *[
+                    document_package(
+                        config.project_config.working_dir,
+                        pkg_path,
+                        packages[pkg_path],
+                        llm,
+                        cache,
+                        progress,
+                        task_id,
+                    )
+                    for pkg_path in packages_by_depth[depth]
+                ]
+            )
+
+    with console.status("[cyan]Documenting project..."):
+        # 2.6 write project documentation
+        project_name = os.path.basename(config.project_config.working_dir)
+        top_level_packages = [p for p in packages if os.path.dirname(p) not in packages]
+        await document_project(
+            config.project_config.working_dir,
+            project_name,
+            top_level_packages,
+            llm,
+            cache,
         )
-
-    # 2.6 write project documentation
-    project_name = os.path.basename(config.project_config.working_dir)
-    top_level_packages = [p for p in packages if os.path.dirname(p) not in packages]
-    await document_project(
-        config.project_config.working_dir,
-        project_name,
-        top_level_packages,
-        llm,
-        cache,
-    )
 
     logger.info(
         "Project documentation generated successfully - writing documentation to %s",
         os.path.join(config.project_config.working_dir, "docs"),
     )
 
-    # 3. write the documentation in human readable format
-    write_markdown_docs(
-        config.project_config.working_dir,
-        project_name,
-        packages,
-        project_files_info,
-        cache,
-    )
+    with console.status("[cyan]Writing documentation..."):
+        # 3. write the documentation in human readable format
+        write_markdown_docs(
+            config.project_config.working_dir,
+            project_name,
+            packages,
+            project_files_info,
+            cache,
+        )
 
-    logger.info("Documentation written successfully")
+    logger.info("Finished")
     return

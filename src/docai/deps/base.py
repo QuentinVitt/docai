@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os.path
 from typing import Optional
 
 from rich.progress import Progress, TaskID
@@ -7,6 +8,8 @@ from rich.progress import Progress, TaskID
 from docai.deps.universal_extractor import (
     extract_dependencies as universal_extract_dependencies,
 )
+from docai.documentation.cache import DocumentationCache
+from docai.documentation.datatypes import FileDocType
 from docai.llm.service import LLMService
 from docai.scanning.file_infos import get_file_content
 
@@ -19,10 +22,18 @@ async def set_files_dependencies(
     llm: Optional[LLMService] = None,
     progress: Optional[Progress] = None,
     progress_task: Optional[TaskID] = None,
+    cache: Optional[DocumentationCache] = None,
 ):
     project_files_set = set(project_files.keys())
 
     async def _safe(f: str) -> tuple[str, set[str]] | None:
+        if cache is not None:
+            cached_deps = cache.get_file_dependencies(f)
+            if cached_deps is not None:
+                logger.debug("File dependencies for '%s' found in cache", f)
+                if progress is not None and progress_task is not None:
+                    progress.advance(progress_task)
+                return f, cached_deps
         try:
             result = await get_dependencies_of_file(
                 project_path, f, project_files[f], project_files_set, llm
@@ -30,6 +41,9 @@ async def set_files_dependencies(
         except Exception as e:
             logger.warning("Failed to extract dependencies for '%s': %s", f, e)
             return None
+        if cache is not None:
+            _, deps = result
+            cache.set_file_dependencies(f, deps)
         if progress is not None and progress_task is not None:
             progress.advance(progress_task)
         return result
@@ -96,6 +110,11 @@ async def get_dependencies_of_file(
     all_files: set[str],
     llm: Optional[LLMService] = None,
 ) -> tuple[str, set[str]]:
+    match file_info.get("file_doc_type"):
+        case FileDocType.OTHER | FileDocType.SKIPPED:
+            return file, set()
+        case FileDocType.CONFIG | FileDocType.DOCS:
+            return file, fuzzy_search_dependencies(project_path, file, all_files)
 
     match file_info.get("file_type"):
         case _:
@@ -110,3 +129,101 @@ async def get_dependencies_of_file(
             )
 
     return file, result
+
+
+_PATH_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789._-/\\")
+
+
+def fuzzy_search_dependencies(
+    project_path: str, file: str, all_files: set[str]
+) -> set[str]:
+    file_content = get_file_content(project_path, file).lower()
+    file_dir = os.path.dirname(file)
+    project_files_lower = {pf.lower() for pf in all_files}
+    dependencies = set()
+
+    for project_file in all_files:
+        if project_file == file:
+            continue
+
+        project_file_name = os.path.basename(project_file).lower()
+        project_file_lower = project_file.lower()
+
+        start = 0
+        while True:
+            idx = file_content.find(project_file_name, start)
+            if idx == -1:
+                break
+            start = idx + 1
+            end_idx = idx + len(project_file_name)
+
+            # 1.1 End boundary: no path char may follow
+            if end_idx < len(file_content) and file_content[end_idx] in _PATH_CHARS:
+                continue
+
+            # 1.2 Start boundary: preceding char must be '/' or not a path char
+            if (
+                idx > 0
+                and file_content[idx - 1] in _PATH_CHARS
+                and file_content[idx - 1] != "/"
+            ):
+                continue
+
+            # 2. Extract the path prefix
+            # 2.1 Quoted: closing '"' right after filename → scan back through path chars + spaces
+            prefix: str | None = None
+            if end_idx < len(file_content) and file_content[end_idx] == '"':
+                back = idx - 1
+                while back >= 0 and (
+                    file_content[back] in _PATH_CHARS or file_content[back] == " "
+                ):
+                    back -= 1
+                if back >= 0 and file_content[back] == '"':
+                    prefix = file_content[back + 1 : idx]
+                # else: closing quote present but no opening one → fall through to 2.2
+
+            # 2.2 Unquoted: scan back through path chars, allow escaped spaces
+            if prefix is None:
+                back = idx - 1
+                while back >= 0:
+                    ch = file_content[back]
+                    if ch in _PATH_CHARS:
+                        back -= 1
+                    elif ch == " " and back > 0 and file_content[back - 1] == "\\":
+                        back -= 2
+                    else:
+                        break
+                prefix = file_content[back + 1 : idx]
+
+            # Normalise: escaped spaces → spaces, backslashes → forward slashes
+            raw = (prefix + project_file_name).replace("\\ ", " ").replace("\\", "/")
+
+            # 3. Matching
+            matched = False
+
+            if raw.startswith("/"):
+                # 3.1 Absolute path
+                matched = raw == (project_path + "/" + project_file_name).lower()
+
+            elif prefix:
+                # 3.2 Root-relative exact match
+                if raw == project_file_lower:
+                    matched = True
+
+                # 3.3 Relative from the current file's directory
+                if not matched:
+                    resolved = os.path.normpath(os.path.join(file_dir, raw)).replace(
+                        "\\", "/"
+                    )
+                    matched = resolved in project_files_lower
+
+            else:
+                # 3.4 Filename only: match if project_file is in the same directory
+                pf_dir = os.path.dirname(project_file)
+                matched = pf_dir == file_dir
+
+            if matched:
+                dependencies.add(project_file)
+                break
+
+    return dependencies

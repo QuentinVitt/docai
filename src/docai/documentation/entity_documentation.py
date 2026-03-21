@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Callable, Optional
 
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import (
@@ -613,6 +614,7 @@ async def document_entity(
     entity: DocItemRef,
     llm: LLMService,
     cache: DocumentationCache,
+    update_progress: Optional[Callable] = None,
 ) -> DocItem:
     """Document a single entity and persist it in the cache.
 
@@ -665,4 +667,6 @@ async def document_entity(
 
     cache.set_entity_documentation(file, entity, doc_item)
     logger.debug("Documented entity %s/%s", file, entity.name)
+    if update_progress:
+        update_progress()
     return doc_item

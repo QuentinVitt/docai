@@ -86,7 +86,7 @@ class DocumentationCache:
 
     def _get_source_mtime(self, source_path: str, level: str) -> float:
         """Returns the newest mtime of the documented source (file or directory)."""
-        if level in ("entity", "file"):
+        if level in ("entity", "file", "deps"):
             try:
                 return os.path.getmtime(source_path)
             except OSError:
@@ -282,6 +282,30 @@ class DocumentationCache:
         key = self._entity_key(file_path, ref)
         self._disk_write(key, "entity", file_path, doc.model_dump(mode="json"))
         self._ram_put(key, doc)
+
+    # ---------------------------------------------------------------------------
+    # Dependencies
+    # ---------------------------------------------------------------------------
+
+    def _deps_key(self, file_path: str) -> str:
+        return _make_hash("deps", file_path)
+
+    def get_file_dependencies(self, file_path: str) -> set[str] | None:
+        key = self._deps_key(file_path)
+        cached = self._ram_get(key)
+        if cached is not None:
+            return cached  # type: ignore
+        content = self._disk_read(key)
+        if content is None:
+            return None
+        deps = set(content["doc"])
+        self._ram_put(key, deps)
+        return deps
+
+    def set_file_dependencies(self, file_path: str, deps: set[str]) -> None:
+        key = self._deps_key(file_path)
+        self._disk_write(key, "deps", file_path, sorted(deps))
+        self._ram_put(key, deps)
 
     # ---------------------------------------------------------------------------
     # Search / fuzzy lookup

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any, Optional
 
 from google import genai
@@ -24,8 +23,6 @@ from docai.llm.datatypes import (
     LLMUserMessage,
 )
 from docai.llm.errors import LLMClientError, LLMError, LLMServerError
-
-logger = logging.getLogger(__name__)
 
 
 class GoogleClient:

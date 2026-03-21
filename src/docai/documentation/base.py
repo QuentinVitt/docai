@@ -1,4 +1,8 @@
 import asyncio
+import os
+from typing import Optional
+
+from rich.progress import Progress, TaskID
 
 from docai.documentation.cache import DocumentationCache
 from docai.documentation.datatypes import DocItemRef, FileDocType
@@ -117,15 +121,49 @@ async def identify_entities(
 
 
 async def create_file_documentation(
-    project_path, file: str, file_info: dict, llm: LLMService, cache: DocumentationCache
+    project_path,
+    file: str,
+    file_info: dict,
+    llm: LLMService,
+    cache: DocumentationCache,
+    progress: Optional[Progress] = None,
+    file_task: Optional[TaskID] = None,
 ):
+    entities = file_info["entities"]
+
+    # Create a per-file subtask for entity progress (removed when done)
+    entity_task: Optional[TaskID] = None
+    if progress is not None and entities:
+        entity_task = progress.add_task(
+            f"[dim]{os.path.basename(file)}[/dim]",
+            total=len(entities),
+        )
+
     # 1. Document all entities in parallel
     await asyncio.gather(
         *[
-            document_entity(project_path, file, file_info, entity, llm, cache)
-            for entity in file_info["entities"]
+            document_entity(
+                project_path,
+                file,
+                file_info,
+                entity,
+                llm,
+                cache,
+                update_progress=lambda: (
+                    progress.advance(entity_task)
+                    if progress is not None and entity_task is not None
+                    else None
+                ),
+            )
+            for entity in entities
         ]
     )
 
+    if progress is not None and entity_task is not None:
+        progress.remove_task(entity_task)
+
     # 2. Document the file itself
     await document_file(project_path, file, file_info, llm, cache)
+
+    if progress is not None and file_task is not None:
+        progress.advance(file_task)
