@@ -18,5 +18,4 @@ jobs:
         run: uv sync --group dev
 
       - name: Run tests
-        # exit code 5 = no tests collected; treat as success until tests are written
-        run: uv run pytest --cov --cov-report=term-missing; code=$?; [ $code -eq 0 ] || [ $code -eq 5 ]
+        run: uv run pytest --cov --cov-report=term-missing
