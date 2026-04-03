@@ -32,7 +32,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-allow_no_tests = true
+
 markers = [
     "unit: pure function tests, no I/O, no mocks",
     "integration: tests that touch the real filesystem",
