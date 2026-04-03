@@ -116,7 +116,20 @@ async def get_dependencies_of_file(
         case FileDocType.CONFIG | FileDocType.DOCS:
             return file, fuzzy_search_dependencies(project_path, file, all_files)
 
+    # most used programming languages:
+    # Python, JavaScript, TypeScript, Java, C#, C++, C, Go, Rust, Kotlin,
+    # Swift, PHP, Ruby, Dart, Scala, R, MATLAB, Shell/Bash, Lua, Haskell
     match file_info.get("file_type"):
+        case "python":
+            from docai.deps.python_extractor import (
+                extract_dependencies as python_extract_dependencies,
+            )
+            result = await python_extract_dependencies(
+                file,
+                get_file_content(project_path, file),
+                all_files,
+                llm,
+            )
         case _:
             if not llm:
                 raise ValueError("LLMService not provided")
