@@ -1,0 +1,29 @@
+[project]
+name = "docai"
+version = "0.1.0"
+description = "DocAI — one tool to document them all: language-universal, AI-powered documentation for any codebase."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "litellm>=1.83.1",
+    "pydantic>=2",
+    "rich>=14.3.3",
+    "tree-sitter>=0.25.2",
+    "typer>=0.23.1",
+]
+
+[project.scripts]
+docai = "docai.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/docai"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]
