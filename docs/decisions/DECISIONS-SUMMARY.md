@@ -347,10 +347,12 @@ tool with crash recovery and incremental regeneration requirements.
 
 ### Implementation
 
-**Python**, packaged as a CLI tool via **uv**. CLI built with **argparse** (stdlib). Progress
-reporting via **rich** library. LLM integration via **Google GenAI SDK** with a thin wrapper
-for future provider switching. All data structures use **Pydantic v2** models for validation,
-serialization, and LLM structured output schema generation.
+**Python**, packaged as a CLI tool via **uv**. CLI built with **Typer** (type-hint-driven,
+Rich-integrated). Progress reporting via **rich** library. LLM integration via **LiteLLM**
+— a unified routing layer supporting multiple providers (Gemini, Claude, GPT-4o, etc.) with
+built-in cost tracking, token counting, and success/failure callbacks. Primary provider:
+Google Gemini. All data structures use **Pydantic v2** models for validation, serialization,
+and LLM structured output schema generation.
 
 ### Component overview
 
@@ -607,9 +609,11 @@ for that entity. This is driven by LLM complexity assessment, not entity count t
 package summaries, and asset listings from the directory registry as context. Output is a
 single `overview` string.
 
-**LLM client**: thin wrapper interface (`send`, `send_structured`). v1 wraps Google GenAI
-SDK. Wrapper handles API key, rate limiting, exponential backoff, token counting, error
-classification.
+**LLM client**: thin wrapper interface (`send`, `send_structured`) over **LiteLLM**. LiteLLM
+handles provider routing, structured output translation (JSON schema → provider-native
+format), token counting, and cost tracking via callbacks. Primary provider: Google Gemini
+(`gemini-2.0-flash`). Switching providers is a config string change. The wrapper adds retry
+logic and error classification on top.
 
 **Retry strategy**: connection retries (3, exponential backoff, configurable) for transient
 errors. Validation retries (3, with error feedback) for invalid LLM responses. Both
@@ -721,8 +725,8 @@ context_warning_tokens = 80000
 asset_package_threshold = 5
 
 [llm]
-provider = "google-genai"
-model = "gemini-2.0-flash"
+provider = "gemini"
+model = "gemini/gemini-2.0-flash"
 # api_key = "..."           # prefer environment variable
 connection_retries = 3
 validation_retries = 3
