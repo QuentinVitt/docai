@@ -867,25 +867,31 @@ exits.
 
 ### Exception hierarchy
 
+Flat — all errors inherit directly from `DocaiError`. The workflow decides whether an error
+is fatal (re-raise as `PipelineError`, exit 2) or recoverable (log, mark file failed,
+continue, exit 1).
+
 ```
-DocaiError (base)
-├── PipelineError                    # fatal, stops execution
-│   ├── ConfigError                  # includes API key validation failure
-│   └── StateError
-└── ComponentError                   # recoverable, file-level failure
-    ├── DiscoveryError
-    ├── ExtractionError
-    ├── GraphError
-    └── GenerationError
+DocaiError (base)          # src/docai/errors.py
+├── PipelineError          # workflow/  — workflow decided this is a dealbreaker
+├── ConfigError            # cli/       — bad/missing config, before pipeline starts
+├── StateError             # state/     — .docai/ corrupt, locked, version mismatch
+├── LLMError               # llm/       — LLM interaction failure
+├── CoreError              # core/      — shared utility failure
+├── DiscoveryError         # discovery/
+├── ExtractionError        # extractor/
+├── GraphError             # graph/
+└── GenerationError        # generator/
 ```
 
-`LLMError` is internal to the `llm/` package. When LLM failures surface beyond `llm/`,
-the consuming component wraps them as its own `ComponentError` subclass, preserving the
-original via `__cause__`.
+All errors carry two fields: `code` and `message`. `__cause__` follows standard Python
+exception chaining.
 
-All `ComponentError` subclasses carry: `file_path`, `code` (machine-readable, e.g.
-`EXTRACTION_PARSE_FAILED`), `message`, and `__cause__`. `PipelineError` carries `code` and
-`message` but not `file_path`.
+- `message` — human-readable description of what went wrong
+- `code` — machine-readable identifier following the convention `COMPONENT_WHAT_HAPPENED`
+  (uppercase with underscores). Examples: `EXTRACTION_PARSE_FAILED`, `CONFIG_MISSING_API_KEY`,
+  `LLM_RATE_LIMIT`, `STATE_LOCKED`, `PIPELINE_NO_FILES`. Each component defines its own
+  codes alongside its error class.
 
 ### CLI exit codes
 
