@@ -57,44 +57,52 @@ class TestModelConfigConstruction:
 
 @pytest.mark.unit
 class TestModelConfigFieldValidation:
-    @pytest.mark.parametrize("field,value", [
-        ("timeout", -0.1),
-        ("num_retries", 0),
-        ("validation_retries", 0),
-        ("max_concurrency", 0),
-        ("n", 0),
-        ("max_completion_tokens", 0),
-        ("max_tokens", 0),
-        ("temperature", -0.1),
-        ("temperature", 2.1),
-        ("top_p", -0.1),
-        ("top_p", 1.1),
-        ("presence_penalty", -2.1),
-        ("presence_penalty", 2.1),
-        ("frequency_penalty", -2.1),
-        ("frequency_penalty", 2.1),
-    ])
-    def test_invalid_field_value_raises_validation_error(self, field: str, value: float) -> None:
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("timeout", -0.1),
+            ("num_retries", 0),
+            ("validation_retries", 0),
+            ("max_concurrency", 0),
+            ("n", 0),
+            ("max_completion_tokens", 0),
+            ("max_tokens", 0),
+            ("temperature", -0.1),
+            ("temperature", 2.1),
+            ("top_p", -0.1),
+            ("top_p", 1.1),
+            ("presence_penalty", -2.1),
+            ("presence_penalty", 2.1),
+            ("frequency_penalty", -2.1),
+            ("frequency_penalty", 2.1),
+        ],
+    )
+    def test_invalid_field_value_raises_validation_error(
+        self, field: str, value: float
+    ) -> None:
         with pytest.raises(ValidationError):
             ModelConfig(model="gemini/gemini-2.0-flash", **{field: value})
 
-    @pytest.mark.parametrize("field,value", [
-        ("timeout", 0.0),
-        ("num_retries", 1),
-        ("validation_retries", 1),
-        ("max_concurrency", 1),
-        ("n", 1),
-        ("max_completion_tokens", 1),
-        ("max_tokens", 1),
-        ("temperature", 0.0),
-        ("temperature", 2.0),
-        ("top_p", 0.0),
-        ("top_p", 1.0),
-        ("presence_penalty", -2.0),
-        ("presence_penalty", 2.0),
-        ("frequency_penalty", -2.0),
-        ("frequency_penalty", 2.0),
-    ])
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("timeout", 0.0),
+            ("num_retries", 1),
+            ("validation_retries", 1),
+            ("max_concurrency", 1),
+            ("n", 1),
+            ("max_completion_tokens", 1),
+            ("max_tokens", 1),
+            ("temperature", 0.0),
+            ("temperature", 2.0),
+            ("top_p", 0.0),
+            ("top_p", 1.0),
+            ("presence_penalty", -2.0),
+            ("presence_penalty", 2.0),
+            ("frequency_penalty", -2.0),
+            ("frequency_penalty", 2.0),
+        ],
+    )
     def test_boundary_values_are_valid(self, field: str, value: float) -> None:
         config = ModelConfig(model="gemini/gemini-2.0-flash", **{field: value})
         assert getattr(config, field) == value
@@ -225,7 +233,9 @@ class TestLLMProfileConstruction:
 class TestLLMProfileFieldValidation:
     def test_max_concurrency_zero_raises_validation_error(self) -> None:
         with pytest.raises(ValidationError):
-            LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")], max_concurrency=0)
+            LLMProfile(
+                models=[ModelConfig(model="gemini/gemini-2.0-flash")], max_concurrency=0
+            )
 
     def test_max_concurrency_one_is_valid(self) -> None:
         profile = LLMProfile(
