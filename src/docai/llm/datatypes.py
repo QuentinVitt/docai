@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from litellm import Message
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.functional_validators import AfterValidator
 from typing_extensions import Annotated
 
@@ -103,8 +105,15 @@ class ModelConfig(BaseModel):
     def configured_params(self) -> set[str]:
         """Return the set of optional LiteLLM param names that are explicitly set (non-None)."""
         fields = [
-            "num_retries", "timeout", "temperature", "top_p", "n",
-            "max_completion_tokens", "max_tokens", "presence_penalty", "frequency_penalty",
+            "num_retries",
+            "timeout",
+            "temperature",
+            "top_p",
+            "n",
+            "max_completion_tokens",
+            "max_tokens",
+            "presence_penalty",
+            "frequency_penalty",
         ]
         return {f for f in fields if getattr(self, f) is not None}
 
@@ -125,3 +134,31 @@ class LLMProfile(BaseModel):
 class LogConfig(BaseModel):
     log_dir: Path
     clean_on_start: bool = False
+
+
+class LLMCallAttempt(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    model_args: dict  # _connections[i][0] with api_key masked as "[REDACTED]"
+    latency_ms: float
+    usage_metadata: (
+        dict | None
+    )  # full litellm.Usage serialized — preserves all token detail
+    prompt_tokens_price: (
+        float | None
+    )  # USD — stored separately as prices change over time
+    completion_tokens_price: float | None  # USD
+    total_price: float | None  # USD
+    messages: list[dict | Message]
+    response: Message | None
+    validator_error: str | None
+    error: str | None
+
+
+class LLMGenerateLog(BaseModel):
+    timestamp: datetime
+    total_latency_ms: float
+    success: bool
+    attempts: list[LLMCallAttempt]
+    final_response: str | None
+    error_code: str | None

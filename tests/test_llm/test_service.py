@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import BaseModel
 
 from docai.llm.datatypes import LLMProfile, LogConfig, ModelConfig
 from docai.llm.errors import LLMError
@@ -51,8 +53,12 @@ def minimal_profile() -> LLMProfile:
 @pytest.fixture
 def litellm_ok():
     """Patch litellm so all params are supported (no api_key on minimal_profile, so check_valid_key is never called)."""
-    with patch("litellm.get_supported_openai_params") as mock_params:
+    with (
+        patch("litellm.get_supported_openai_params") as mock_params,
+        patch("litellm.supports_response_schema") as mock_schema,
+    ):
         mock_params.return_value = list(ALL_SUPPORTED_PARAMS)
+        mock_schema.return_value = True
         yield mock_params
 
 
@@ -172,9 +178,11 @@ class TestApiKeyValidation:
         with (
             patch("litellm.check_valid_key") as mock_key,
             patch("litellm.get_supported_openai_params") as mock_params,
+            patch("litellm.supports_response_schema") as mock_schema,
         ):
             mock_key.return_value = True
             mock_params.return_value = list(ALL_SUPPORTED_PARAMS)
+            mock_schema.return_value = True
             LLMService(
                 profile=LLMProfile(
                     models=[
@@ -192,9 +200,11 @@ class TestApiKeyValidation:
         with (
             patch("litellm.check_valid_key") as mock_key,
             patch("litellm.get_supported_openai_params") as mock_params,
+            patch("litellm.supports_response_schema") as mock_schema,
         ):
             mock_key.return_value = True
             mock_params.return_value = list(ALL_SUPPORTED_PARAMS)
+            mock_schema.return_value = True
             LLMService(
                 profile=LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")]),
                 log_config=log_config,
@@ -205,9 +215,11 @@ class TestApiKeyValidation:
         with (
             patch("litellm.check_valid_key") as mock_key,
             patch("litellm.get_supported_openai_params") as mock_params,
+            patch("litellm.supports_response_schema") as mock_schema,
         ):
             mock_key.return_value = True
             mock_params.return_value = list(ALL_SUPPORTED_PARAMS)
+            mock_schema.return_value = True
             LLMService(
                 profile=LLMProfile(
                     models=[
@@ -228,9 +240,11 @@ class TestApiKeyValidation:
         with (
             patch("litellm.check_valid_key") as mock_key,
             patch("litellm.get_supported_openai_params") as mock_params,
+            patch("litellm.supports_response_schema") as mock_schema,
         ):
             mock_key.return_value = True
             mock_params.return_value = list(ALL_SUPPORTED_PARAMS)
+            mock_schema.return_value = True
             LLMService(
                 profile=LLMProfile(
                     models=[ModelConfig(model="gemini/gemini-2.0-flash", api_key="test-key")],
@@ -330,8 +344,12 @@ class TestUnsupportedParameterCheck:
         self, log_config: LogConfig
     ) -> None:
         params = [p for p in ALL_SUPPORTED_PARAMS if p != "temperature"]
-        with patch("litellm.get_supported_openai_params") as mock_params:
+        with (
+            patch("litellm.get_supported_openai_params") as mock_params,
+            patch("litellm.supports_response_schema") as mock_schema,
+        ):
             mock_params.return_value = params
+            mock_schema.return_value = True
             # temperature is None (default) — should not raise
             service = LLMService(
                 profile=LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")]),
@@ -464,3 +482,405 @@ class TestCleanOnStart:
             log_config=LogConfig(log_dir=log_dir, clean_on_start=False),
         )
         assert log_file.read_text() == "old content"
+
+
+# ── generate() helpers and fixtures ──────────────────────────────────────────
+
+
+def _make_llm_response(content: str = "Hello, world!") -> MagicMock:
+    usage = MagicMock()
+    usage.prompt_tokens = 10
+    usage.completion_tokens = 5
+    usage.total_tokens = 15
+    usage.completion_tokens_details = None
+
+    message = MagicMock()
+    message.content = content
+
+    choice = MagicMock()
+    choice.message = message
+
+    response = MagicMock()
+    response.choices = [choice]
+    response.usage = usage
+    response.model = "gemini/gemini-2.0-flash"
+    return response
+
+
+class _SimpleOutput(BaseModel):
+    value: str
+
+
+@pytest.fixture
+def generate_service(litellm_ok, log_config: LogConfig) -> LLMService:
+    profile = LLMProfile(
+        models=[ModelConfig(model="gemini/gemini-2.0-flash", validation_retries=3)],
+    )
+    return LLMService(profile=profile, log_config=log_config)
+
+
+@pytest.fixture
+def two_model_service(litellm_ok, log_config: LogConfig) -> LLMService:
+    profile = LLMProfile(
+        models=[
+            ModelConfig(model="gemini/gemini-2.0-flash", validation_retries=2),
+            ModelConfig(model="gemini/gemini-2.0-pro", validation_retries=2),
+        ],
+    )
+    return LLMService(profile=profile, log_config=log_config)
+
+
+# ── generate() — happy path ───────────────────────────────────────────────────
+
+
+@pytest.mark.llm
+class TestGenerateHappyPath:
+    async def test_plain_prompt_returns_string(self, generate_service: LLMService) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response("Hello, world!")
+            result = await generate_service.generate(prompt="test prompt")
+        assert result == "Hello, world!"
+
+    async def test_structured_output_returns_pydantic_instance(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response('{"value": "parsed"}')
+            result = await generate_service.generate(
+                prompt="test", structured_output=_SimpleOutput
+            )
+        assert result == _SimpleOutput(value="parsed")
+
+    async def test_structured_output_passes_response_format_to_acompletion(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response('{"value": "x"}')
+            await generate_service.generate(prompt="test", structured_output=_SimpleOutput)
+        assert mock_ac.call_args.kwargs["response_format"] == _SimpleOutput
+
+    async def test_prompt_sent_as_user_message(self, generate_service: LLMService) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="my question")
+        assert mock_ac.call_args.kwargs["messages"] == [
+            {"role": "user", "content": "my question"}
+        ]
+
+    async def test_connection_kwargs_forwarded_to_acompletion(
+        self, generate_service: LLMService
+    ) -> None:
+        expected_kwargs = generate_service._connections[0][0]
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="test")
+        actual_kwargs = mock_ac.call_args.kwargs
+        for key, value in expected_kwargs.items():
+            assert actual_kwargs[key] == value
+
+    async def test_system_prompt_prepended_as_system_message(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="my question", system_prompt="You are helpful.")
+        assert mock_ac.call_args.kwargs["messages"] == [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "my question"},
+        ]
+
+
+# ── generate() — validator ────────────────────────────────────────────────────
+
+
+@pytest.mark.llm
+class TestGenerateValidator:
+    async def test_no_validator_calls_acompletion_once(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="test")
+        assert mock_ac.call_count == 1
+
+    async def test_validator_passes_first_try_calls_acompletion_once(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="test", validator=lambda _: None)
+        assert mock_ac.call_count == 1
+
+    async def test_validator_fails_once_then_passes_calls_acompletion_twice(
+        self, generate_service: LLMService
+    ) -> None:
+        call_count = 0
+
+        async def fake_acompletion(**kwargs):
+            nonlocal call_count
+            call_count += 1
+            return _make_llm_response()
+
+        def validator(output: str) -> str | None:
+            return "not good" if call_count == 1 else None
+
+        with patch("litellm.acompletion", side_effect=fake_acompletion):
+            await generate_service.generate(prompt="test", validator=validator)
+
+        assert call_count == 2
+
+    async def test_validator_failure_appended_to_retry_messages(
+        self, generate_service: LLMService
+    ) -> None:
+        call_count = 0
+        captured_messages: list[list[dict]] = []
+
+        async def fake_acompletion(**kwargs):
+            nonlocal call_count
+            call_count += 1
+            captured_messages.append(kwargs["messages"])
+            return _make_llm_response("first response")
+
+        def validator(output: str) -> str | None:
+            return "output was invalid" if call_count == 1 else None
+
+        with patch("litellm.acompletion", side_effect=fake_acompletion):
+            await generate_service.generate(prompt="original prompt", validator=validator)
+
+        assert captured_messages[1] == [
+            {"role": "user", "content": "original prompt"},
+            {"role": "assistant", "content": "first response"},
+            {"role": "user", "content": "output was invalid"},
+        ]
+
+    async def test_system_prompt_preserved_in_retry_messages(
+        self, generate_service: LLMService
+    ) -> None:
+        call_count = 0
+        captured_messages: list[list[dict]] = []
+
+        async def fake_acompletion(**kwargs):
+            nonlocal call_count
+            call_count += 1
+            captured_messages.append(kwargs["messages"])
+            return _make_llm_response("first response")
+
+        def validator(output: str) -> str | None:
+            return "try again" if call_count == 1 else None
+
+        with patch("litellm.acompletion", side_effect=fake_acompletion):
+            await generate_service.generate(
+                prompt="my question",
+                system_prompt="You are helpful.",
+                validator=validator,
+            )
+
+        assert captured_messages[1] == [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "my question"},
+            {"role": "assistant", "content": "first response"},
+            {"role": "user", "content": "try again"},
+        ]
+
+    async def test_validator_fails_all_retries_falls_back_to_second_connection(
+        self, two_model_service: LLMService
+    ) -> None:
+        first_model_calls = 0
+
+        async def fake_acompletion(**kwargs):
+            nonlocal first_model_calls
+            if kwargs.get("model") == "gemini/gemini-2.0-flash":
+                first_model_calls += 1
+                return _make_llm_response("bad")
+            return _make_llm_response("good")
+
+        def validator(output: str) -> str | None:
+            return "rejected" if output == "bad" else None
+
+        with patch("litellm.acompletion", side_effect=fake_acompletion):
+            result = await two_model_service.generate(prompt="test", validator=validator)
+
+        assert first_model_calls == 2  # exhausted validation_retries=2
+        assert result == "good"
+
+
+# ── generate() — fallback and errors ─────────────────────────────────────────
+
+
+@pytest.mark.llm
+class TestGenerateFallback:
+    async def test_api_exception_triggers_fallback_to_next_connection(
+        self, two_model_service: LLMService
+    ) -> None:
+        async def fake_acompletion(**kwargs):
+            if kwargs.get("model") == "gemini/gemini-2.0-flash":
+                raise Exception("first model down")
+            return _make_llm_response("second model response")
+
+        with patch("litellm.acompletion", side_effect=fake_acompletion):
+            result = await two_model_service.generate(prompt="test")
+
+        assert result == "second model response"
+
+    async def test_all_connections_exhausted_raises_llm_error(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.side_effect = Exception("API error")
+            with pytest.raises(LLMError) as exc_info:
+                await generate_service.generate(prompt="test")
+
+        assert exc_info.value.code == "LLM_ALL_MODELS_FAILED"
+
+    async def test_all_models_failed_error_message(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.side_effect = Exception("API error")
+            with pytest.raises(LLMError) as exc_info:
+                await generate_service.generate(prompt="test")
+
+        assert exc_info.value.message == "All models failed to produce a valid response"
+
+
+# ── generate() — structured output parsing ───────────────────────────────────
+
+
+@pytest.mark.llm
+class TestGenerateStructuredOutputParsing:
+    async def test_unparseable_response_retries_then_raises(
+        self, generate_service: LLMService
+    ) -> None:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response("not valid json")
+            with pytest.raises(LLMError) as exc_info:
+                await generate_service.generate(
+                    prompt="test", structured_output=_SimpleOutput
+                )
+
+        assert mock_ac.call_count == 3  # validation_retries=3, all fail to parse
+        assert exc_info.value.code == "LLM_ALL_MODELS_FAILED"
+
+
+# ── generate() — semaphores ───────────────────────────────────────────────────
+
+
+@pytest.mark.llm
+class TestGenerateSemaphores:
+    async def test_global_semaphore_restored_after_successful_call(
+        self, generate_service: LLMService
+    ) -> None:
+        initial = generate_service._global_semaphore._value
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="test")
+        assert generate_service._global_semaphore._value == initial
+
+    async def test_per_model_semaphore_restored_after_successful_call(
+        self, generate_service: LLMService
+    ) -> None:
+        _, _, semaphore = generate_service._connections[0]
+        initial = semaphore._value
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service.generate(prompt="test")
+        assert semaphore._value == initial
+
+    async def test_semaphores_restored_after_acompletion_raises(
+        self, generate_service: LLMService
+    ) -> None:
+        global_initial = generate_service._global_semaphore._value
+        _, _, semaphore = generate_service._connections[0]
+        model_initial = semaphore._value
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.side_effect = Exception("API error")
+            with pytest.raises(LLMError):
+                await generate_service.generate(prompt="test")
+        assert generate_service._global_semaphore._value == global_initial
+        assert semaphore._value == model_initial
+
+
+# ── generate() — logging ─────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+class TestGenerateLogging:
+    async def test_successful_generate_writes_one_json_line(
+        self, litellm_ok, log_config: LogConfig, log_dir: Path
+    ) -> None:
+        service = LLMService(
+            profile=LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")]),
+            log_config=log_config,
+        )
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response("result")
+            await service.generate(prompt="test")
+
+        lines = (log_dir / "llm.log").read_text().strip().splitlines()
+        assert len(lines) == 1
+        json.loads(lines[0])  # must be valid JSON
+
+    async def test_log_entry_success_true_with_final_response(
+        self, litellm_ok, log_config: LogConfig, log_dir: Path
+    ) -> None:
+        service = LLMService(
+            profile=LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")]),
+            log_config=log_config,
+        )
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response("the answer")
+            await service.generate(prompt="test")
+
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["success"] is True
+        assert entry["final_response"] == "the answer"
+
+    async def test_log_entry_has_one_attempt_for_single_successful_call(
+        self, litellm_ok, log_config: LogConfig, log_dir: Path
+    ) -> None:
+        service = LLMService(
+            profile=LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")]),
+            log_config=log_config,
+        )
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await service.generate(prompt="test")
+
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert len(entry["attempts"]) == 1
+
+    async def test_failed_generate_still_writes_log_entry(
+        self, litellm_ok, log_config: LogConfig, log_dir: Path
+    ) -> None:
+        service = LLMService(
+            profile=LLMProfile(
+                models=[ModelConfig(model="gemini/gemini-2.0-flash", validation_retries=1)]
+            ),
+            log_config=log_config,
+        )
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.side_effect = Exception("API down")
+            with pytest.raises(LLMError):
+                await service.generate(prompt="test")
+
+        lines = (log_dir / "llm.log").read_text().strip().splitlines()
+        assert len(lines) == 1
+        entry = json.loads(lines[0])
+        assert entry["success"] is False
+
+    async def test_api_key_masked_as_redacted_in_log_model_args(
+        self, litellm_ok, log_config: LogConfig, log_dir: Path
+    ) -> None:
+        service = LLMService(
+            profile=LLMProfile(
+                models=[ModelConfig(model="gemini/gemini-2.0-flash", api_key="secret-key-123")],
+                skip_api_key_validation=True,
+            ),
+            log_config=log_config,
+        )
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await service.generate(prompt="test")
+
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["attempts"][0]["model_args"]["api_key"] == "[REDACTED]"
