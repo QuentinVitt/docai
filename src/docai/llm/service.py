@@ -3,13 +3,17 @@ from __future__ import annotations
 import asyncio
 import os
 import time
+from datetime import datetime, timezone
 from logging import getLogger
 from pathlib import Path
 from typing import Callable
 
 import litellm
-from litellm import BadRequestError, openai
+from litellm import openai
 from pydantic import BaseModel
+
+litellm.suppress_debug_info = True
+getLogger("LiteLLM").setLevel(40)  # ERROR
 
 from docai.llm.datatypes import (
     LLMCallAttempt,
@@ -32,7 +36,7 @@ _CAPABILITY_NAMES: dict[str, str] = {
 
 class LLMService:
     def __init__(self, profile: LLMProfile, log_config: LogConfig) -> None:
-        self._setup_log_dir(log_config)
+        self._log_file = self._setup_log_dir(log_config)
         self._global_semaphore = asyncio.Semaphore(profile.max_concurrency)
         self._connections: list[tuple[dict, int, asyncio.Semaphore]] = []
 
@@ -96,7 +100,7 @@ class LLMService:
                 message=f"Model '{model.model}' does not support response schema [{litellm.supports_response_schema(model=model.model, custom_llm_provider=model.base_url)}]",
             )
 
-    def _setup_log_dir(self, log_config: LogConfig) -> None:
+    def _setup_log_dir(self, log_config: LogConfig) -> Path:
         path = Path(log_config.log_dir)
 
         # Reject if the target path itself is a file
@@ -133,7 +137,9 @@ class LLMService:
         # Create or truncate the log file
         log_file = path / LOG_FILE_NAME
         mode = "w" if log_config.clean_on_start else "a"
-        log_file.open(mode).close()
+        with log_file.open(mode):
+            pass
+        return log_file
 
     async def _call(
         self,
@@ -172,9 +178,33 @@ class LLMService:
         validation_error: str | None = None,
         error: str | None = None,
     ) -> LLMCallAttempt:
-        raise NotImplementedError
-        if model_args["api_key"]:
+        model_args = model_args.copy()
+        if "api_key" in model_args:
             model_args["api_key"] = "[REDACTED]"
+        if usage is not None:
+            try:
+                prompt_tokens_price, completion_tokens_price = litellm.cost_per_token(
+                    model=model_args["model"],
+                    custom_llm_provider=model_args.get("base_url"),
+                    prompt_tokens=usage.prompt_tokens,
+                    completion_tokens=usage.completion_tokens,
+                )
+            except Exception:
+                logger.debug("Price lookup failed for model '%s'", model_args["model"])
+                prompt_tokens_price, completion_tokens_price = None, None
+        else:
+            prompt_tokens_price, completion_tokens_price = None, None
+        return LLMCallAttempt(
+            model_args=model_args,
+            latency_ms=latency * 1000,
+            usage_metadata=usage.model_dump() if usage else None,
+            prompt_tokens_price=prompt_tokens_price,
+            completion_tokens_price=completion_tokens_price,
+            messages=messages,
+            response=response,
+            validator_error=validation_error,
+            error=error,
+        )
 
     async def _log(
         self,
@@ -185,7 +215,17 @@ class LLMService:
         final_response: litellm.Message | None = None,
         error_code: str | None = None,
     ):
-        raise NotImplementedError
+        generation_log = LLMGenerateLog(
+            timestamp=datetime.now(timezone.utc),
+            total_latency_ms=latency * 1000,
+            success=success,
+            attempts=attempts,
+            final_response=final_response.content if final_response else None,
+            error_code=error_code,
+        )
+
+        with open(self._log_file, "a") as f:
+            f.write(generation_log.model_dump_json() + "\n")
 
     async def generate(
         self,

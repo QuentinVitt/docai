@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from litellm import Message
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 from pydantic.functional_validators import AfterValidator
 from typing_extensions import Annotated
 
@@ -137,8 +137,6 @@ class LogConfig(BaseModel):
 
 
 class LLMCallAttempt(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     model_args: dict  # _connections[i][0] with api_key masked as "[REDACTED]"
     latency_ms: float
     usage_metadata: (
@@ -148,11 +146,18 @@ class LLMCallAttempt(BaseModel):
         float | None
     )  # USD — stored separately as prices change over time
     completion_tokens_price: float | None  # USD
-    total_price: float | None  # USD
     messages: list[dict | Message]
     response: Message | None
     validator_error: str | None
     error: str | None
+
+    @field_serializer("messages")
+    def _serialize_messages(self, messages: list[dict | Message]) -> list[dict]:
+        return [m.model_dump() if isinstance(m, Message) else m for m in messages]
+
+    @field_serializer("response")
+    def _serialize_response(self, response: Message | None) -> dict | None:
+        return response.model_dump() if response is not None else None
 
 
 class LLMGenerateLog(BaseModel):

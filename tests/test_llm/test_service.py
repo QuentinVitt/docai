@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import litellm
+import openai
 import pytest
 from pydantic import BaseModel
 
@@ -493,9 +497,13 @@ def _make_llm_response(content: str = "Hello, world!") -> MagicMock:
     usage.completion_tokens = 5
     usage.total_tokens = 15
     usage.completion_tokens_details = None
+    usage.model_dump.return_value = {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 15,
+    }
 
-    message = MagicMock()
-    message.content = content
+    message = litellm.Message(content=content, role="assistant")
 
     choice = MagicMock()
     choice.message = message
@@ -528,6 +536,61 @@ def two_model_service(litellm_ok, log_config: LogConfig) -> LLMService:
         ],
     )
     return LLMService(profile=profile, log_config=log_config)
+
+
+# ── _call() ───────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.llm
+class TestCall:
+    async def test_messages_forwarded_to_acompletion(
+        self, generate_service: LLMService
+    ) -> None:
+        model_args, _, semaphore = generate_service._connections[0]
+        messages = [{"role": "user", "content": "hello"}]
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.return_value = _make_llm_response()
+            await generate_service._call(model_args, messages, semaphore)
+        assert mock_ac.call_args.kwargs["messages"] == messages
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            openai.OpenAIError("generic api error"),
+            litellm.RateLimitError(
+                message="rate limited", llm_provider="gemini", model="gemini-2.0-flash"
+            ),
+            litellm.AuthenticationError(
+                message="auth failed", llm_provider="gemini", model="gemini-2.0-flash"
+            ),
+            litellm.APIConnectionError(
+                message="connection failed", llm_provider="gemini", model="gemini-2.0-flash"
+            ),
+            litellm.Timeout(
+                message="timed out", llm_provider="gemini", model="gemini-2.0-flash"
+            ),
+        ],
+    )
+    async def test_openai_error_returned_not_raised(
+        self, generate_service: LLMService, exc: openai.OpenAIError
+    ) -> None:
+        model_args, _, semaphore = generate_service._connections[0]
+        messages = [{"role": "user", "content": "hello"}]
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.side_effect = exc
+            result, usage = await generate_service._call(model_args, messages, semaphore)
+        assert result is exc
+        assert usage is None
+
+    async def test_non_openai_exception_propagates(
+        self, generate_service: LLMService
+    ) -> None:
+        model_args, _, semaphore = generate_service._connections[0]
+        messages = [{"role": "user", "content": "hello"}]
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+            mock_ac.side_effect = ValueError("unexpected error")
+            with pytest.raises(ValueError, match="unexpected error"):
+                await generate_service._call(model_args, messages, semaphore)
 
 
 # ── generate() — happy path ───────────────────────────────────────────────────
@@ -649,7 +712,7 @@ class TestGenerateValidator:
 
         assert captured_messages[1] == [
             {"role": "user", "content": "original prompt"},
-            {"role": "assistant", "content": "first response"},
+            litellm.Message(content="first response", role="assistant"),
             {"role": "user", "content": "output was invalid"},
         ]
 
@@ -678,7 +741,7 @@ class TestGenerateValidator:
         assert captured_messages[1] == [
             {"role": "system", "content": "You are helpful."},
             {"role": "user", "content": "my question"},
-            {"role": "assistant", "content": "first response"},
+            litellm.Message(content="first response", role="assistant"),
             {"role": "user", "content": "try again"},
         ]
 
@@ -714,7 +777,7 @@ class TestGenerateFallback:
     ) -> None:
         async def fake_acompletion(**kwargs):
             if kwargs.get("model") == "gemini/gemini-2.0-flash":
-                raise Exception("first model down")
+                raise openai.OpenAIError("first model down")
             return _make_llm_response("second model response")
 
         with patch("litellm.acompletion", side_effect=fake_acompletion):
@@ -726,7 +789,7 @@ class TestGenerateFallback:
         self, generate_service: LLMService
     ) -> None:
         with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
-            mock_ac.side_effect = Exception("API error")
+            mock_ac.side_effect = openai.OpenAIError("API error")
             with pytest.raises(LLMError) as exc_info:
                 await generate_service.generate(prompt="test")
 
@@ -736,7 +799,7 @@ class TestGenerateFallback:
         self, generate_service: LLMService
     ) -> None:
         with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
-            mock_ac.side_effect = Exception("API error")
+            mock_ac.side_effect = openai.OpenAIError("API error")
             with pytest.raises(LLMError) as exc_info:
                 await generate_service.generate(prompt="test")
 
@@ -793,7 +856,7 @@ class TestGenerateSemaphores:
         _, _, semaphore = generate_service._connections[0]
         model_initial = semaphore._value
         with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
-            mock_ac.side_effect = Exception("API error")
+            mock_ac.side_effect = openai.OpenAIError("API error")
             with pytest.raises(LLMError):
                 await generate_service.generate(prompt="test")
         assert generate_service._global_semaphore._value == global_initial
@@ -859,7 +922,7 @@ class TestGenerateLogging:
             log_config=log_config,
         )
         with patch("litellm.acompletion", new_callable=AsyncMock) as mock_ac:
-            mock_ac.side_effect = Exception("API down")
+            mock_ac.side_effect = openai.OpenAIError("API down")
             with pytest.raises(LLMError):
                 await service.generate(prompt="test")
 
@@ -884,3 +947,110 @@ class TestGenerateLogging:
 
         entry = json.loads((log_dir / "llm.log").read_text().strip())
         assert entry["attempts"][0]["model_args"]["api_key"] == "[REDACTED]"
+
+
+# ── _log() ────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def log_service(litellm_ok, log_config: LogConfig) -> LLMService:
+    return LLMService(
+        profile=LLMProfile(models=[ModelConfig(model="gemini/gemini-2.0-flash")]),
+        log_config=log_config,
+    )
+
+
+@pytest.mark.integration
+class TestLog:
+    async def test_writes_exactly_one_json_line(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(latency=0.1, success=True, attempts=[])
+        lines = (log_dir / "llm.log").read_text().strip().splitlines()
+        assert len(lines) == 1
+
+    async def test_json_line_is_parseable(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(latency=0.1, success=True, attempts=[])
+        raw = (log_dir / "llm.log").read_text().strip()
+        json.loads(raw)  # must not raise
+
+    async def test_success_true_stored(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(latency=0.1, success=True, attempts=[])
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["success"] is True
+
+    async def test_success_false_stored(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(latency=0.1, success=False, attempts=[])
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["success"] is False
+
+    async def test_error_code_stored(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(
+            latency=0.1, success=False, attempts=[], error_code="LLM_ALL_MODELS_FAILED"
+        )
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["error_code"] == "LLM_ALL_MODELS_FAILED"
+
+    async def test_final_response_none_produces_null(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(
+            latency=0.1, success=False, attempts=[], final_response=None
+        )
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["final_response"] is None
+
+    async def test_final_response_message_stores_content(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        message = MagicMock()
+        message.content = "the model said this"
+        await log_service._log(
+            latency=0.1, success=True, attempts=[], final_response=message
+        )
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["final_response"] == "the model said this"
+
+    async def test_latency_converted_to_milliseconds(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(latency=1.5, success=True, attempts=[])
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert entry["total_latency_ms"] == 1500.0
+
+    async def test_timestamp_is_recent(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        before = datetime.now(timezone.utc)
+        await log_service._log(latency=0.1, success=True, attempts=[])
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        ts = datetime.fromisoformat(entry["timestamp"])
+        assert before - timedelta(seconds=1) <= ts <= datetime.now(timezone.utc)
+
+    async def test_attempts_list_written(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        attempt = log_service._log_attempt(
+            model_args=log_service._connections[0][0],
+            latency=0.05,
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        await log_service._log(latency=0.1, success=True, attempts=[attempt])
+        entry = json.loads((log_dir / "llm.log").read_text().strip())
+        assert len(entry["attempts"]) == 1
+
+    async def test_two_calls_append_two_lines(
+        self, log_service: LLMService, log_dir: Path
+    ) -> None:
+        await log_service._log(latency=0.1, success=True, attempts=[])
+        await log_service._log(latency=0.2, success=False, attempts=[])
+        lines = (log_dir / "llm.log").read_text().strip().splitlines()
+        assert len(lines) == 2
