@@ -31,10 +31,10 @@ class AssetSummary(BaseModel):
 
 
 class DirectoryEntry(BaseModel):
+    child_packages: list[str]
     files: list[str]
-    subdirectories: list[str]
-    asset_summary: AssetSummary | None
+    assets: AssetSummary | None
 
 
 FileManifest = dict[str, ManifestEntry]
-DirectoryRegistry = dict[str, DirectoryEntry]
+PackageManifest = dict[str, DirectoryEntry]
