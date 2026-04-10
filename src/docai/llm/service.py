@@ -12,9 +12,6 @@ import litellm
 from litellm import openai
 from pydantic import BaseModel
 
-litellm.suppress_debug_info = True
-getLogger("LiteLLM").setLevel(40)  # ERROR
-
 from docai.llm.datatypes import (
     LLMCallAttempt,
     LLMGenerateLog,
@@ -23,6 +20,9 @@ from docai.llm.datatypes import (
     ModelConfig,
 )
 from docai.llm.errors import LLMError
+
+litellm.suppress_debug_info = True
+getLogger("LiteLLM").setLevel(40)  # ERROR
 
 logger = getLogger(__name__)
 
