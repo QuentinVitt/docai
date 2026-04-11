@@ -426,13 +426,19 @@ by all downstream components.
 (Pass 1 purpose + package summaries), asset (directory registry), ignored (invisible),
 unknown (warned, skippable).
 
-**Symlinks**: ignored, warning emitted.
+**Symlinks**: ignored by default, warning emitted. Force-included symlinks (`!` pattern in `.docaiignore`) are processed normally.
 
 **Two outputs**:
 - **File manifest**: `dict[str, ManifestEntry]` keyed by relative path. Per-file:
-  classification, language, content hash, override.
+  classification, language, content hash, override. Content hash computed for: processed
+  files not force-excluded, and force-included non-asset files. All other files have
+  `content_hash = None`.
 - **Directory registry**: `dict[str, DirectoryEntry]` keyed by relative directory path.
-  Per-directory: direct child files, direct child subdirectories, asset summary.
+  Per-directory: direct child files (non-asset), child packages, asset summary. Each
+  `DirectoryEntry` exposes a `content_hash()` method (SHA256 of stable JSON serialization)
+  used by status reconciliation.
+
+Both manifests are regenerated fresh on every run — they are not persisted to `.docai/`.
 
 ### 2. Structure Extractor
 
@@ -609,15 +615,18 @@ for that entity. This is driven by LLM complexity assessment, not entity count t
 package summaries, and asset listings from the directory registry as context. Output is a
 single `overview` string.
 
-**LLM client**: thin wrapper interface (`send`, `send_structured`) over **LiteLLM**. LiteLLM
-handles provider routing, structured output translation (JSON schema → provider-native
-format), token counting, and cost tracking via callbacks. Primary provider: Google Gemini
-(`gemini-2.0-flash`). Switching providers is a config string change. The wrapper adds retry
-logic and error classification on top.
+**LLM client**: `LLMService.generate(prompt, *, system_prompt, structured_output, validator)`
+over **LiteLLM**. LiteLLM handles provider routing, structured output translation (JSON
+schema → provider-native format), token counting, and cost tracking. The service adds
+multi-model failover, validation retry loops, and structured logging on top.
 
-**Retry strategy**: connection retries (3, exponential backoff, configurable) for transient
-errors. Validation retries (3, with error feedback) for invalid LLM responses. Both
-independent and configurable.
+**Multi-model profile**: `LLMProfile` holds an ordered `list[ModelConfig]`. On failure,
+the service moves to the next model in the list. Primary model: Google Gemini
+(`gemini-2.0-flash`). Switching models or providers is a config string change.
+
+**Retry strategy**: per-model validation retries (default 3, with error feedback appended
+to conversation) for parse or validation failures. On connection error the service moves
+directly to the next model. All retries exhausted → `LLMError(code="LLM_ALL_MODELS_FAILED")`.
 
 ### 5. Project State
 
@@ -629,41 +638,48 @@ directory.
 .docai/
   version                    # state format version (plain text)
   lock                       # PID lockfile (gitignored)
-  manifest.json              # dict[str, ManifestEntry] — file classifications
-  directories.json           # dict[str, DirectoryEntry] — directory registry
   purposes.json              # dict[str, str] — Pass 1 purpose sentences
   graph.json                 # ProcessingPlan — ordered work item buckets
-  status.json                # dict[str, FileStatus] — generation status per file
+  status.json                # dict[str, FileStatus] — generation status per file and package
   logs/                      # detailed per-call metrics for benchmarking
   analyses/                  # FileAnalysis per processed file (mirrors source tree)
   docs/                      # generated documentation (mirrors source tree)
 ```
 
+File manifest and directory registry are **not persisted** — they are regenerated fresh on
+every run by the Discovery component.
+
 **Atomic writes**: all disk writes use write-to-temp-then-rename. Leftover `.tmp` files
 cleaned up on startup.
 
-**Crash recovery**: on resume, load manifest, compare stored hashes against current files.
-Files with matching hashes and `complete` status are skipped. Files with `in_progress`
-status are restarted. Changed/new files get full re-processing.
+**Status reconciliation** (runs every time, after Discovery): status.json is the ground
+truth for incremental processing. After Discovery produces fresh manifests, the state
+module reconciles against the stored status:
 
-**Incremental invalidation**: uses an invalidated set propagated through ProcessingPlan
-bucket order:
-1. Discovery compares stored hashes against current files. Changed files enter the
-   invalidated set.
-2. Changed files get re-extracted. Graph Builder produces a new ProcessingPlan.
-3. Documentation Generator processes buckets in order. For each file: if the file or any
-   of its dependencies (from FileAnalysis `dependencies`) are in the invalidated set →
-   regenerate and add to set. Otherwise → use cached docs.
-4. Package summaries regenerate if any constituent file or child package was invalidated.
+Tracked entries: all files where `ManifestEntry.content_hash is not None` (processed files
+not force-excluded, and force-included non-assets), plus all packages in the directory
+registry.
 
-No reverse dependency index needed — forward dependency lists plus ordered processing are
-sufficient.
+Reconciliation rules:
+- Entry in manifests, not in status → add as `pending`
+- Entry in manifests, status `complete`, same hash → keep `complete` (skip generation)
+- Entry in manifests, status `complete`, different hash → mark `deprecated`
+- Entry in manifests, status `deprecated` → keep `deprecated`
+- Entry in manifests, status `failed` → reset to `pending`
+- Entry in manifests, status `remove` → mark `deprecated` (file reappeared)
+- Entry in status, not in manifests → mark `remove`
 
-**Status tracking**: `dict[str, FileStatus]` in `.docai/status.json`.
+**Incremental invalidation**: entries marked `deprecated` (and transitively, anything whose
+dependency chain includes a `deprecated` entry) are regenerated. Propagation uses the
+forward dependency lists on FileAnalysis and the ordered ProcessingPlan buckets — no reverse
+dependency index needed.
+
+**Status tracking**: `dict[str, FileStatus]` in `.docai/status.json`. Covers both files
+and package directories.
 ```
 FileStatus:
-  status: GenerationStatus      # pending | in_progress | complete | failed
-  content_hash: str             # hash at time of generation
+  status: GenerationStatus      # pending | complete | deprecated | failed | remove
+  content_hash: str             # hash at time of generation (or directory content hash)
   error: str | None             # error message when failed
 ```
 
@@ -1027,10 +1043,19 @@ FileDocumentation:
 
 ```
 FileStatus:
-  status: GenerationStatus              # pending | in_progress | complete | failed
+  status: GenerationStatus              # pending | complete | deprecated | failed | remove
   content_hash: str
   error: str | None
+
+GenerationStatus:
+  pending     — in plan, not yet started (or reset from failed)
+  complete    — generated successfully, hash matches
+  deprecated  — hash changed since last generation, or file reappeared after removal
+  failed      — generation failed; error field populated; reset to pending on next run
+  remove      — no longer present in manifests
 ```
+
+Applies to both files and package directories. See reconciliation rules in Project State.
 
 ### Configuration (ADR-021)
 
@@ -1113,8 +1138,9 @@ include all categories and aspects, let the LLM determine relevance.
 - **ADR-020**: Documentation output model — Pass 1 purposes, per-category discriminated
   union (Callable, Macro, Type, Value, Implementation), complexity enum for hybrid mode,
   completeness verification via protocol_methods and folded_accessors
-- **ADR-021**: Status tracking and configuration — FileStatus model, GenerationStatus enum,
-  single status.json, DocaiConfig model for docai.toml
+- **ADR-021**: Status tracking and configuration — FileStatus model, GenerationStatus enum
+  (pending/complete/deprecated/failed/remove), unified status.json for files and packages,
+  DocaiConfig model for docai.toml
 
 ### Project Structure (phase 4)
 - **ADR-022**: Package structure and module boundaries — nine packages (cli, core, discovery,
