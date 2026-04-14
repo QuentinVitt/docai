@@ -692,6 +692,11 @@ regenerate.
 clone, run `docai`, hashes match, instant completion. Only `.docai/lock` and `*.tmp` are
 gitignored.
 
+**Analyses cache API** (`state/analyses.py`):
+- `get_analysis(file_path: str) -> FileAnalysis | None` — reads `.docai/analyses/<file_path>.json`; returns `None` on miss; raises `StateError(STATE_PERMISSION_DENIED)` or `StateError(STATE_CORRUPT)` on errors.
+- `save_analysis(analysis: FileAnalysis) -> None` — atomic write to `.docai/analyses/<analysis.file_path>.json`; creates intermediate directories; raises `StateError(STATE_PERMISSION_DENIED)` on `PermissionError`.
+- `purge_analyses() -> None` — call after `reconcile_status()`; deletes analysis files whose status is `deprecated`, `remove`, or absent from `status.json`; removes empty parent directories bottom-up; wraps all errors as `StateError(STATE_PURGE_FAILED)`.
+
 ### 6. LLM Connector
 
 Encapsulates all LLM interaction: client abstraction, agent loop, tool functions, structured
@@ -992,10 +997,13 @@ AssetSummary:
 ```
 FileAnalysis:
   file_path: str
-  file_type: FileType                   # source_file | source_like_config | config_file
+  file_type: FileType                   # source_file | source_like_config | config_file | other
   entities: list[Entity]
   dependencies: list[str]
 ```
+
+`other` — force-included unknown files where the LLM cannot classify the file as
+source_file, source_like_config, or config_file. Gets a plain description only.
 
 ### Entity — Extraction Model (ADR-017)
 
