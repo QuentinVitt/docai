@@ -1,0 +1,587 @@
+{
+  "timestamp": "2026-04-16_18-24-59",
+  "model": "gemini/gemini-3-flash-preview",
+  "results": {
+    "tests/fixtures/source/python/exceptions.py": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "RequestException",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestException(IOError):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestException",
+          "signature": "def __init__(self, *args, **kwargs):"
+        },
+        {
+          "name": "InvalidJSONError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidJSONError(RequestException):"
+        },
+        {
+          "name": "JSONDecodeError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class JSONDecodeError(InvalidJSONError, CompatJSONDecodeError):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "JSONDecodeError",
+          "signature": "def __init__(self, *args, **kwargs):"
+        },
+        {
+          "name": "__reduce__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "JSONDecodeError",
+          "signature": "def __reduce__(self):"
+        },
+        {
+          "name": "HTTPError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class HTTPError(RequestException):"
+        },
+        {
+          "name": "ConnectionError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ConnectionError(RequestException):"
+        },
+        {
+          "name": "ProxyError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ProxyError(ConnectionError):"
+        },
+        {
+          "name": "SSLError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class SSLError(ConnectionError):"
+        },
+        {
+          "name": "Timeout",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class Timeout(RequestException):"
+        },
+        {
+          "name": "ConnectTimeout",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ConnectTimeout(ConnectionError, Timeout):"
+        },
+        {
+          "name": "ReadTimeout",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ReadTimeout(Timeout):"
+        },
+        {
+          "name": "URLRequired",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class URLRequired(RequestException):"
+        },
+        {
+          "name": "TooManyRedirects",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class TooManyRedirects(RequestException):"
+        },
+        {
+          "name": "MissingSchema",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class MissingSchema(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidSchema",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidSchema(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidURL",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidURL(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidHeader",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidHeader(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidProxyURL",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidProxyURL(InvalidURL):"
+        },
+        {
+          "name": "ChunkedEncodingError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ChunkedEncodingError(RequestException):"
+        },
+        {
+          "name": "ContentDecodingError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ContentDecodingError(RequestException, BaseHTTPError):"
+        },
+        {
+          "name": "StreamConsumedError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class StreamConsumedError(RequestException, TypeError):"
+        },
+        {
+          "name": "RetryError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RetryError(RequestException):"
+        },
+        {
+          "name": "UnrewindableBodyError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class UnrewindableBodyError(RequestException):"
+        },
+        {
+          "name": "RequestsWarning",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestsWarning(Warning):"
+        },
+        {
+          "name": "FileModeWarning",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class FileModeWarning(RequestsWarning, DeprecationWarning):"
+        },
+        {
+          "name": "RequestsDependencyWarning",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestsDependencyWarning(RequestsWarning):"
+        }
+      ]
+    },
+    "tests/fixtures/source/python/models.py": {
+      "file_type": "source_file",
+      "dependencies": [
+        "tests/fixtures/source/python/exceptions.py"
+      ],
+      "entities": [
+        {
+          "name": "REDIRECT_STATI",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "REDIRECT_STATI = (codes.moved, codes.found, codes.other, codes.temporary_redirect, codes.permanent_redirect)"
+        },
+        {
+          "name": "DEFAULT_REDIRECT_LIMIT",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "DEFAULT_REDIRECT_LIMIT = 30"
+        },
+        {
+          "name": "CONTENT_CHUNK_SIZE",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "CONTENT_CHUNK_SIZE = 10 * 1024"
+        },
+        {
+          "name": "ITER_CHUNK_SIZE",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "ITER_CHUNK_SIZE = 512"
+        },
+        {
+          "name": "RequestEncodingMixin",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestEncodingMixin:"
+        },
+        {
+          "name": "path_url",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestEncodingMixin",
+          "signature": "@property\ndef path_url(self):"
+        },
+        {
+          "name": "_encode_params",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestEncodingMixin",
+          "signature": "@staticmethod\ndef _encode_params(data):"
+        },
+        {
+          "name": "_encode_files",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestEncodingMixin",
+          "signature": "@staticmethod\ndef _encode_files(files, data):"
+        },
+        {
+          "name": "RequestHooksMixin",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestHooksMixin:"
+        },
+        {
+          "name": "register_hook",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestHooksMixin",
+          "signature": "def register_hook(self, event, hook):"
+        },
+        {
+          "name": "deregister_hook",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestHooksMixin",
+          "signature": "def deregister_hook(self, event, hook):"
+        },
+        {
+          "name": "Request",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class Request(RequestHooksMixin):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "def __init__(self, method=None, url=None, headers=None, files=None, data=None, params=None, auth=None, cookies=None, hooks=None, json=None):"
+        },
+        {
+          "name": "__repr__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "def __repr__(self):"
+        },
+        {
+          "name": "prepare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "def prepare(self):"
+        },
+        {
+          "name": "PreparedRequest",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def __init__(self):"
+        },
+        {
+          "name": "prepare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare(self, method=None, url=None, headers=None, files=None, data=None, params=None, auth=None, cookies=None, hooks=None, json=None):"
+        },
+        {
+          "name": "__repr__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def __repr__(self):"
+        },
+        {
+          "name": "copy",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def copy(self):"
+        },
+        {
+          "name": "prepare_method",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_method(self, method):"
+        },
+        {
+          "name": "_get_idna_encoded_host",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "@staticmethod\ndef _get_idna_encoded_host(host):"
+        },
+        {
+          "name": "prepare_url",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_url(self, url, params):"
+        },
+        {
+          "name": "prepare_headers",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_headers(self, headers):"
+        },
+        {
+          "name": "prepare_body",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_body(self, data, files, json=None):"
+        },
+        {
+          "name": "prepare_content_length",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_content_length(self, body):"
+        },
+        {
+          "name": "prepare_auth",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_auth(self, auth, url=\"\"):"
+        },
+        {
+          "name": "prepare_cookies",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_cookies(self, cookies):"
+        },
+        {
+          "name": "prepare_hooks",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_hooks(self, hooks):"
+        },
+        {
+          "name": "Response",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class Response:"
+        },
+        {
+          "name": "__attrs__",
+          "category": "value",
+          "kind": "variable",
+          "parent": "Response",
+          "signature": "__attrs__ = [\"_content\", \"status_code\", \"headers\", \"url\", \"history\", \"encoding\", \"reason\", \"cookies\", \"elapsed\", \"request\"]"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __init__(self):"
+        },
+        {
+          "name": "__enter__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __enter__(self):"
+        },
+        {
+          "name": "__exit__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __exit__(self, *args):"
+        },
+        {
+          "name": "__getstate__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __getstate__(self):"
+        },
+        {
+          "name": "__setstate__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __setstate__(self, state):"
+        },
+        {
+          "name": "__repr__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __repr__(self):"
+        },
+        {
+          "name": "__bool__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __bool__(self):"
+        },
+        {
+          "name": "__nonzero__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __nonzero__(self):"
+        },
+        {
+          "name": "__iter__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __iter__(self):"
+        },
+        {
+          "name": "ok",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef ok(self):"
+        },
+        {
+          "name": "is_redirect",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef is_redirect(self):"
+        },
+        {
+          "name": "is_permanent_redirect",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef is_permanent_redirect(self):"
+        },
+        {
+          "name": "next",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef next(self):"
+        },
+        {
+          "name": "apparent_encoding",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef apparent_encoding(self):"
+        },
+        {
+          "name": "iter_content",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def iter_content(self, chunk_size=1, decode_unicode=False):"
+        },
+        {
+          "name": "iter_lines",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def iter_lines(self, chunk_size=ITER_CHUNK_SIZE, decode_unicode=False, delimiter=None):"
+        },
+        {
+          "name": "content",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef content(self):"
+        },
+        {
+          "name": "text",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef text(self):"
+        },
+        {
+          "name": "json",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def json(self, **kwargs):"
+        },
+        {
+          "name": "links",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "@property\ndef links(self):"
+        },
+        {
+          "name": "raise_for_status",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def raise_for_status(self):"
+        },
+        {
+          "name": "close",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def close(self):"
+        }
+      ]
+    }
+  }
+}

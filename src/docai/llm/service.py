@@ -85,7 +85,10 @@ class LLMService:
                     message=f"Model '{model.model}' does not support {_CAPABILITY_NAMES[capability]}",
                 )
 
-        for param in model.configured_params():
+        # num_retries and timeout are litellm-internal — not provider API params,
+        # so they won't appear in get_supported_openai_params() for any model.
+        _LITELLM_INTERNAL_PARAMS = {"num_retries", "timeout"}
+        for param in model.configured_params() - _LITELLM_INTERNAL_PARAMS:
             if param not in supported:
                 raise LLMError(
                     code="LLM_UNSUPPORTED_PARAMETER",

@@ -1,0 +1,28 @@
+@use '../variables';
+@use '../mixins';
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: variables.$spacing-sm variables.$spacing-md;
+  border-radius: variables.$border-radius;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+
+  &--primary {
+    background-color: variables.$color-primary;
+    color: #fff;
+  }
+
+  &--secondary {
+    background-color: transparent;
+    border-color: variables.$color-secondary;
+    color: variables.$color-secondary;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
