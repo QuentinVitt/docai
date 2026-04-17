@@ -172,7 +172,7 @@ class TestMergeEntities:
         e_a = _entity("a", EntityCategory.callable)
         e_b = _entity("b", EntityCategory.type)
         e_a_dup = _entity("a", EntityCategory.callable, signature="duplicate")
-        e_c = _entity("c", EntityCategory.value)
+        e_c = _entity("c", EntityCategory.variable)
         result = _merge_entities(
             EntityList(entities=[e_a, e_b]),
             EntityList(entities=[e_a_dup, e_c]),

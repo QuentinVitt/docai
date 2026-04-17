@@ -28,7 +28,7 @@ class TestEntityCategoryEnum:
         assert EntityCategory.callable.value == "callable"
         assert EntityCategory.macro.value == "macro"
         assert EntityCategory.type.value == "type"
-        assert EntityCategory.value.value == "value"
+        assert EntityCategory.variable.value == "value"
         assert EntityCategory.implementation.value == "implementation"
 
 
@@ -62,7 +62,7 @@ class TestEntityConstruction:
     @pytest.mark.unit
     def test_signature_none(self) -> None:
         entity = Entity(
-            category=EntityCategory.value,
+            category=EntityCategory.variable,
             name="MAX_RETRIES",
             kind="constant",
             parent=None,

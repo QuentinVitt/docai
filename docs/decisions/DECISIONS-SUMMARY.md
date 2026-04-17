@@ -504,7 +504,22 @@ Documentation Generator when it has the full source code.
    returned paths exist in the file manifest, and that `source_like_config` always has
    non-empty dependencies (source_like_config is defined by having imports).
 2. **Entity call** — extracts entities. Only executed when `file_type == source_file`;
-   skipped entirely for config_file, source_like_config, and other.
+   skipped entirely for config_file, source_like_config, and other. For large files,
+   extraction is chunked: 750-line chunks with a 100-line header prepended and 200-line
+   overlap between chunks (step=550). Chunks are merged by deduplicating on (name, category).
+   Chunk size is constrained by output size, not input size — dense files produce 12k+ token
+   responses per chunk, which causes intermittent provider disconnects at larger sizes.
+
+**Dep resolution rule**: only imports containing an explicit file path string produce
+dependencies. Language module system paths (Rust `use crate::`, Haskell module names,
+Java package imports) are never resolved to project files.
+
+**Language-specific entity rules** (hard-won from eval analysis):
+- Haskell data constructors → `callable`; `deriving` clauses → one `implementation` per typeclass
+- Scala `object Foo` (singleton/companion) → `value`
+- TypeScript `type` object shapes and `interface` bodies are recursed; `new` construct signatures → `callable`
+- Ruby `attr_reader`/`attr_accessor`/`attr_writer` call sites → `macro`
+- Module-level `const foo = () => ...` → `callable`
 
 **Main entry point** (`extractor/extractor.py`):
 1. Cache check via `get_analysis()` — hit → return immediately

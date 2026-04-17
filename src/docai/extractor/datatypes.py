@@ -16,7 +16,7 @@ class EntityCategory(str, Enum):
     callable = "callable"
     macro = "macro"
     type = "type"
-    value = "value"
+    variable = "value"
     implementation = "implementation"
 
 

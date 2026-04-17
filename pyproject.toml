@@ -34,6 +34,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "-m 'not eval'"
 
 markers = [
     "unit: pure function tests, no I/O, no mocks",
