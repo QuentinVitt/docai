@@ -1,0 +1,36 @@
+@use 'variables';
+
+$breakpoints: (
+  sm: 640px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+);
+
+@mixin responsive($breakpoint) {
+  $bp: map.get($breakpoints, $breakpoint);
+  @media (min-width: $bp) {
+    @content;
+  }
+}
+
+@mixin heading-styles {
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: variables.$spacing-sm;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin generate-spacing-utilities {
+  @each $name, $value in (xs: 0.25rem, sm: 0.5rem, md: 1rem, lg: 1.5rem, xl: 2rem) {
+    .mt-#{$name} { margin-top: $value; }
+    .mb-#{$name} { margin-bottom: $value; }
+    .pt-#{$name} { padding-top: $value; }
+    .pb-#{$name} { padding-bottom: $value; }
+  }
+}

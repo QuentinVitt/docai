@@ -1,0 +1,25 @@
+{% macro render_form(form, action='', method='POST', class='') %}
+<form action="{{ action }}" method="{{ method }}" class="form {{ class }}">
+  {{ form.hidden_tag() }}
+  {% for field in form %}
+    {% if field.type != 'HiddenField' and field.type != 'CSRFTokenField' %}
+      {{ render_field(field) }}
+    {% endif %}
+  {% endfor %}
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary">Submit</button>
+  </div>
+</form>
+{% endmacro %}
+
+{% macro render_field(field, label_visible=true) %}
+<div class="form__group {% if field.errors %}form__group--error{% endif %}">
+  {% if label_visible %}
+    {{ field.label(class='form__label') }}
+  {% endif %}
+  {{ field(class='form__input') }}
+  {% for error in field.errors %}
+    <span class="form__error">{{ error }}</span>
+  {% endfor %}
+</div>
+{% endmacro %}

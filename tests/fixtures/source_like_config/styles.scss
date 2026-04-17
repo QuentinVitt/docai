@@ -1,0 +1,58 @@
+@use 'variables';
+@use 'mixins';
+@use 'components/button';
+@use 'components/card';
+
+// Base reset
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: variables.$font-family-base;
+  font-size: variables.$font-size-base;
+  line-height: variables.$line-height-base;
+  color: variables.$color-text;
+  background-color: variables.$color-background;
+}
+
+// Layout
+.container {
+  max-width: variables.$container-max-width;
+  margin: 0 auto;
+  padding: 0 variables.$spacing-md;
+
+  &--fluid {
+    max-width: none;
+  }
+}
+
+.grid {
+  display: grid;
+  gap: variables.$spacing-md;
+
+  @include mixins.responsive(md) {
+    grid-template-columns: repeat(12, 1fr);
+  }
+
+  &__col {
+    @each $span in 1, 2, 3, 4, 6, 12 {
+      &--#{$span} {
+        grid-column: span $span;
+      }
+    }
+  }
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  @include mixins.heading-styles;
+  color: variables.$color-heading;
+}
+
+// Utilities
+@include mixins.generate-spacing-utilities;

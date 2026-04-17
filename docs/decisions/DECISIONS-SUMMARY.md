@@ -478,8 +478,8 @@ extraction method was used.
 ```
 FileAnalysis:
   file_path: str                # relative path, matches manifest key
-  file_type: FileType           # source_file | source_like_config | config_file
-  entities: list[Entity]        # empty for source-like config and config files
+  file_type: FileType           # source_file | source_like_config | config_file | other
+  entities: list[Entity]        # populated only for source_file; empty for all others
   dependencies: list[str]       # resolved project file paths
 ```
 
@@ -487,9 +487,11 @@ FileAnalysis:
 ```
 Entity:
   category: EntityCategory      # callable | macro | type | value | implementation
-  name: str                     # entity name as it appears in code
+  name: str                     # entity name only (not qualified)
   kind: str                     # freeform variant label (function, method, class, etc.)
-  parent: str | None            # enclosing type name for depth-1 entities
+  parent: str | None            # dotted scope path from module root (e.g. "OuterClass.Inner"),
+                                #   or None if top-level. Fully qualified to avoid ambiguity
+                                #   when multiple types share the same name in one file.
   signature: str | None         # full signature as it appears in source
 ```
 
@@ -497,9 +499,27 @@ The extraction model is intentionally minimal. All documentation richness (descr
 parameters, side effects, error behavior, complexity judgments) is produced by the
 Documentation Generator when it has the full source code.
 
-**LLM output format**: JSON with structured output (GenAI response schema). Validated for
-semantic completeness. Up to 3 validation retries with error feedback before marking as
-failed.
+**LLM fallback extraction pipeline** (`extractor/llm_fallback.py`): two focused LLM calls:
+1. **Type + deps call** — determines `FileType` and `dependencies`. Validator ensures all
+   returned paths exist in the file manifest, and that `source_like_config` always has
+   non-empty dependencies (source_like_config is defined by having imports).
+2. **Entity call** — extracts entities. Only executed when `file_type == source_file`;
+   skipped entirely for config_file, source_like_config, and other.
+
+**Main entry point** (`extractor/extractor.py`):
+1. Cache check via `get_analysis()` — hit → return immediately
+2. Read file content — `PermissionError` → `ExtractionError(EXTRACTION_READ_FAILED)`
+3. Dispatch: tree-sitter (not yet implemented) → heuristic (not yet implemented) → LLM fallback
+4. `save_analysis()` → return result
+5. `DocaiError` propagates unchanged; bare `Exception` wrapped as `EXTRACTION_UNEXPECTED_ERROR`
+
+**Error codes** (`extractor/errors.py` — `ExtractionError(DocaiError)`):
+- `EXTRACTION_READ_FAILED` — file content unreadable, message: `"Content not readable for file: {path}"`
+- `EXTRACTION_LLM_FAILED` — LLM call failed, message: `"File Analysis failed for {path}"`
+- `EXTRACTION_UNEXPECTED_ERROR` — unexpected exception, message: `"File Analysis failed for {path}: {e}"`
+
+**LLM output format**: Pydantic structured output via `LLMService.generate(structured_output=...)`.
+Validated with retry feedback. Up to 3 validation retries before marking as failed.
 
 ### 3. Graph Builder
 
@@ -691,6 +711,11 @@ regenerate.
 **Git-committable**: `.docai/` is designed to be committed to version control. Team members
 clone, run `docai`, hashes match, instant completion. Only `.docai/lock` and `*.tmp` are
 gitignored.
+
+**Analyses cache API** (`state/analyses.py`):
+- `get_analysis(file_path: str) -> FileAnalysis | None` — reads `.docai/analyses/<file_path>.json`; returns `None` on miss; raises `StateError(STATE_PERMISSION_DENIED)` or `StateError(STATE_CORRUPT)` on errors.
+- `save_analysis(analysis: FileAnalysis) -> None` — atomic write to `.docai/analyses/<analysis.file_path>.json`; creates intermediate directories; raises `StateError(STATE_PERMISSION_DENIED)` on `PermissionError`.
+- `purge_analyses() -> None` — call after `reconcile_status()`; deletes analysis files whose status is `deprecated`, `remove`, or absent from `status.json`; removes empty parent directories bottom-up; wraps all errors as `StateError(STATE_PURGE_FAILED)`.
 
 ### 6. LLM Connector
 
@@ -992,10 +1017,13 @@ AssetSummary:
 ```
 FileAnalysis:
   file_path: str
-  file_type: FileType                   # source_file | source_like_config | config_file
+  file_type: FileType                   # source_file | source_like_config | config_file | other
   entities: list[Entity]
   dependencies: list[str]
 ```
+
+`other` — force-included unknown files where the LLM cannot classify the file as
+source_file, source_like_config, or config_file. Gets a plain description only.
 
 ### Entity — Extraction Model (ADR-017)
 

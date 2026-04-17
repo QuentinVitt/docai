@@ -41,6 +41,7 @@ markers = [
     "slow: full pipeline tests or anything multi-stage",
     "llm: tests that use the mock LLM client",
     "tree_sitter: tests that exercise tree-sitter parsing (Tier 1 extractor)",
+    "eval: real API calls to evaluate LLM prompt quality",
 ]
 
 [tool.coverage.run]

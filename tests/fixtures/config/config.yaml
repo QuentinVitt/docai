@@ -1,0 +1,35 @@
+app:
+  name: docai
+  version: "0.1.0"
+  environment: development
+  debug: true
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  workers: 4
+  timeout: 30
+
+database:
+  host: localhost
+  port: 5432
+  name: docai_db
+  user: docai
+  pool_size: 10
+  max_overflow: 20
+
+logging:
+  level: INFO
+  format: json
+  output: stdout
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-6
+  max_retries: 3
+  timeout: 60
+
+cache:
+  backend: sqlite
+  path: .docai/cache.db
+  ttl: 3600

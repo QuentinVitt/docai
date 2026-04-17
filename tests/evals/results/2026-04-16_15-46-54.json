@@ -1,0 +1,5227 @@
+{
+  "timestamp": "2026-04-16_15-46-54",
+  "model": "gemini/gemini-3-flash-preview",
+  "results": {
+    "tests/fixtures/source/python/exceptions.py": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "RequestException",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestException(IOError):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestException",
+          "signature": "def __init__(self, *args, **kwargs):"
+        },
+        {
+          "name": "InvalidJSONError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidJSONError(RequestException):"
+        },
+        {
+          "name": "JSONDecodeError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class JSONDecodeError(InvalidJSONError, CompatJSONDecodeError):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "JSONDecodeError",
+          "signature": "def __init__(self, *args, **kwargs):"
+        },
+        {
+          "name": "__reduce__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "JSONDecodeError",
+          "signature": "def __reduce__(self):"
+        },
+        {
+          "name": "HTTPError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class HTTPError(RequestException):"
+        },
+        {
+          "name": "ConnectionError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ConnectionError(RequestException):"
+        },
+        {
+          "name": "ProxyError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ProxyError(ConnectionError):"
+        },
+        {
+          "name": "SSLError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class SSLError(ConnectionError):"
+        },
+        {
+          "name": "Timeout",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class Timeout(RequestException):"
+        },
+        {
+          "name": "ConnectTimeout",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ConnectTimeout(ConnectionError, Timeout):"
+        },
+        {
+          "name": "ReadTimeout",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ReadTimeout(Timeout):"
+        },
+        {
+          "name": "URLRequired",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class URLRequired(RequestException):"
+        },
+        {
+          "name": "TooManyRedirects",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class TooManyRedirects(RequestException):"
+        },
+        {
+          "name": "MissingSchema",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class MissingSchema(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidSchema",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidSchema(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidURL",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidURL(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidHeader",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidHeader(RequestException, ValueError):"
+        },
+        {
+          "name": "InvalidProxyURL",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class InvalidProxyURL(InvalidURL):"
+        },
+        {
+          "name": "ChunkedEncodingError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ChunkedEncodingError(RequestException):"
+        },
+        {
+          "name": "ContentDecodingError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ContentDecodingError(RequestException, BaseHTTPError):"
+        },
+        {
+          "name": "StreamConsumedError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class StreamConsumedError(RequestException, TypeError):"
+        },
+        {
+          "name": "RetryError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RetryError(RequestException):"
+        },
+        {
+          "name": "UnrewindableBodyError",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class UnrewindableBodyError(RequestException):"
+        },
+        {
+          "name": "RequestsWarning",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestsWarning(Warning):"
+        },
+        {
+          "name": "FileModeWarning",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class FileModeWarning(RequestsWarning, DeprecationWarning):"
+        },
+        {
+          "name": "RequestsDependencyWarning",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestsDependencyWarning(RequestsWarning):"
+        }
+      ]
+    },
+    "tests/fixtures/source/python/models.py": {
+      "file_type": "source_file",
+      "dependencies": [
+        "tests/fixtures/source/python/exceptions.py"
+      ],
+      "entities": [
+        {
+          "name": "REDIRECT_STATI",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "REDIRECT_STATI = ( codes.moved, codes.found, codes.other, codes.temporary_redirect, codes.permanent_redirect, )"
+        },
+        {
+          "name": "DEFAULT_REDIRECT_LIMIT",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "DEFAULT_REDIRECT_LIMIT = 30"
+        },
+        {
+          "name": "CONTENT_CHUNK_SIZE",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "CONTENT_CHUNK_SIZE = 10 * 1024"
+        },
+        {
+          "name": "ITER_CHUNK_SIZE",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "ITER_CHUNK_SIZE = 512"
+        },
+        {
+          "name": "RequestEncodingMixin",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestEncodingMixin:"
+        },
+        {
+          "name": "path_url",
+          "category": "callable",
+          "kind": "property",
+          "parent": "RequestEncodingMixin",
+          "signature": "@property def path_url(self):"
+        },
+        {
+          "name": "_encode_params",
+          "category": "callable",
+          "kind": "staticmethod",
+          "parent": "RequestEncodingMixin",
+          "signature": "@staticmethod def _encode_params(data):"
+        },
+        {
+          "name": "_encode_files",
+          "category": "callable",
+          "kind": "staticmethod",
+          "parent": "RequestEncodingMixin",
+          "signature": "@staticmethod def _encode_files(files, data):"
+        },
+        {
+          "name": "RequestHooksMixin",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class RequestHooksMixin:"
+        },
+        {
+          "name": "register_hook",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestHooksMixin",
+          "signature": "def register_hook(self, event, hook):"
+        },
+        {
+          "name": "deregister_hook",
+          "category": "callable",
+          "kind": "method",
+          "parent": "RequestHooksMixin",
+          "signature": "def deregister_hook(self, event, hook):"
+        },
+        {
+          "name": "Request",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class Request(RequestHooksMixin):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "Request",
+          "signature": "def __init__( self, method=None, url=None, headers=None, files=None, data=None, params=None, auth=None, cookies=None, hooks=None, json=None, ):"
+        },
+        {
+          "name": "__repr__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "def __repr__(self):"
+        },
+        {
+          "name": "prepare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "def prepare(self):"
+        },
+        {
+          "name": "PreparedRequest",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "PreparedRequest",
+          "signature": "def __init__(self):"
+        },
+        {
+          "name": "prepare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare( self, method=None, url=None, headers=None, files=None, data=None, params=None, auth=None, cookies=None, hooks=None, json=None, ):"
+        },
+        {
+          "name": "__repr__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def __repr__(self):"
+        },
+        {
+          "name": "copy",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def copy(self):"
+        },
+        {
+          "name": "prepare_method",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_method(self, method):"
+        },
+        {
+          "name": "_get_idna_encoded_host",
+          "category": "callable",
+          "kind": "staticmethod",
+          "parent": "PreparedRequest",
+          "signature": "@staticmethod def _get_idna_encoded_host(host):"
+        },
+        {
+          "name": "prepare_url",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_url(self, url, params):"
+        },
+        {
+          "name": "prepare_headers",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_headers(self, headers):"
+        },
+        {
+          "name": "prepare_body",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_body(self, data, files, json=None):"
+        },
+        {
+          "name": "prepare_content_length",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_content_length(self, body):"
+        },
+        {
+          "name": "prepare_auth",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_auth(self, auth, url=\"\"):"
+        },
+        {
+          "name": "prepare_cookies",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_cookies(self, cookies):"
+        },
+        {
+          "name": "prepare_hooks",
+          "category": "callable",
+          "kind": "method",
+          "parent": "PreparedRequest",
+          "signature": "def prepare_hooks(self, hooks):"
+        },
+        {
+          "name": "Response",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class Response:"
+        },
+        {
+          "name": "__attrs__",
+          "category": "value",
+          "kind": "variable",
+          "parent": "Response",
+          "signature": "__attrs__ = [ \"_content\", \"status_code\", \"headers\", \"url\", \"history\", \"encoding\", \"reason\", \"cookies\", \"elapsed\", \"request\", ]"
+        },
+        {
+          "name": "__init__",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "Response",
+          "signature": "def __init__(self):"
+        },
+        {
+          "name": "__enter__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __enter__(self):"
+        },
+        {
+          "name": "__exit__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __exit__(self, *args):"
+        },
+        {
+          "name": "__getstate__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __getstate__(self):"
+        },
+        {
+          "name": "__setstate__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __setstate__(self, state):"
+        },
+        {
+          "name": "__repr__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __repr__(self):"
+        },
+        {
+          "name": "__bool__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __bool__(self):"
+        },
+        {
+          "name": "__nonzero__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __nonzero__(self):"
+        },
+        {
+          "name": "__iter__",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def __iter__(self):"
+        },
+        {
+          "name": "ok",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def ok(self):"
+        },
+        {
+          "name": "is_redirect",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def is_redirect(self):"
+        },
+        {
+          "name": "is_permanent_redirect",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def is_permanent_redirect(self):"
+        },
+        {
+          "name": "next",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def next(self):"
+        },
+        {
+          "name": "apparent_encoding",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def apparent_encoding(self):"
+        },
+        {
+          "name": "iter_content",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def iter_content(self, chunk_size=1, decode_unicode=False):"
+        },
+        {
+          "name": "iter_lines",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def iter_lines( self, chunk_size=ITER_CHUNK_SIZE, decode_unicode=False, delimiter=None )"
+        },
+        {
+          "name": "content",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def content(self):"
+        },
+        {
+          "name": "text",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def text(self):"
+        },
+        {
+          "name": "json",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def json(self, **kwargs):"
+        },
+        {
+          "name": "links",
+          "category": "callable",
+          "kind": "property",
+          "parent": "Response",
+          "signature": "@property def links(self):"
+        },
+        {
+          "name": "raise_for_status",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def raise_for_status(self):"
+        },
+        {
+          "name": "close",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Response",
+          "signature": "def close(self):"
+        }
+      ]
+    },
+    "tests/fixtures/source/go/scanner.go": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "Valid",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func Valid(data []byte) bool"
+        },
+        {
+          "name": "checkValid",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func checkValid(data []byte, scan *scanner) error"
+        },
+        {
+          "name": "SyntaxError",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type SyntaxError struct"
+        },
+        {
+          "name": "Error",
+          "category": "callable",
+          "kind": "method",
+          "parent": "SyntaxError",
+          "signature": "func (e *SyntaxError) Error() string"
+        },
+        {
+          "name": "scanner",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type scanner struct"
+        },
+        {
+          "name": "scannerPool",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var scannerPool = sync.Pool{...}"
+        },
+        {
+          "name": "newScanner",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func newScanner() *scanner"
+        },
+        {
+          "name": "freeScanner",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func freeScanner(scan *scanner)"
+        },
+        {
+          "name": "scanContinue",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanContinue     = iota"
+        },
+        {
+          "name": "scanBeginLiteral",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanBeginLiteral"
+        },
+        {
+          "name": "scanBeginObject",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanBeginObject"
+        },
+        {
+          "name": "scanObjectKey",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanObjectKey"
+        },
+        {
+          "name": "scanObjectValue",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanObjectValue"
+        },
+        {
+          "name": "scanEndObject",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanEndObject"
+        },
+        {
+          "name": "scanBeginArray",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanBeginArray"
+        },
+        {
+          "name": "scanArrayValue",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanArrayValue"
+        },
+        {
+          "name": "scanEndArray",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanEndArray"
+        },
+        {
+          "name": "scanSkipSpace",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanSkipSpace"
+        },
+        {
+          "name": "scanEnd",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanEnd"
+        },
+        {
+          "name": "scanError",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "scanError"
+        },
+        {
+          "name": "parseObjectKey",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "parseObjectKey   = iota"
+        },
+        {
+          "name": "parseObjectValue",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "parseObjectValue"
+        },
+        {
+          "name": "parseArrayValue",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "parseArrayValue"
+        },
+        {
+          "name": "maxNestingDepth",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const maxNestingDepth = 10000"
+        },
+        {
+          "name": "reset",
+          "category": "callable",
+          "kind": "method",
+          "parent": "scanner",
+          "signature": "func (s *scanner) reset()"
+        },
+        {
+          "name": "eof",
+          "category": "callable",
+          "kind": "method",
+          "parent": "scanner",
+          "signature": "func (s *scanner) eof() int"
+        },
+        {
+          "name": "pushParseState",
+          "category": "callable",
+          "kind": "method",
+          "parent": "scanner",
+          "signature": "func (s *scanner) pushParseState(c byte, newParseState int, successState int) int"
+        },
+        {
+          "name": "popParseState",
+          "category": "callable",
+          "kind": "method",
+          "parent": "scanner",
+          "signature": "func (s *scanner) popParseState()"
+        },
+        {
+          "name": "isSpace",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func isSpace(c byte) bool"
+        },
+        {
+          "name": "stateBeginValueOrEmpty",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateBeginValueOrEmpty(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateBeginValue",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateBeginValue(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateBeginStringOrEmpty",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateBeginStringOrEmpty(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateBeginString",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateBeginString(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateEndValue",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateEndValue(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateEndTop",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateEndTop(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateInString",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateInString(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateInStringEsc",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateInStringEsc(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateInStringEscU",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateInStringEscU(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateInStringEscU1",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateInStringEscU1(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateInStringEscU12",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateInStringEscU12(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateInStringEscU123",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateInStringEscU123(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateNeg",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateNeg(s *scanner, c byte) int"
+        },
+        {
+          "name": "state1",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func state1(s *scanner, c byte) int"
+        },
+        {
+          "name": "state0",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func state0(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateDot",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateDot(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateDot0",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateDot0(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateE",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateE(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateESign",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateESign(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateE0",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateE0(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateT",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateT(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateTr",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateTr(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateTru",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateTru(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateF",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateF(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateFa",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateFa(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateFal",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateFal(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateFals",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateFals(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateN",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateN(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateNu",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateNu(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateNul",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateNul(s *scanner, c byte) int"
+        },
+        {
+          "name": "stateError",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func stateError(s *scanner, c byte) int"
+        },
+        {
+          "name": "error",
+          "category": "callable",
+          "kind": "method",
+          "parent": "scanner",
+          "signature": "func (s *scanner) error(c byte, context string) int"
+        },
+        {
+          "name": "quoteChar",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func quoteChar(c byte) string"
+        }
+      ]
+    },
+    "tests/fixtures/source/go/request.go": {
+      "file_type": "source_file",
+      "dependencies": [
+        "tests/fixtures/source/go/scanner.go",
+        "tests/fixtures/source/go/server.go"
+      ],
+      "entities": [
+        {
+          "name": "defaultMaxMemory",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const defaultMaxMemory = 32 << 20"
+        },
+        {
+          "name": "ErrMissingFile",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var ErrMissingFile = errors.New(\"http: no such file\")"
+        },
+        {
+          "name": "ProtocolError",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type ProtocolError struct"
+        },
+        {
+          "name": "Error",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ProtocolError",
+          "signature": "func (pe *ProtocolError) Error() string"
+        },
+        {
+          "name": "Is",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ProtocolError",
+          "signature": "func (pe *ProtocolError) Is(err error) bool"
+        },
+        {
+          "name": "ErrNotSupported",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrNotSupported = &ProtocolError{\"feature not supported\"}"
+        },
+        {
+          "name": "ErrUnexpectedTrailer",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrUnexpectedTrailer = &ProtocolError{\"trailer header without chunked transfer encoding\"}"
+        },
+        {
+          "name": "ErrMissingBoundary",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrMissingBoundary = &ProtocolError{\"no multipart boundary param in Content-Type\"}"
+        },
+        {
+          "name": "ErrNotMultipart",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrNotMultipart = &ProtocolError{\"request Content-Type isn't multipart/form-data\"}"
+        },
+        {
+          "name": "ErrHeaderTooLong",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrHeaderTooLong = &ProtocolError{\"header too long\"}"
+        },
+        {
+          "name": "ErrShortBody",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrShortBody = &ProtocolError{\"entity body too short\"}"
+        },
+        {
+          "name": "ErrMissingContentLength",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "ErrMissingContentLength = &ProtocolError{\"missing ContentLength in HEAD response\"}"
+        },
+        {
+          "name": "badStringError",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func badStringError(what, val string) error"
+        },
+        {
+          "name": "reqWriteExcludeHeader",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var reqWriteExcludeHeader = map[string]bool"
+        },
+        {
+          "name": "Request",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type Request struct"
+        },
+        {
+          "name": "Context",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) Context() context.Context"
+        },
+        {
+          "name": "WithContext",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) WithContext(ctx context.Context) *Request"
+        },
+        {
+          "name": "Clone",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) Clone(ctx context.Context) *Request"
+        },
+        {
+          "name": "ProtoAtLeast",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) ProtoAtLeast(major, minor int) bool"
+        },
+        {
+          "name": "UserAgent",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) UserAgent() string"
+        },
+        {
+          "name": "Cookies",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) Cookies() []*Cookie"
+        },
+        {
+          "name": "CookiesNamed",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) CookiesNamed(name string) []*Cookie"
+        },
+        {
+          "name": "ErrNoCookie",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var ErrNoCookie = errors.New(\"http: named cookie not present\")"
+        },
+        {
+          "name": "Cookie",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) Cookie(name string) (*Cookie, error)"
+        },
+        {
+          "name": "AddCookie",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) AddCookie(c *Cookie)"
+        },
+        {
+          "name": "Referer",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) Referer() string"
+        },
+        {
+          "name": "multipartByReader",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var multipartByReader = &multipart.Form"
+        },
+        {
+          "name": "MultipartReader",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) MultipartReader() (*multipart.Reader, error)"
+        },
+        {
+          "name": "multipartReader",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) multipartReader(allowMixed bool) (*multipart.Reader, error)"
+        },
+        {
+          "name": "isH2Upgrade",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) isH2Upgrade() bool"
+        },
+        {
+          "name": "valueOrDefault",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func valueOrDefault(value, def string) string"
+        },
+        {
+          "name": "defaultUserAgent",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const defaultUserAgent = \"Go-http-client/1.1\""
+        },
+        {
+          "name": "Write",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) Write(w io.Writer) error"
+        },
+        {
+          "name": "WriteProxy",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) WriteProxy(w io.Writer) error"
+        },
+        {
+          "name": "errMissingHost",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var errMissingHost = errors.New(\"http: Request.Write on Request with no Host or URL set\")"
+        },
+        {
+          "name": "write",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) write(w io.Writer, usingProxy bool, extraHeaders Header, waitForContinue func() bool) (err error)"
+        },
+        {
+          "name": "requestBodyReadError",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type requestBodyReadError struct{ error }"
+        },
+        {
+          "name": "idnaASCII",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func idnaASCII(v string) (string, error)"
+        },
+        {
+          "name": "removeZone",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func removeZone(host string) string"
+        },
+        {
+          "name": "ParseHTTPVersion",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func ParseHTTPVersion(vers string) (major, minor int, ok bool)"
+        },
+        {
+          "name": "validMethod",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func validMethod(method string) bool"
+        },
+        {
+          "name": "NewRequest",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func NewRequest(method, url string, body io.Reader) (*Request, error)"
+        },
+        {
+          "name": "NewRequestWithContext",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func NewRequestWithContext(ctx context.Context, method, url string, body io.Reader) (*Request, error)"
+        },
+        {
+          "name": "BasicAuth",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) BasicAuth() (username, password string, ok bool)"
+        },
+        {
+          "name": "parseBasicAuth",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func parseBasicAuth(auth string) (username, password string, ok bool)"
+        },
+        {
+          "name": "SetBasicAuth",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) SetBasicAuth(username, password string)"
+        },
+        {
+          "name": "parseRequestLine",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func parseRequestLine(line string) (method, requestURI, proto string, ok bool)"
+        },
+        {
+          "name": "textprotoReaderPool",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var textprotoReaderPool sync.Pool"
+        },
+        {
+          "name": "newTextprotoReader",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func newTextprotoReader(br *bufio.Reader) *textproto.Reader"
+        },
+        {
+          "name": "putTextprotoReader",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func putTextprotoReader(r *textproto.Reader)"
+        },
+        {
+          "name": "ReadRequest",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func ReadRequest(b *bufio.Reader) (*Request, error)"
+        },
+        {
+          "name": "readRequest",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func readRequest(b *bufio.Reader) (req *Request, err error)"
+        },
+        {
+          "name": "MaxBytesReader",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func MaxBytesReader(w ResponseWriter, r io.ReadCloser, n int64) io.ReadCloser"
+        },
+        {
+          "name": "MaxBytesError",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type MaxBytesError struct"
+        },
+        {
+          "name": "Error",
+          "category": "callable",
+          "kind": "method",
+          "parent": "MaxBytesError",
+          "signature": "func (e *MaxBytesError) Error() string"
+        },
+        {
+          "name": "maxBytesReader",
+          "category": "type",
+          "kind": "struct",
+          "parent": null,
+          "signature": "type maxBytesReader struct"
+        },
+        {
+          "name": "Read",
+          "category": "callable",
+          "kind": "method",
+          "parent": "maxBytesReader",
+          "signature": "func (l *maxBytesReader) Read(p []byte) (n int, err error)"
+        },
+        {
+          "name": "Close",
+          "category": "callable",
+          "kind": "method",
+          "parent": "maxBytesReader",
+          "signature": "func (l *maxBytesReader) Close() error"
+        },
+        {
+          "name": "copyValues",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func copyValues(dst, src url.Values)"
+        },
+        {
+          "name": "parsePostForm",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func parsePostForm(r *Request) (vs url.Values, err error)"
+        },
+        {
+          "name": "ParseForm",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) ParseForm() error"
+        },
+        {
+          "name": "ParseMultipartForm",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) ParseMultipartForm(maxMemory int64) error"
+        },
+        {
+          "name": "FormValue",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) FormValue(key string) string"
+        },
+        {
+          "name": "PostFormValue",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) PostFormValue(key string) string"
+        },
+        {
+          "name": "FormFile",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) FormFile(key string) (multipart.File, *multipart.FileHeader, error)"
+        },
+        {
+          "name": "PathValue",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) PathValue(name string) string"
+        },
+        {
+          "name": "SetPathValue",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) SetPathValue(name, value string)"
+        },
+        {
+          "name": "patIndex",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) patIndex(name string) int"
+        },
+        {
+          "name": "expectsContinue",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) expectsContinue() bool"
+        },
+        {
+          "name": "wantsHttp10KeepAlive",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) wantsHttp10KeepAlive() bool"
+        },
+        {
+          "name": "wantsClose",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) wantsClose() bool"
+        },
+        {
+          "name": "closeBody",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) closeBody() error"
+        },
+        {
+          "name": "isReplayable",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) isReplayable() bool"
+        },
+        {
+          "name": "outgoingLength",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) outgoingLength() int64"
+        },
+        {
+          "name": "requestMethodUsuallyLacksBody",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "func requestMethodUsuallyLacksBody(method string) bool"
+        },
+        {
+          "name": "requiresHTTP1",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Request",
+          "signature": "func (r *Request) requiresHTTP1() bool"
+        }
+      ]
+    },
+    "tests/fixtures/source/java/NumberUtils.java": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "NumberUtils",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "public class NumberUtils"
+        },
+        {
+          "name": "LONG_ZERO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Long LONG_ZERO = Long.valueOf(0L)"
+        },
+        {
+          "name": "LONG_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Long LONG_ONE = Long.valueOf(1L)"
+        },
+        {
+          "name": "LONG_MINUS_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Long LONG_MINUS_ONE = Long.valueOf(-1L)"
+        },
+        {
+          "name": "INTEGER_ZERO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Integer INTEGER_ZERO = Integer.valueOf(0)"
+        },
+        {
+          "name": "INTEGER_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Integer INTEGER_ONE = Integer.valueOf(1)"
+        },
+        {
+          "name": "INTEGER_TWO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Integer INTEGER_TWO = Integer.valueOf(2)"
+        },
+        {
+          "name": "INTEGER_MINUS_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Integer INTEGER_MINUS_ONE = Integer.valueOf(-1)"
+        },
+        {
+          "name": "SHORT_ZERO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Short SHORT_ZERO = Short.valueOf((short) 0)"
+        },
+        {
+          "name": "SHORT_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Short SHORT_ONE = Short.valueOf((short) 1)"
+        },
+        {
+          "name": "SHORT_MINUS_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Short SHORT_MINUS_ONE = Short.valueOf((short) -1)"
+        },
+        {
+          "name": "BYTE_ZERO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Byte BYTE_ZERO = Byte.valueOf((byte) 0)"
+        },
+        {
+          "name": "BYTE_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Byte BYTE_ONE = Byte.valueOf((byte) 1)"
+        },
+        {
+          "name": "BYTE_MINUS_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Byte BYTE_MINUS_ONE = Byte.valueOf((byte) -1)"
+        },
+        {
+          "name": "DOUBLE_ZERO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Double DOUBLE_ZERO = Double.valueOf(0.0d)"
+        },
+        {
+          "name": "DOUBLE_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Double DOUBLE_ONE = Double.valueOf(1.0d)"
+        },
+        {
+          "name": "DOUBLE_MINUS_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Double DOUBLE_MINUS_ONE = Double.valueOf(-1.0d)"
+        },
+        {
+          "name": "FLOAT_ZERO",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Float FLOAT_ZERO = Float.valueOf(0.0f)"
+        },
+        {
+          "name": "FLOAT_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Float FLOAT_ONE = Float.valueOf(1.0f)"
+        },
+        {
+          "name": "FLOAT_MINUS_ONE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Float FLOAT_MINUS_ONE = Float.valueOf(-1.0f)"
+        },
+        {
+          "name": "LONG_INT_MAX_VALUE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Long LONG_INT_MAX_VALUE = Long.valueOf(Integer.MAX_VALUE)"
+        },
+        {
+          "name": "LONG_INT_MIN_VALUE",
+          "category": "value",
+          "kind": "constant",
+          "parent": "NumberUtils",
+          "signature": "public static final Long LONG_INT_MIN_VALUE = Long.valueOf(Integer.MIN_VALUE)"
+        },
+        {
+          "name": "accept",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "private static <T> boolean accept(final Consumer<T> consumer, final T obj)"
+        },
+        {
+          "name": "compare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int compare(final byte x, final byte y)"
+        },
+        {
+          "name": "compare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int compare(final int x, final int y)"
+        },
+        {
+          "name": "compare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int compare(final long x, final long y)"
+        },
+        {
+          "name": "compare",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int compare(final short x, final short y)"
+        },
+        {
+          "name": "createBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal createBigDecimal(final String str)"
+        },
+        {
+          "name": "createBigInteger",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigInteger createBigInteger(final String str)"
+        },
+        {
+          "name": "createDouble",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static Double createDouble(final String str)"
+        },
+        {
+          "name": "createFloat",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static Float createFloat(final String str)"
+        },
+        {
+          "name": "createInteger",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static Integer createInteger(final String str)"
+        },
+        {
+          "name": "createLong",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static Long createLong(final String str)"
+        },
+        {
+          "name": "createNumber",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static Number createNumber(final String str)"
+        },
+        {
+          "name": "getMantissa",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "private static String getMantissa(final String str, final int stopPos)"
+        },
+        {
+          "name": "isAllZeros",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "private static boolean isAllZeros(final String str)"
+        },
+        {
+          "name": "isCreatable",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static boolean isCreatable(final String str)"
+        },
+        {
+          "name": "isDigits",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static boolean isDigits(final String str)"
+        },
+        {
+          "name": "isNumber",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static boolean isNumber(final String str)"
+        },
+        {
+          "name": "isParsable",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static boolean isParsable(final String str)"
+        },
+        {
+          "name": "isSign",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "private static boolean isSign(final char ch)"
+        },
+        {
+          "name": "isZero",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "private static boolean isZero(final String mant, final String dec)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static byte max(final byte... array)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static byte max(byte a, final byte b, final byte c)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double max(final double... array)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double max(final double a, final double b, final double c)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static float max(final float... array)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static float max(final float a, final float b, final float c)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int max(final int... array)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int max(int a, final int b, final int c)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static long max(final long... array)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static long max(long a, final long b, final long c)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static short max(final short... array)"
+        },
+        {
+          "name": "max",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static short max(short a, final short b, final short c)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static byte min(final byte... array)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static byte min(byte a, final byte b, final byte c)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double min(final double... array)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double min(final double a, final double b, final double c)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static float min(final float... array)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static float min(final float a, final float b, final float c)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int min(final int... array)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int min(int a, final int b, final int c)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static long min(final long... array)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static long min(long a, final long b, final long c)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static short min(final short... array)"
+        },
+        {
+          "name": "min",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static short min(short a, final short b, final short c)"
+        },
+        {
+          "name": "toByte",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static byte toByte(final String str)"
+        },
+        {
+          "name": "toByte",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static byte toByte(final String str, final byte defaultValue)"
+        },
+        {
+          "name": "toDouble",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double toDouble(final BigDecimal value)"
+        },
+        {
+          "name": "toDouble",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double toDouble(final BigDecimal value, final double defaultValue)"
+        },
+        {
+          "name": "toDouble",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double toDouble(final String str)"
+        },
+        {
+          "name": "toDouble",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static double toDouble(final String str, final double defaultValue)"
+        },
+        {
+          "name": "toFloat",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static float toFloat(final String str)"
+        },
+        {
+          "name": "toFloat",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static float toFloat(final String str, final float defaultValue)"
+        },
+        {
+          "name": "toInt",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int toInt(final String str)"
+        },
+        {
+          "name": "toInt",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static int toInt(final String str, final int defaultValue)"
+        },
+        {
+          "name": "toLong",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static long toLong(final String str)"
+        },
+        {
+          "name": "toLong",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static long toLong(final String str, final long defaultValue)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final BigDecimal value)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final BigDecimal value, final int scale, final RoundingMode roundingMode)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final Double value)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final Double value, final int scale, final RoundingMode roundingMode)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final Float value)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final Float value, final int scale, final RoundingMode roundingMode)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final String value)"
+        },
+        {
+          "name": "toScaledBigDecimal",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static BigDecimal toScaledBigDecimal(final String value, final int scale, final RoundingMode roundingMode)"
+        },
+        {
+          "name": "toShort",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static short toShort(final String str)"
+        },
+        {
+          "name": "toShort",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "public static short toShort(final String str, final short defaultValue)"
+        },
+        {
+          "name": "validateArray",
+          "category": "callable",
+          "kind": "method",
+          "parent": "NumberUtils",
+          "signature": "private static void validateArray(final Object array)"
+        },
+        {
+          "name": "NumberUtils",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "NumberUtils",
+          "signature": "public NumberUtils()"
+        }
+      ]
+    },
+    "tests/fixtures/source/javascript/chalk.js": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "stdoutColor",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const {stdout: stdoutColor, stderr: stderrColor} = supportsColor;"
+        },
+        {
+          "name": "stderrColor",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const {stdout: stdoutColor, stderr: stderrColor} = supportsColor;"
+        },
+        {
+          "name": "GENERATOR",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const GENERATOR = Symbol('GENERATOR');"
+        },
+        {
+          "name": "STYLER",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const STYLER = Symbol('STYLER');"
+        },
+        {
+          "name": "IS_EMPTY",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const IS_EMPTY = Symbol('IS_EMPTY');"
+        },
+        {
+          "name": "levelMapping",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const levelMapping = [\n\t'ansi',\n\t'ansi',\n\t'ansi256',\n\t'ansi16m',\n];"
+        },
+        {
+          "name": "styles",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const styles = Object.create(null);"
+        },
+        {
+          "name": "applyOptions",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "const applyOptions = (object, options = {}) => {"
+        },
+        {
+          "name": "Chalk",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "export class Chalk {"
+        },
+        {
+          "name": "constructor",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Chalk",
+          "signature": "constructor(options)"
+        },
+        {
+          "name": "chalkFactory",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "const chalkFactory = options => {"
+        },
+        {
+          "name": "createChalk",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "function createChalk(options)"
+        },
+        {
+          "name": "getModelAnsi",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "const getModelAnsi = (model, level, type, ...arguments_) => {"
+        },
+        {
+          "name": "usedModels",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const usedModels = ['rgb', 'hex', 'ansi256'];"
+        },
+        {
+          "name": "proto",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const proto = Object.defineProperties(() => {}, {"
+        },
+        {
+          "name": "createStyler",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "const createStyler = (open, close, parent) => {"
+        },
+        {
+          "name": "createBuilder",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "const createBuilder = (self, _styler, _isEmpty) => {"
+        },
+        {
+          "name": "applyStyle",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "const applyStyle = (self, string) => {"
+        },
+        {
+          "name": "chalk",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const chalk = createChalk();"
+        },
+        {
+          "name": "chalkStderr",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "export const chalkStderr = createChalk({level: stderrColor ? stderrColor.level : 0});"
+        },
+        {
+          "name": "modifierNames",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "modifierNames"
+        },
+        {
+          "name": "foregroundColorNames",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "foregroundColorNames"
+        },
+        {
+          "name": "backgroundColorNames",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "backgroundColorNames"
+        },
+        {
+          "name": "colorNames",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "colorNames"
+        },
+        {
+          "name": "modifiers",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "modifierNames as modifiers"
+        },
+        {
+          "name": "foregroundColors",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "foregroundColorNames as foregroundColors"
+        },
+        {
+          "name": "backgroundColors",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "backgroundColorNames as backgroundColors"
+        },
+        {
+          "name": "colors",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "colorNames as colors"
+        },
+        {
+          "name": "supportsColor",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "stdoutColor as supportsColor"
+        },
+        {
+          "name": "supportsColorStderr",
+          "category": "value",
+          "kind": "export",
+          "parent": null,
+          "signature": "stderrColor as supportsColorStderr"
+        }
+      ]
+    },
+    "tests/fixtures/source/javascript/application.js": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "finalhandler",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var finalhandler = require('finalhandler');"
+        },
+        {
+          "name": "debug",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var debug = require('debug')('express:application');"
+        },
+        {
+          "name": "View",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var View = require('./view');"
+        },
+        {
+          "name": "http",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var http = require('node:http');"
+        },
+        {
+          "name": "methods",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var methods = require('./utils').methods;"
+        },
+        {
+          "name": "compileETag",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var compileETag = require('./utils').compileETag;"
+        },
+        {
+          "name": "compileQueryParser",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var compileQueryParser = require('./utils').compileQueryParser;"
+        },
+        {
+          "name": "compileTrust",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var compileTrust = require('./utils').compileTrust;"
+        },
+        {
+          "name": "resolve",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var resolve = require('node:path').resolve;"
+        },
+        {
+          "name": "once",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var once = require('once')"
+        },
+        {
+          "name": "Router",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var Router = require('router');"
+        },
+        {
+          "name": "slice",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var slice = Array.prototype.slice;"
+        },
+        {
+          "name": "flatten",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var flatten = Array.prototype.flat;"
+        },
+        {
+          "name": "app",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var app = exports = module.exports = {};"
+        },
+        {
+          "name": "trustProxyDefaultSymbol",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "var trustProxyDefaultSymbol = '@@symbol:trust_proxy_default';"
+        },
+        {
+          "name": "init",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.init = function init()"
+        },
+        {
+          "name": "defaultConfiguration",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.defaultConfiguration = function defaultConfiguration()"
+        },
+        {
+          "name": "handle",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.handle = function handle(req, res, callback)"
+        },
+        {
+          "name": "use",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.use = function use(fn)"
+        },
+        {
+          "name": "route",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.route = function route(path)"
+        },
+        {
+          "name": "engine",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.engine = function engine(ext, fn)"
+        },
+        {
+          "name": "param",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.param = function param(name, fn)"
+        },
+        {
+          "name": "set",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.set = function set(setting, val)"
+        },
+        {
+          "name": "path",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.path = function path()"
+        },
+        {
+          "name": "enabled",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.enabled = function enabled(setting)"
+        },
+        {
+          "name": "disabled",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.disabled = function disabled(setting)"
+        },
+        {
+          "name": "enable",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.enable = function enable(setting)"
+        },
+        {
+          "name": "disable",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.disable = function disable(setting)"
+        },
+        {
+          "name": "all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.all = function all(path)"
+        },
+        {
+          "name": "render",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.render = function render(name, options, callback)"
+        },
+        {
+          "name": "listen",
+          "category": "callable",
+          "kind": "method",
+          "parent": "app",
+          "signature": "app.listen = function listen()"
+        },
+        {
+          "name": "logerror",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "function logerror(err)"
+        },
+        {
+          "name": "tryRender",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "function tryRender(view, options, callback)"
+        }
+      ]
+    },
+    "tests/fixtures/source/typescript/basic.d.ts": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "Class",
+          "category": "type",
+          "kind": "type alias",
+          "parent": null,
+          "signature": "export type Class<T, Arguments extends unknown[] = any[]> = {"
+        },
+        {
+          "name": "prototype",
+          "category": "value",
+          "kind": "property",
+          "parent": "Class",
+          "signature": "prototype: Pick<T, keyof T>;"
+        },
+        {
+          "name": "new",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "Class",
+          "signature": "new(...arguments_: Arguments): T;"
+        },
+        {
+          "name": "Constructor",
+          "category": "type",
+          "kind": "type alias",
+          "parent": null,
+          "signature": "export type Constructor<T, Arguments extends unknown[] = any[]> = new(...arguments_: Arguments) => T;"
+        },
+        {
+          "name": "AbstractClass",
+          "category": "type",
+          "kind": "interface",
+          "parent": null,
+          "signature": "export interface AbstractClass<T, Arguments extends unknown[] = any[]> extends AbstractConstructor<T, Arguments> {"
+        },
+        {
+          "name": "prototype",
+          "category": "value",
+          "kind": "property",
+          "parent": "AbstractClass",
+          "signature": "prototype: Pick<T, keyof T>;"
+        },
+        {
+          "name": "AbstractConstructor",
+          "category": "type",
+          "kind": "type alias",
+          "parent": null,
+          "signature": "export type AbstractConstructor<T, Arguments extends unknown[] = any[]> = abstract new(...arguments_: Arguments) => T;"
+        }
+      ]
+    },
+    "tests/fixtures/source/typescript/textModel.ts": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "createTextBufferFactory",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "export function createTextBufferFactory(text: string): model.ITextBufferFactory"
+        },
+        {
+          "name": "ITextStream",
+          "category": "type",
+          "kind": "interface",
+          "parent": null,
+          "signature": "interface ITextStream"
+        },
+        {
+          "name": "createTextBufferFactoryFromStream",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "export function createTextBufferFactoryFromStream(stream: ITextStream | VSBufferReadableStream): Promise<model.ITextBufferFactory>"
+        },
+        {
+          "name": "createTextBufferFactoryFromSnapshot",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "export function createTextBufferFactoryFromSnapshot(snapshot: model.ITextSnapshot): model.ITextBufferFactory"
+        },
+        {
+          "name": "createTextBuffer",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "export function createTextBuffer(value: string | model.ITextBufferFactory | model.ITextSnapshot, defaultEOL: model.DefaultEndOfLine): { textBuffer: model.ITextBuffer; disposable: IDisposable }"
+        },
+        {
+          "name": "MODEL_ID",
+          "category": "value",
+          "kind": "variable",
+          "parent": null,
+          "signature": "let MODEL_ID = 0;"
+        },
+        {
+          "name": "LIMIT_FIND_COUNT",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const LIMIT_FIND_COUNT = 999;"
+        },
+        {
+          "name": "LONG_LINE_BOUNDARY",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const LONG_LINE_BOUNDARY = 10000;"
+        },
+        {
+          "name": "LINE_HEIGHT_CEILING",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const LINE_HEIGHT_CEILING = 300;"
+        },
+        {
+          "name": "TextModelSnapshot",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class TextModelSnapshot implements model.ITextSnapshot"
+        },
+        {
+          "name": "constructor",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "TextModelSnapshot",
+          "signature": "constructor(source: model.ITextSnapshot)"
+        },
+        {
+          "name": "read",
+          "category": "callable",
+          "kind": "method",
+          "parent": "TextModelSnapshot",
+          "signature": "public read(): string | null"
+        },
+        {
+          "name": "invalidFunc",
+          "category": "callable",
+          "kind": "variable",
+          "parent": null,
+          "signature": "const invalidFunc = () => { throw new Error(`Invalid change accessor`); };"
+        },
+        {
+          "name": "StringOffsetValidationType",
+          "category": "type",
+          "kind": "enum",
+          "parent": null,
+          "signature": "const enum StringOffsetValidationType"
+        },
+        {
+          "name": "TextModel",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "export class TextModel extends Disposable implements model.ITextModel, IDecorationsTreesHost"
+        },
+        {
+          "name": "_MODEL_SYNC_LIMIT",
+          "category": "value",
+          "kind": "static property",
+          "parent": "TextModel",
+          "signature": "static _MODEL_SYNC_LIMIT = 50 * 1024 * 1024;"
+        },
+        {
+          "name": "DEFAULT_CREATION_OPTIONS",
+          "category": "value",
+          "kind": "static property",
+          "parent": "TextModel",
+          "signature": "public static DEFAULT_CREATION_OPTIONS: model.ITextModelCreationOptions"
+        },
+        {
+          "name": "resolveOptions",
+          "category": "callable",
+          "kind": "static method",
+          "parent": "TextModel",
+          "signature": "public static resolveOptions(textBuffer: model.ITextBuffer, options: model.ITextModelCreationOptions): model.TextModelResolvedOptions"
+        },
+        {
+          "name": "onDidChangeLanguage",
+          "category": "callable",
+          "kind": "getter",
+          "parent": "TextModel",
+          "signature": "public get onDidChangeLanguage()"
+        },
+        {
+          "name": "onDidChangeOptions",
+          "category": "callable",
+          "kind": "getter",
+          "parent": "TextModel",
+          "signature": "public get onDidChangeOptions(): Event<IModelOptionsChangedEvent>"
+        },
+        {
+          "name": "onDidChangeContent",
+          "category": "callable",
+          "kind": "method",
+          "parent": "TextModel",
+          "signature": "public onDidChangeContent(listener: (e: IModelContentChangedEvent) => void): IDisposable"
+        },
+        {
+          "name": "constructor",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "TextModel",
+          "signature": "constructor(\n\t\tsource: string | model.ITextBufferFactory,\n\t\tlanguageIdOrSelection: string | ILanguageSelection,\n\t\tcreationOptions: model.ITextModelCreationOptions,\n\t\tassociatedResource: URI | null = null,\n\t\t@IUndoRedoService private readonly _undoRedoService: IUndoRedoService,\n\t\t@ILanguageService private readonly _languageService: ILanguageService,\n\t\t@ILanguageConfigurationService private readonly _languageConfigurationService: ILanguageConfigurationService,\n\t\t@IInstantiationService private readonly instantiationService: IInstantiationService\n\t)"
+        },
+        {
+          "name": "dispose",
+          "category": "callable",
+          "kind": "method",
+          "parent": "TextModel",
+          "signature": "public override dispose(): void"
+        },
+        {
+          "name": "setValue",
+          "category": "callable",
+          "kind": "method",
+          "parent": "TextModel",
+          "signature": "public setValue(value: string | model.ITextSnapshot, reason = EditSources.setValue()): void"
+        },
+        {
+          "name": "applyEdits",
+          "category": "callable",
+          "kind": "method",
+          "parent": "TextModel",
+          "signature": "public applyEdits(rawOperations: readonly model.IIdentifiedSingleEditOperation[], computeUndoEdits?: boolean, reason?: TextModelEditSource): void | model.IValidEditOperation[]"
+        },
+        {
+          "name": "getLineTokensWithInjections",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "export function getLineTokensWithInjections(tokens: LineTokens, injectionOptions: model.InjectedTextOptions[] | null, injectionOffsets: number[] | null): LineTokens"
+        },
+        {
+          "name": "indentOfLine",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "export function indentOfLine(line: string): number"
+        },
+        {
+          "name": "IDecorationsTreesHost",
+          "category": "type",
+          "kind": "interface",
+          "parent": null,
+          "signature": "export interface IDecorationsTreesHost"
+        },
+        {
+          "name": "DecorationsTrees",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class DecorationsTrees"
+        },
+        {
+          "name": "ModelDecorationOptions",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "export class ModelDecorationOptions implements model.IModelDecorationOptions"
+        },
+        {
+          "name": "register",
+          "category": "callable",
+          "kind": "static method",
+          "parent": "ModelDecorationOptions",
+          "signature": "public static register(options: model.IModelDecorationOptions): ModelDecorationOptions"
+        },
+        {
+          "name": "DidChangeDecorationsEmitter",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class DidChangeDecorationsEmitter extends Disposable"
+        },
+        {
+          "name": "DidChangeContentEmitter",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class DidChangeContentEmitter extends Disposable"
+        }
+      ]
+    },
+    "tests/fixtures/source/c/sds.c": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "SDS_NOINIT",
+          "category": "value",
+          "kind": "constant",
+          "parent": null,
+          "signature": "const char *SDS_NOINIT = \"SDS_NOINIT\";"
+        },
+        {
+          "name": "sdsReqType",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "char sdsReqType(size_t string_size)"
+        },
+        {
+          "name": "sdsTypeMaxSize",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "static inline size_t sdsTypeMaxSize(char type)"
+        },
+        {
+          "name": "adjustTypeIfNeeded",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "static inline int adjustTypeIfNeeded(char *type, int *hdrlen, size_t bufsize)"
+        },
+        {
+          "name": "_sdsnewlen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds _sdsnewlen(const void *init, size_t initlen, int trymalloc)"
+        },
+        {
+          "name": "sdsnewplacement",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsnewplacement(char *buf, size_t bufsize, char type, const char *init, size_t initlen)"
+        },
+        {
+          "name": "sdsnewlen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsnewlen(const void *init, size_t initlen)"
+        },
+        {
+          "name": "sdstrynewlen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdstrynewlen(const void *init, size_t initlen)"
+        },
+        {
+          "name": "sdsempty",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsempty(void)"
+        },
+        {
+          "name": "sdsnew",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsnew(const char *init)"
+        },
+        {
+          "name": "sdsdup",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsdup(const sds s)"
+        },
+        {
+          "name": "sdsfree",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsfree(sds s)"
+        },
+        {
+          "name": "sdsfreeusable",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsfreeusable(sds s, size_t *usable)"
+        },
+        {
+          "name": "sdsfreegeneric",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsfreegeneric(void *s)"
+        },
+        {
+          "name": "sdsupdatelen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsupdatelen(sds s)"
+        },
+        {
+          "name": "sdsclear",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsclear(sds s)"
+        },
+        {
+          "name": "_sdsMakeRoomFor",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds _sdsMakeRoomFor(sds s, size_t addlen, int greedy)"
+        },
+        {
+          "name": "sdsMakeRoomFor",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsMakeRoomFor(sds s, size_t addlen)"
+        },
+        {
+          "name": "sdsMakeRoomForNonGreedy",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsMakeRoomForNonGreedy(sds s, size_t addlen)"
+        },
+        {
+          "name": "sdsRemoveFreeSpace",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsRemoveFreeSpace(sds s, int would_regrow)"
+        },
+        {
+          "name": "sdsResize",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsResize(sds s, size_t size, int would_regrow)"
+        },
+        {
+          "name": "sdsAllocPtr",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void *sdsAllocPtr(sds s)"
+        },
+        {
+          "name": "sdsIncrLen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsIncrLen(sds s, ssize_t incr)"
+        },
+        {
+          "name": "sdsgrowzero",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsgrowzero(sds s, size_t len)"
+        },
+        {
+          "name": "sdscatlen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscatlen(sds s, const void *t, size_t len)"
+        },
+        {
+          "name": "sdscat",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscat(sds s, const char *t)"
+        },
+        {
+          "name": "sdscatsds",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscatsds(sds s, const sds t)"
+        },
+        {
+          "name": "sdscpylen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscpylen(sds s, const char *t, size_t len)"
+        },
+        {
+          "name": "sdscpy",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscpy(sds s, const char *t)"
+        },
+        {
+          "name": "sdsfromlonglong",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsfromlonglong(long long value)"
+        },
+        {
+          "name": "sdscatvprintf",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscatvprintf(sds s, const char *fmt, va_list ap)"
+        },
+        {
+          "name": "sdscatprintf",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscatprintf(sds s, const char *fmt, ...)"
+        },
+        {
+          "name": "sdscatfmt",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscatfmt(sds s, char const *fmt, ...)"
+        },
+        {
+          "name": "sdstrim",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdstrim(sds s, const char *cset)"
+        },
+        {
+          "name": "sdssubstr",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdssubstr(sds s, size_t start, size_t len)"
+        },
+        {
+          "name": "sdsrange",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsrange(sds s, ssize_t start, ssize_t end)"
+        },
+        {
+          "name": "sdstolower",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdstolower(sds s)"
+        },
+        {
+          "name": "sdstoupper",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdstoupper(sds s)"
+        },
+        {
+          "name": "sdscmp",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "int sdscmp(const sds s1, const sds s2)"
+        },
+        {
+          "name": "sdssplitlen",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds *sdssplitlen(const char *s, ssize_t len, const char *sep, int seplen, int *count)"
+        },
+        {
+          "name": "sdsfreesplitres",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sdsfreesplitres(sds *tokens, int count)"
+        },
+        {
+          "name": "sdscatrepr",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdscatrepr(sds s, const char *p, size_t len)"
+        },
+        {
+          "name": "sdsneedsrepr",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "int sdsneedsrepr(const sds s)"
+        },
+        {
+          "name": "is_hex_digit",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "int is_hex_digit(char c)"
+        },
+        {
+          "name": "hex_digit_to_int",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "int hex_digit_to_int(char c)"
+        },
+        {
+          "name": "sdssplitargs",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds *sdssplitargs(const char *line, int *argc)"
+        },
+        {
+          "name": "sdsmapchars",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsmapchars(sds s, const char *from, const char *to, size_t setlen)"
+        },
+        {
+          "name": "sdsjoin",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsjoin(char **argv, int argc, char *sep)"
+        },
+        {
+          "name": "sdsjoinsds",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdsjoinsds(sds *argv, int argc, const char *sep, size_t seplen)"
+        },
+        {
+          "name": "sds_malloc",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void *sds_malloc(size_t size)"
+        },
+        {
+          "name": "sds_realloc",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void *sds_realloc(void *ptr, size_t size)"
+        },
+        {
+          "name": "sds_free",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void sds_free(void *ptr)"
+        },
+        {
+          "name": "sdstemplate",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "sds sdstemplate(const char *template, sdstemplate_callback_t cb_func, void *cb_arg)"
+        },
+        {
+          "name": "UNUSED",
+          "category": "macro",
+          "kind": "macro",
+          "parent": null,
+          "signature": "#define UNUSED(x) (void)(x)"
+        },
+        {
+          "name": "sdsTestTemplateCallback",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "static sds sdsTestTemplateCallback(sds varname, void *arg)"
+        },
+        {
+          "name": "sdsTest",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "int sdsTest(int argc, char **argv, int flags)"
+        }
+      ]
+    },
+    "tests/fixtures/source/cpp/Error.cpp": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "ErrorErrorCode",
+          "category": "type",
+          "kind": "enum class",
+          "parent": null,
+          "signature": "enum class ErrorErrorCode : int"
+        },
+        {
+          "name": "MultipleErrors",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ErrorErrorCode",
+          "signature": "MultipleErrors = 1"
+        },
+        {
+          "name": "FileError",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ErrorErrorCode",
+          "signature": "FileError"
+        },
+        {
+          "name": "InconvertibleError",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ErrorErrorCode",
+          "signature": "InconvertibleError"
+        },
+        {
+          "name": "ErrorErrorCategory",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class ErrorErrorCategory : public std::error_category"
+        },
+        {
+          "name": "name",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ErrorErrorCategory",
+          "signature": "const char *name() const noexcept override"
+        },
+        {
+          "name": "message",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ErrorErrorCategory",
+          "signature": "std::string message(int condition) const override"
+        },
+        {
+          "name": "getErrorErrorCat",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "static ErrorErrorCategory &getErrorErrorCat()"
+        },
+        {
+          "name": "anchor",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ErrorInfoBase",
+          "signature": "void ErrorInfoBase::anchor()"
+        },
+        {
+          "name": "ID",
+          "category": "value",
+          "kind": "variable",
+          "parent": "ErrorInfoBase",
+          "signature": "char ErrorInfoBase::ID = 0;"
+        },
+        {
+          "name": "ID",
+          "category": "value",
+          "kind": "variable",
+          "parent": "ErrorList",
+          "signature": "char ErrorList::ID = 0;"
+        },
+        {
+          "name": "anchor",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ECError",
+          "signature": "void ECError::anchor()"
+        },
+        {
+          "name": "ID",
+          "category": "value",
+          "kind": "variable",
+          "parent": "ECError",
+          "signature": "char ECError::ID = 0;"
+        },
+        {
+          "name": "ID",
+          "category": "value",
+          "kind": "variable",
+          "parent": "StringError",
+          "signature": "char StringError::ID = 0;"
+        },
+        {
+          "name": "ID",
+          "category": "value",
+          "kind": "variable",
+          "parent": "FileError",
+          "signature": "char FileError::ID = 0;"
+        },
+        {
+          "name": "logAllUnhandledErrors",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "void llvm::logAllUnhandledErrors(Error E, raw_ostream &OS, Twine ErrorBanner)"
+        },
+        {
+          "name": "toString",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "std::string llvm::toString(Error E)"
+        },
+        {
+          "name": "toStringWithoutConsuming",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "std::string llvm::toStringWithoutConsuming(const Error &E)"
+        },
+        {
+          "name": "convertToErrorCode",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ErrorList",
+          "signature": "std::error_code ErrorList::convertToErrorCode() const"
+        },
+        {
+          "name": "inconvertibleErrorCode",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "std::error_code llvm::inconvertibleErrorCode()"
+        },
+        {
+          "name": "convertToErrorCode",
+          "category": "callable",
+          "kind": "method",
+          "parent": "FileError",
+          "signature": "std::error_code FileError::convertToErrorCode() const"
+        },
+        {
+          "name": "errorCodeToError",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "Error llvm::errorCodeToError(std::error_code EC)"
+        },
+        {
+          "name": "errorToErrorCode",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "std::error_code llvm::errorToErrorCode(Error Err)"
+        },
+        {
+          "name": "fatalUncheckedError",
+          "category": "callable",
+          "kind": "method",
+          "parent": "Error",
+          "signature": "void Error::fatalUncheckedError() const"
+        },
+        {
+          "name": "StringError",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "StringError",
+          "signature": "StringError::StringError(std::error_code EC, const Twine &S)"
+        },
+        {
+          "name": "StringError",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "StringError",
+          "signature": "StringError::StringError(const Twine &S, std::error_code EC)"
+        },
+        {
+          "name": "StringError",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "StringError",
+          "signature": "StringError::StringError(std::string &&S, std::error_code EC, bool PrintMsgOnly)"
+        },
+        {
+          "name": "log",
+          "category": "callable",
+          "kind": "method",
+          "parent": "StringError",
+          "signature": "void StringError::log(raw_ostream &OS) const"
+        },
+        {
+          "name": "convertToErrorCode",
+          "category": "callable",
+          "kind": "method",
+          "parent": "StringError",
+          "signature": "std::error_code StringError::convertToErrorCode() const"
+        },
+        {
+          "name": "createStringError",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "Error llvm::createStringError(std::string &&Msg, std::error_code EC)"
+        },
+        {
+          "name": "report_fatal_error",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "void llvm::report_fatal_error(Error Err, bool GenCrashDiag)"
+        },
+        {
+          "name": "reportFatalInternalError",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "void llvm::reportFatalInternalError(Error Err)"
+        },
+        {
+          "name": "reportFatalUsageError",
+          "category": "callable",
+          "kind": "function",
+          "parent": "llvm",
+          "signature": "void llvm::reportFatalUsageError(Error Err)"
+        },
+        {
+          "name": "LLVMGetErrorTypeId",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "LLVMErrorTypeId LLVMGetErrorTypeId(LLVMErrorRef Err)"
+        },
+        {
+          "name": "LLVMConsumeError",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void LLVMConsumeError(LLVMErrorRef Err)"
+        },
+        {
+          "name": "LLVMCantFail",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void LLVMCantFail(LLVMErrorRef Err)"
+        },
+        {
+          "name": "LLVMGetErrorMessage",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "char *LLVMGetErrorMessage(LLVMErrorRef Err)"
+        },
+        {
+          "name": "LLVMDisposeErrorMessage",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "void LLVMDisposeErrorMessage(char *ErrMsg)"
+        },
+        {
+          "name": "LLVMGetStringErrorTypeId",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "LLVMErrorTypeId LLVMGetStringErrorTypeId()"
+        },
+        {
+          "name": "LLVMCreateStringError",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "LLVMErrorRef LLVMCreateStringError(const char *ErrMsg)"
+        }
+      ]
+    },
+    "tests/fixtures/source/haskell/Error.hs": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "OnError",
+          "category": "type",
+          "kind": "type alias",
+          "parent": null,
+          "signature": "type OnError a b = String -> Maybe a -> Maybe b"
+        },
+        {
+          "name": "OnDecodeError",
+          "category": "type",
+          "kind": "type alias",
+          "parent": null,
+          "signature": "type OnDecodeError = OnError Word8 Char"
+        },
+        {
+          "name": "OnEncodeError",
+          "category": "type",
+          "kind": "type alias",
+          "parent": null,
+          "signature": "type OnEncodeError = OnError Char Word8"
+        },
+        {
+          "name": "UnicodeException",
+          "category": "type",
+          "kind": "data",
+          "parent": null,
+          "signature": "data UnicodeException ="
+        },
+        {
+          "name": "DecodeError",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "UnicodeException",
+          "signature": "DecodeError String (Maybe Word8)"
+        },
+        {
+          "name": "EncodeError",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "UnicodeException",
+          "signature": "EncodeError String (Maybe Char)"
+        },
+        {
+          "name": "Eq",
+          "category": "implementation",
+          "kind": "instance",
+          "parent": "UnicodeException",
+          "signature": "deriving (Eq)"
+        },
+        {
+          "name": "showUnicodeException",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "showUnicodeException :: UnicodeException -> String"
+        },
+        {
+          "name": "Show",
+          "category": "implementation",
+          "kind": "instance",
+          "parent": "UnicodeException",
+          "signature": "instance Show UnicodeException where"
+        },
+        {
+          "name": "Exception",
+          "category": "implementation",
+          "kind": "instance",
+          "parent": "UnicodeException",
+          "signature": "instance Exception UnicodeException"
+        },
+        {
+          "name": "NFData",
+          "category": "implementation",
+          "kind": "instance",
+          "parent": "UnicodeException",
+          "signature": "instance NFData UnicodeException where"
+        },
+        {
+          "name": "strictDecode",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "strictDecode :: OnDecodeError"
+        },
+        {
+          "name": "lenientDecode",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "lenientDecode :: OnDecodeError"
+        },
+        {
+          "name": "strictEncode",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "strictEncode :: OnEncodeError"
+        },
+        {
+          "name": "ignore",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "ignore :: OnError a b"
+        },
+        {
+          "name": "replace",
+          "category": "callable",
+          "kind": "function",
+          "parent": null,
+          "signature": "replace :: b -> OnError a b"
+        }
+      ]
+    },
+    "tests/fixtures/source/elixir/gen_server.ex": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "GenServer",
+          "category": "type",
+          "kind": "module",
+          "parent": null,
+          "signature": "defmodule GenServer do"
+        },
+        {
+          "name": "init",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback init(init_arg :: term) :: {:ok, state} | {:ok, state, timeout | :hibernate | {:continue, continue_arg :: term}} | :ignore | {:stop, reason :: term} when state: term"
+        },
+        {
+          "name": "handle_call",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback handle_call(request :: term, from, state :: term) :: {:reply, reply, new_state} | {:reply, reply, new_state, timeout | :hibernate | {:continue, continue_arg :: term}} | {:noreply, new_state} | {:noreply, new_state, timeout | :hibernate | {:continue, continue_arg :: term}} | {:stop, reason, reply, new_state} | {:stop, reason, new_state} when reply: term, new_state: term, reason: term"
+        },
+        {
+          "name": "handle_cast",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback handle_cast(request :: term, state :: term) :: {:noreply, new_state} | {:noreply, new_state, timeout | :hibernate | {:continue, continue_arg :: term}} | {:stop, reason :: term, new_state} when new_state: term"
+        },
+        {
+          "name": "handle_info",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback handle_info(msg :: :timeout | term, state :: term) :: {:noreply, new_state} | {:noreply, new_state, timeout | :hibernate | {:continue, continue_arg :: term}} | {:stop, reason :: term, new_state} when new_state: term"
+        },
+        {
+          "name": "handle_continue",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback handle_continue(continue_arg, state :: term) :: {:noreply, new_state} | {:noreply, new_state, timeout | :hibernate | {:continue, continue_arg}} | {:stop, reason :: term, new_state} when new_state: term, continue_arg: term"
+        },
+        {
+          "name": "terminate",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback terminate(reason, state :: term) :: term when reason: :normal | :shutdown | {:shutdown, term} | term"
+        },
+        {
+          "name": "code_change",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback code_change(old_vsn, state :: term, extra :: term) :: {:ok, new_state :: term} | {:error, reason :: term} when old_vsn: term | {:down, term}"
+        },
+        {
+          "name": "format_status",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback format_status(status :: :gen_server.format_status()) :: new_status :: :gen_server.format_status()"
+        },
+        {
+          "name": "format_status",
+          "category": "callable",
+          "kind": "callback",
+          "parent": "GenServer",
+          "signature": "@callback format_status(reason, pdict_and_state :: list) :: term when reason: :normal | :terminate"
+        },
+        {
+          "name": "on_start",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type on_start :: {:ok, pid} | :ignore | {:error, {:already_started, pid} | term}"
+        },
+        {
+          "name": "name",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type name :: nil | atom | {:global, term} | {:via, module, term}"
+        },
+        {
+          "name": "options",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type options :: [option]"
+        },
+        {
+          "name": "option",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type option :: {:debug, debug} | {:name, name} | {:timeout, timeout} | {:spawn_opt, [Process.spawn_opt()]} | {:hibernate_after, timeout}"
+        },
+        {
+          "name": "debug",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type debug :: [:trace | :log | :statistics | {:log_to_file, Path.t()}]"
+        },
+        {
+          "name": "server",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type server :: pid | name | {atom, node}"
+        },
+        {
+          "name": "from",
+          "category": "type",
+          "kind": "type",
+          "parent": "GenServer",
+          "signature": "@type from :: {pid, tag :: term}"
+        },
+        {
+          "name": "__using__",
+          "category": "macro",
+          "kind": "macro",
+          "parent": "GenServer",
+          "signature": "defmacro __using__(opts)"
+        },
+        {
+          "name": "__before_compile__",
+          "category": "macro",
+          "kind": "macro",
+          "parent": "GenServer",
+          "signature": "defmacro __before_compile__(env)"
+        },
+        {
+          "name": "start_link",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def start_link(module, init_arg, options \\\\ [])"
+        },
+        {
+          "name": "start",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def start(module, init_arg, options \\\\ [])"
+        },
+        {
+          "name": "do_start",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "defp do_start(link, module, init_arg, options)"
+        },
+        {
+          "name": "stop",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def stop(server, reason \\\\ :normal, timeout \\\\ :infinity)"
+        },
+        {
+          "name": "call",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def call(server, request, timeout \\\\ 5000)"
+        },
+        {
+          "name": "cast",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def cast(server, request)"
+        },
+        {
+          "name": "abcast",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def abcast(nodes \\\\ [node() | Node.list()], name, request)"
+        },
+        {
+          "name": "cast_msg",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "defp cast_msg(req)"
+        },
+        {
+          "name": "do_send",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "defp do_send(dest, msg)"
+        },
+        {
+          "name": "multi_call",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def multi_call(nodes \\\\ [node() | Node.list()], name, request, timeout \\\\ :infinity)"
+        },
+        {
+          "name": "reply",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def reply(client, reply)"
+        },
+        {
+          "name": "whereis",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def whereis(server)"
+        },
+        {
+          "name": "format_report",
+          "category": "callable",
+          "kind": "function",
+          "parent": "GenServer",
+          "signature": "def format_report(%{label: {GenServer, :no_handle_info}, report: %{module: mod, message: msg, name: proc}})"
+        }
+      ]
+    },
+    "tests/fixtures/source/ruby/inflections.rb": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "String",
+          "category": "type",
+          "kind": "class",
+          "parent": null,
+          "signature": "class String"
+        },
+        {
+          "name": "pluralize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def pluralize(count = nil, locale = :en)"
+        },
+        {
+          "name": "singularize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def singularize(locale = :en)"
+        },
+        {
+          "name": "constantize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def constantize"
+        },
+        {
+          "name": "safe_constantize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def safe_constantize"
+        },
+        {
+          "name": "camelize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def camelize(first_letter = :upper)"
+        },
+        {
+          "name": "camelcase",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "alias_method :camelcase, :camelize"
+        },
+        {
+          "name": "titleize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def titleize(keep_id_suffix: false)"
+        },
+        {
+          "name": "titlecase",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "alias_method :titlecase, :titleize"
+        },
+        {
+          "name": "underscore",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def underscore"
+        },
+        {
+          "name": "dasherize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def dasherize"
+        },
+        {
+          "name": "demodulize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def demodulize"
+        },
+        {
+          "name": "deconstantize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def deconstantize"
+        },
+        {
+          "name": "parameterize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def parameterize(separator: \"-\", preserve_case: false, locale: nil)"
+        },
+        {
+          "name": "tableize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def tableize"
+        },
+        {
+          "name": "classify",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def classify"
+        },
+        {
+          "name": "humanize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def humanize(capitalize: true, keep_id_suffix: false)"
+        },
+        {
+          "name": "upcase_first",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def upcase_first"
+        },
+        {
+          "name": "downcase_first",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def downcase_first"
+        },
+        {
+          "name": "foreign_key",
+          "category": "callable",
+          "kind": "method",
+          "parent": "String",
+          "signature": "def foreign_key(separate_class_name_and_id_with_underscore = true)"
+        }
+      ]
+    },
+    "tests/fixtures/source/ruby/relation.rb": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "ActiveRecord",
+          "category": "type",
+          "kind": "module",
+          "parent": null,
+          "signature": "module ActiveRecord"
+        },
+        {
+          "name": "Relation",
+          "category": "type",
+          "kind": "class",
+          "parent": "ActiveRecord",
+          "signature": "class Relation"
+        },
+        {
+          "name": "ExplainProxy",
+          "category": "type",
+          "kind": "class",
+          "parent": "ActiveRecord.Relation",
+          "signature": "class ExplainProxy"
+        },
+        {
+          "name": "initialize",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def initialize(relation, options)"
+        },
+        {
+          "name": "inspect",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def inspect"
+        },
+        {
+          "name": "average",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def average(column_name)"
+        },
+        {
+          "name": "count",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def count(column_name = nil)"
+        },
+        {
+          "name": "first",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def first(limit = nil)"
+        },
+        {
+          "name": "last",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def last(limit = nil)"
+        },
+        {
+          "name": "maximum",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def maximum(column_name)"
+        },
+        {
+          "name": "minimum",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def minimum(column_name)"
+        },
+        {
+          "name": "pluck",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def pluck(*column_names)"
+        },
+        {
+          "name": "sum",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def sum(identity_or_column = nil)"
+        },
+        {
+          "name": "exec_explain",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.ExplainProxy",
+          "signature": "def exec_explain(&block)"
+        },
+        {
+          "name": "MULTI_VALUE_METHODS",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ActiveRecord.Relation",
+          "signature": "MULTI_VALUE_METHODS  = [:includes, :eager_load, :preload, :select, :group, :order, :joins, :left_outer_joins, :references, :extending, :unscope, :optimizer_hints, :annotate, :with]"
+        },
+        {
+          "name": "SINGLE_VALUE_METHODS",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ActiveRecord.Relation",
+          "signature": "SINGLE_VALUE_METHODS = [:limit, :offset, :lock, :readonly, :reordering, :strict_loading, :reverse_order, :distinct, :create_with, :skip_query_cache]"
+        },
+        {
+          "name": "CLAUSE_METHODS",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ActiveRecord.Relation",
+          "signature": "CLAUSE_METHODS = [:where, :having, :from]"
+        },
+        {
+          "name": "INVALID_METHODS_FOR_UPDATE_AND_DELETE_ALL",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ActiveRecord.Relation",
+          "signature": "INVALID_METHODS_FOR_UPDATE_AND_DELETE_ALL = [:distinct, :with, :with_recursive]"
+        },
+        {
+          "name": "VALUE_METHODS",
+          "category": "value",
+          "kind": "constant",
+          "parent": "ActiveRecord.Relation",
+          "signature": "VALUE_METHODS = MULTI_VALUE_METHODS + SINGLE_VALUE_METHODS + CLAUSE_METHODS"
+        },
+        {
+          "name": "Enumerable",
+          "category": "implementation",
+          "kind": "include",
+          "parent": "ActiveRecord.Relation",
+          "signature": "include Enumerable"
+        },
+        {
+          "name": "FinderMethods",
+          "category": "implementation",
+          "kind": "include",
+          "parent": "ActiveRecord.Relation",
+          "signature": "include FinderMethods, Calculations, SpawnMethods, QueryMethods, Batches, Explain, Delegation"
+        },
+        {
+          "name": "SignedId::RelationMethods",
+          "category": "implementation",
+          "kind": "include",
+          "parent": "ActiveRecord.Relation",
+          "signature": "include SignedId::RelationMethods, TokenFor::RelationMethods"
+        },
+        {
+          "name": "attr_reader",
+          "category": "macro",
+          "kind": "attribute_reader",
+          "parent": "ActiveRecord.Relation",
+          "signature": "attr_reader :table, :model, :loaded, :predicate_builder"
+        },
+        {
+          "name": "attr_accessor",
+          "category": "macro",
+          "kind": "attribute_accessor",
+          "parent": "ActiveRecord.Relation",
+          "signature": "attr_accessor :skip_preloading_value"
+        },
+        {
+          "name": "klass",
+          "category": "macro",
+          "kind": "alias",
+          "parent": "ActiveRecord.Relation",
+          "signature": "alias :klass :model"
+        },
+        {
+          "name": "loaded?",
+          "category": "macro",
+          "kind": "alias",
+          "parent": "ActiveRecord.Relation",
+          "signature": "alias :loaded? :loaded"
+        },
+        {
+          "name": "locked?",
+          "category": "macro",
+          "kind": "alias",
+          "parent": "ActiveRecord.Relation",
+          "signature": "alias :locked? :lock_value"
+        },
+        {
+          "name": "initialize",
+          "category": "callable",
+          "kind": "constructor",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def initialize(model, table: nil, predicate_builder: nil, values: {})"
+        },
+        {
+          "name": "initialize_copy",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def initialize_copy(other)"
+        },
+        {
+          "name": "bind_attribute",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def bind_attribute(name, value) # :nodoc:"
+        },
+        {
+          "name": "new",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def new(attributes = nil, &block)"
+        },
+        {
+          "name": "build",
+          "category": "macro",
+          "kind": "alias",
+          "parent": "ActiveRecord.Relation",
+          "signature": "alias build new"
+        },
+        {
+          "name": "create",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def create(attributes = nil, &block)"
+        },
+        {
+          "name": "create!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def create!(attributes = nil, &block)"
+        },
+        {
+          "name": "first_or_create",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def first_or_create(attributes = nil, &block)"
+        },
+        {
+          "name": "first_or_create!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def first_or_create!(attributes = nil, &block)"
+        },
+        {
+          "name": "first_or_initialize",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def first_or_initialize(attributes = nil, &block)"
+        },
+        {
+          "name": "find_or_create_by",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def find_or_create_by(attributes, &block)"
+        },
+        {
+          "name": "find_or_create_by!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def find_or_create_by!(attributes, &block)"
+        },
+        {
+          "name": "create_or_find_by",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def create_or_find_by(attributes, &block)"
+        },
+        {
+          "name": "create_or_find_by!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def create_or_find_by!(attributes, &block)"
+        },
+        {
+          "name": "find_or_initialize_by",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def find_or_initialize_by(attributes, &block)"
+        },
+        {
+          "name": "explain",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def explain(*options)"
+        },
+        {
+          "name": "to_ary",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def to_ary"
+        },
+        {
+          "name": "to_a",
+          "category": "macro",
+          "kind": "alias",
+          "parent": "ActiveRecord.Relation",
+          "signature": "alias to_a to_ary"
+        },
+        {
+          "name": "records",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def records"
+        },
+        {
+          "name": "encode_with",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def encode_with(coder)"
+        },
+        {
+          "name": "size",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def size"
+        },
+        {
+          "name": "empty?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def empty?"
+        },
+        {
+          "name": "none?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def none?(*args)"
+        },
+        {
+          "name": "any?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def any?(*args)"
+        },
+        {
+          "name": "one?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def one?(*args)"
+        },
+        {
+          "name": "many?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def many?"
+        },
+        {
+          "name": "cache_key",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def cache_key(timestamp_column = \"updated_at\")"
+        },
+        {
+          "name": "compute_cache_key",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def compute_cache_key(timestamp_column = :updated_at)"
+        },
+        {
+          "name": "cache_version",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def cache_version(timestamp_column = :updated_at)"
+        },
+        {
+          "name": "compute_cache_version",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def compute_cache_version(timestamp_column)"
+        },
+        {
+          "name": "cache_key_with_version",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def cache_key_with_version"
+        },
+        {
+          "name": "scoping",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def scoping(all_queries: nil, &block)"
+        },
+        {
+          "name": "_exec_scope",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _exec_scope(...)"
+        },
+        {
+          "name": "update_all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def update_all(updates)"
+        },
+        {
+          "name": "update",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def update(id = :all, attributes)"
+        },
+        {
+          "name": "update!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def update!(id = :all, attributes)"
+        },
+        {
+          "name": "insert",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def insert(attributes, returning: nil, unique_by: nil, record_timestamps: nil)"
+        },
+        {
+          "name": "insert_all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def insert_all(attributes, returning: nil, unique_by: nil, record_timestamps: nil)"
+        },
+        {
+          "name": "insert!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def insert!(attributes, returning: nil, record_timestamps: nil)"
+        },
+        {
+          "name": "insert_all!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def insert_all!(attributes, returning: nil, unique_by: nil, record_timestamps: nil)"
+        },
+        {
+          "name": "upsert",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def upsert(attributes, **kwargs)"
+        },
+        {
+          "name": "upsert_all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def upsert_all(attributes, on_duplicate: :update, update_only: nil, returning: nil, unique_by: nil, record_timestamps: nil)"
+        },
+        {
+          "name": "update_counters",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def update_counters(counters)"
+        },
+        {
+          "name": "touch_all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def touch_all(*names, time: nil)"
+        },
+        {
+          "name": "destroy_all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def destroy_all"
+        },
+        {
+          "name": "delete_all",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def delete_all"
+        },
+        {
+          "name": "delete",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def delete(id_or_array)"
+        },
+        {
+          "name": "destroy",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def destroy(id)"
+        },
+        {
+          "name": "destroy_by",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def destroy_by(*args)"
+        },
+        {
+          "name": "delete_by",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def delete_by(*args)"
+        },
+        {
+          "name": "load_async",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def load_async"
+        },
+        {
+          "name": "then",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def then(&block)"
+        },
+        {
+          "name": "scheduled?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def scheduled?"
+        },
+        {
+          "name": "load",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def load(&block)"
+        },
+        {
+          "name": "reload",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def reload"
+        },
+        {
+          "name": "reset",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def reset"
+        },
+        {
+          "name": "to_sql",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def to_sql"
+        },
+        {
+          "name": "where_values_hash",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def where_values_hash(relation_table_name = model.table_name)"
+        },
+        {
+          "name": "scope_for_create",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def scope_for_create"
+        },
+        {
+          "name": "eager_loading?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def eager_loading?"
+        },
+        {
+          "name": "joined_includes_values",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def joined_includes_values"
+        },
+        {
+          "name": "==",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def ==(other)"
+        },
+        {
+          "name": "pretty_print",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def pretty_print(pp)"
+        },
+        {
+          "name": "blank?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def blank?"
+        },
+        {
+          "name": "readonly?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def readonly?"
+        },
+        {
+          "name": "values",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def values"
+        },
+        {
+          "name": "values_for_queries",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def values_for_queries"
+        },
+        {
+          "name": "inspect",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def inspect"
+        },
+        {
+          "name": "empty_scope?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def empty_scope?"
+        },
+        {
+          "name": "has_limit_or_offset?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def has_limit_or_offset?"
+        },
+        {
+          "name": "alias_tracker",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def alias_tracker(joins = [], aliases = nil)"
+        },
+        {
+          "name": "StrictLoadingScope",
+          "category": "type",
+          "kind": "class",
+          "parent": "ActiveRecord.Relation",
+          "signature": "class StrictLoadingScope"
+        },
+        {
+          "name": "empty_scope?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.StrictLoadingScope",
+          "signature": "def self.empty_scope?"
+        },
+        {
+          "name": "strict_loading_value",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation.StrictLoadingScope",
+          "signature": "def self.strict_loading_value"
+        },
+        {
+          "name": "preload_associations",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def preload_associations(records)"
+        },
+        {
+          "name": "load_records",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def load_records(records)"
+        },
+        {
+          "name": "already_in_scope?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def already_in_scope?(registry)"
+        },
+        {
+          "name": "global_scope?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def global_scope?(registry)"
+        },
+        {
+          "name": "current_scope_restoring_block",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def current_scope_restoring_block(&block)"
+        },
+        {
+          "name": "_new",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _new(attributes, &block)"
+        },
+        {
+          "name": "_create",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _create(attributes, &block)"
+        },
+        {
+          "name": "_create!",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _create!(attributes, &block)"
+        },
+        {
+          "name": "_scoping",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _scoping(scope, registry, all_queries = false)"
+        },
+        {
+          "name": "_substitute_values",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _substitute_values(values)"
+        },
+        {
+          "name": "_increment_attribute",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def _increment_attribute(attribute, value = 1)"
+        },
+        {
+          "name": "exec_queries",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def exec_queries(&block)"
+        },
+        {
+          "name": "exec_main_query",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def exec_main_query(async: false)"
+        },
+        {
+          "name": "instantiate_records",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def instantiate_records(rows, &block)"
+        },
+        {
+          "name": "skip_query_cache_if_necessary",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def skip_query_cache_if_necessary(&block)"
+        },
+        {
+          "name": "references_eager_loaded_tables?",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def references_eager_loaded_tables?"
+        },
+        {
+          "name": "tables_in_string",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def tables_in_string(string)"
+        },
+        {
+          "name": "limited_count",
+          "category": "callable",
+          "kind": "method",
+          "parent": "ActiveRecord.Relation",
+          "signature": "def limited_count"
+        }
+      ]
+    },
+    "tests/fixtures/source/prolog/simple.pl": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "parent",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "parent(Parent, Child)"
+        },
+        {
+          "name": "female",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "female(X)"
+        },
+        {
+          "name": "male",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "male(X)"
+        },
+        {
+          "name": "mother",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "mother(X, Y)"
+        },
+        {
+          "name": "father",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "father(X, Y)"
+        },
+        {
+          "name": "grandparent",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "grandparent(X, Z)"
+        },
+        {
+          "name": "grandmother",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "grandmother(X, Z)"
+        },
+        {
+          "name": "grandfather",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "grandfather(X, Z)"
+        },
+        {
+          "name": "sibling",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "sibling(X, Y)"
+        },
+        {
+          "name": "ancestor",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "ancestor(X, Y)"
+        },
+        {
+          "name": "descendant",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "descendant(X, Y)"
+        }
+      ]
+    },
+    "tests/fixtures/source/prolog/medium.pl": {
+      "file_type": "source_file",
+      "dependencies": [],
+      "entities": [
+        {
+          "name": "my_length",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_length([], 0)"
+        },
+        {
+          "name": "my_append",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_append([], L, L)"
+        },
+        {
+          "name": "my_reverse",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_reverse([], [])"
+        },
+        {
+          "name": "my_member",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_member(X, [X|_])"
+        },
+        {
+          "name": "my_last",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_last(X, [X])"
+        },
+        {
+          "name": "my_nth",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_nth(1, [H|_], H)"
+        },
+        {
+          "name": "my_flatten",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_flatten([], [])"
+        },
+        {
+          "name": "my_msort",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "my_msort([], [])"
+        },
+        {
+          "name": "merge_sorted",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "merge_sorted([], R, R)"
+        },
+        {
+          "name": "factorial",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "factorial(0, 1)"
+        },
+        {
+          "name": "fibonacci",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "fibonacci(0, 0)"
+        },
+        {
+          "name": "gcd",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "gcd(X, 0, X)"
+        },
+        {
+          "name": "sum_list",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "sum_list([], 0)"
+        },
+        {
+          "name": "max_list",
+          "category": "callable",
+          "kind": "predicate",
+          "parent": null,
+          "signature": "max_list([X], X)"
+        }
+      ]
+    },
+    "tests/fixtures/source_like_config/styles.scss": {
+      "file_type": "source_like_config",
+      "dependencies": [
+        "tests/fixtures/source_like_config/_mixins.scss",
+        "tests/fixtures/source_like_config/_variables.scss",
+        "tests/fixtures/source_like_config/components/_button.scss",
+        "tests/fixtures/source_like_config/components/_card.scss"
+      ],
+      "entities": []
+    },
+    "tests/fixtures/source_like_config/_mixins.scss": {
+      "file_type": "source_like_config",
+      "dependencies": [
+        "tests/fixtures/source_like_config/_variables.scss"
+      ],
+      "entities": []
+    },
+    "tests/fixtures/source_like_config/components/_button.scss": {
+      "file_type": "source_like_config",
+      "dependencies": [
+        "tests/fixtures/source_like_config/_variables.scss",
+        "tests/fixtures/source_like_config/_mixins.scss"
+      ],
+      "entities": []
+    },
+    "tests/fixtures/source_like_config/components/_card.scss": {
+      "file_type": "source_like_config",
+      "dependencies": [
+        "tests/fixtures/source_like_config/_variables.scss"
+      ],
+      "entities": []
+    },
+    "tests/fixtures/source_like_config/Makefile": {
+      "file_type": "source_like_config",
+      "dependencies": [
+        "tests/fixtures/source_like_config/config.mk",
+        "tests/fixtures/source_like_config/scripts/helpers.mk"
+      ],
+      "entities": []
+    },
+    "tests/fixtures/source_like_config/template.html": {
+      "file_type": "source_like_config",
+      "dependencies": [
+        "tests/fixtures/source_like_config/base.html",
+        "tests/fixtures/source_like_config/macros/forms.html",
+        "tests/fixtures/source_like_config/macros/pagination.html"
+      ],
+      "entities": []
+    },
+    "tests/fixtures/config/config.yaml": {
+      "file_type": "config_file",
+      "dependencies": [],
+      "entities": []
+    },
+    "tests/fixtures/config/config.toml": {
+      "file_type": "config_file",
+      "dependencies": [],
+      "entities": []
+    },
+    "tests/fixtures/config/config.json": {
+      "file_type": "config_file",
+      "dependencies": [],
+      "entities": []
+    },
+    "tests/fixtures/config/Dockerfile": {
+      "file_type": "config_file",
+      "dependencies": [],
+      "entities": []
+    },
+    "tests/fixtures/config/.env": {
+      "file_type": "config_file",
+      "dependencies": [],
+      "entities": []
+    }
+  }
+}

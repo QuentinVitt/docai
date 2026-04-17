@@ -1,0 +1,33 @@
+[tool.docai]
+name = "docai"
+version = "0.1.0"
+
+[tool.docai.llm]
+provider = "anthropic"
+model = "claude-sonnet-4-6"
+max_retries = 3
+timeout = 60
+
+[tool.docai.extraction]
+tiers = ["tree_sitter", "heuristic", "llm_fallback"]
+cache_enabled = true
+
+[tool.docai.discovery]
+include_patterns = ["**/*.py", "**/*.go", "**/*.rs"]
+exclude_patterns = ["**/node_modules/**", "**/.venv/**", "**/dist/**"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "unit: pure logic tests",
+    "integration: tests touching filesystem",
+    "llm: tests using mock LLM",
+    "eval: real API evaluation tests",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP"]

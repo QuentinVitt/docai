@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "macros/forms.html" as forms %}
+{% import "macros/pagination.html" as pagination %}
+
+{% block title %}{{ page_title }} — {{ site_name }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <header class="dashboard__header">
+    <h1>{{ page_title }}</h1>
+    {% if user.is_authenticated %}
+      <span class="user-badge">{{ user.display_name }}</span>
+    {% endif %}
+  </header>
+
+  <nav class="dashboard__nav">
+    {% for item in nav_items %}
+      <a href="{{ item.url }}"
+         class="nav-item {% if item.active %}nav-item--active{% endif %}">
+        {{ item.label }}
+      </a>
+    {% endfor %}
+  </nav>
+
+  <main class="dashboard__main">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert--{{ message.level }}">{{ message.text }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% block main_content %}
+      {{ forms.render_form(form, action=form_action) }}
+
+      {% if items %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              {% for col in columns %}
+                <th>{{ col.label }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              <tr>
+                {% for col in columns %}
+                  <td>{{ item[col.key] }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {{ pagination.render(page_obj) }}
+      {% else %}
+        <p class="empty-state">{{ empty_message | default("No items found.") }}</p>
+      {% endif %}
+    {% endblock %}
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

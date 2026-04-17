@@ -1,0 +1,28 @@
+@use '../variables';
+
+.card {
+  background: variables.$color-background;
+  border-radius: variables.$border-radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: variables.$spacing-lg;
+
+  &__header {
+    margin-bottom: variables.$spacing-md;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: variables.$spacing-sm;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: variables.$color-heading;
+  }
+
+  &__body { }
+
+  &__footer {
+    margin-top: variables.$spacing-md;
+    padding-top: variables.$spacing-sm;
+    border-top: 1px solid #e5e7eb;
+  }
+}
