@@ -1,0 +1,74 @@
+fixture: tests/fixtures/source/javascript/application.js
+language: javascript
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: finalhandler
+  category: value
+- name: debug
+  category: value
+- name: View
+  category: value
+- name: http
+  category: value
+- name: methods
+  category: value
+- name: compileETag
+  category: value
+- name: compileQueryParser
+  category: value
+- name: compileTrust
+  category: value
+- name: resolve
+  category: value
+- name: once
+  category: value
+- name: Router
+  category: value
+- name: slice
+  category: value
+- name: flatten
+  category: value
+- name: app
+  category: value
+- name: trustProxyDefaultSymbol
+  category: value
+- name: init
+  category: callable
+- name: defaultConfiguration
+  category: callable
+- name: handle
+  category: callable
+- name: use
+  category: callable
+- name: route
+  category: callable
+- name: engine
+  category: callable
+- name: param
+  category: callable
+- name: set
+  category: callable
+- name: path
+  category: callable
+- name: enabled
+  category: callable
+- name: disabled
+  category: callable
+- name: enable
+  category: callable
+- name: disable
+  category: callable
+- name: all
+  category: callable
+- name: render
+  category: callable
+- name: listen
+  category: callable
+- name: logerror
+  category: callable
+- name: tryRender
+  category: callable
+should_not_contain: []
+tags:
+- javascript

@@ -1,0 +1,10 @@
+fixture: tests/fixtures/source/ruby/abstract_adapter.rb
+language: ruby
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: AbstractAdapter
+  category: type
+should_not_contain: []
+tags:
+- ruby

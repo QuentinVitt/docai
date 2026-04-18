@@ -1,0 +1,74 @@
+fixture: tests/fixtures/source/typescript/textModel.ts
+language: typescript
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: TextModel
+  category: type
+- name: createTextBufferFactory
+  category: callable
+- name: ITextStream
+  category: type
+- name: createTextBufferFactoryFromStream
+  category: callable
+- name: createTextBufferFactoryFromSnapshot
+  category: callable
+- name: createTextBuffer
+  category: callable
+- name: MODEL_ID
+  category: value
+- name: LIMIT_FIND_COUNT
+  category: value
+- name: LONG_LINE_BOUNDARY
+  category: value
+- name: LINE_HEIGHT_CEILING
+  category: value
+- name: TextModelSnapshot
+  category: type
+- name: constructor
+  category: callable
+- name: read
+  category: callable
+- name: invalidFunc
+  category: callable
+- name: StringOffsetValidationType
+  category: type
+- name: _MODEL_SYNC_LIMIT
+  category: value
+- name: DEFAULT_CREATION_OPTIONS
+  category: value
+- name: resolveOptions
+  category: callable
+- name: onDidChangeLanguage
+  category: callable
+- name: onDidChangeOptions
+  category: callable
+- name: onDidChangeContent
+  category: callable
+- name: constructor
+  category: callable
+- name: dispose
+  category: callable
+- name: setValue
+  category: callable
+- name: applyEdits
+  category: callable
+- name: getLineTokensWithInjections
+  category: callable
+- name: indentOfLine
+  category: callable
+- name: IDecorationsTreesHost
+  category: type
+- name: DecorationsTrees
+  category: type
+- name: ModelDecorationOptions
+  category: type
+- name: register
+  category: callable
+- name: DidChangeDecorationsEmitter
+  category: type
+- name: DidChangeContentEmitter
+  category: type
+should_not_contain: []
+tags:
+- typescript

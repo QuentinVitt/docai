@@ -1,0 +1,68 @@
+fixture: tests/fixtures/source/javascript/chalk.js
+language: javascript
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: stdoutColor
+  category: value
+- name: stderrColor
+  category: value
+- name: GENERATOR
+  category: value
+- name: STYLER
+  category: value
+- name: IS_EMPTY
+  category: value
+- name: levelMapping
+  category: value
+- name: styles
+  category: value
+- name: applyOptions
+  category: callable
+- name: Chalk
+  category: type
+- name: constructor
+  category: callable
+- name: chalkFactory
+  category: callable
+- name: createChalk
+  category: callable
+- name: getModelAnsi
+  category: callable
+- name: usedModels
+  category: value
+- name: proto
+  category: value
+- name: createStyler
+  category: callable
+- name: createBuilder
+  category: callable
+- name: applyStyle
+  category: callable
+- name: chalk
+  category: value
+- name: chalkStderr
+  category: value
+- name: modifierNames
+  category: value
+- name: foregroundColorNames
+  category: value
+- name: backgroundColorNames
+  category: value
+- name: colorNames
+  category: value
+- name: modifiers
+  category: value
+- name: foregroundColors
+  category: value
+- name: backgroundColors
+  category: value
+- name: colors
+  category: value
+- name: supportsColor
+  category: value
+- name: supportsColorStderr
+  category: value
+should_not_contain: []
+tags:
+- javascript

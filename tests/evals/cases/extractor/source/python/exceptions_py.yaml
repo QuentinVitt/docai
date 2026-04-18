@@ -1,0 +1,64 @@
+fixture: tests/fixtures/source/python/exceptions.py
+language: python
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: RequestException
+  category: type
+- name: HTTPError
+  category: type
+- name: ConnectionError
+  category: type
+- name: Timeout
+  category: type
+- name: JSONDecodeError
+  category: type
+- name: __init__
+  category: callable
+- name: InvalidJSONError
+  category: type
+- name: __init__
+  category: callable
+- name: __reduce__
+  category: callable
+- name: ProxyError
+  category: type
+- name: SSLError
+  category: type
+- name: ConnectTimeout
+  category: type
+- name: ReadTimeout
+  category: type
+- name: URLRequired
+  category: type
+- name: TooManyRedirects
+  category: type
+- name: MissingSchema
+  category: type
+- name: InvalidSchema
+  category: type
+- name: InvalidURL
+  category: type
+- name: InvalidHeader
+  category: type
+- name: InvalidProxyURL
+  category: type
+- name: ChunkedEncodingError
+  category: type
+- name: ContentDecodingError
+  category: type
+- name: StreamConsumedError
+  category: type
+- name: RetryError
+  category: type
+- name: UnrewindableBodyError
+  category: type
+- name: RequestsWarning
+  category: type
+- name: FileModeWarning
+  category: type
+- name: RequestsDependencyWarning
+  category: type
+should_not_contain: []
+tags:
+- python

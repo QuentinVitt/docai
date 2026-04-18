@@ -1,0 +1,30 @@
+fixture: tests/fixtures/source/prolog/simple.pl
+language: prolog
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: parent
+  category: callable
+- name: grandparent
+  category: callable
+- name: ancestor
+  category: callable
+- name: female
+  category: callable
+- name: male
+  category: callable
+- name: mother
+  category: callable
+- name: father
+  category: callable
+- name: grandmother
+  category: callable
+- name: grandfather
+  category: callable
+- name: sibling
+  category: callable
+- name: descendant
+  category: callable
+should_not_contain: []
+tags:
+- prolog

@@ -1,0 +1,90 @@
+fixture: tests/fixtures/source/javascript/Compiler.js
+language: javascript
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Compiler
+  category: type
+- name: isSorted
+  category: callable
+- name: sortObject
+  category: callable
+- name: includesHash
+  category: callable
+- name: getValidate
+  category: callable
+- name: CompilationParams
+  category: type
+- name: Callback
+  category: type
+- name: ErrorCallback
+  category: type
+- name: RunAsChildCallback
+  category: type
+- name: KnownRecords
+  category: type
+- name: Records
+  category: type
+- name: AssetEmittedInfo
+  category: type
+- name: CacheEntry
+  category: type
+- name: SimilarEntry
+  category: type
+- name: WeakReferences
+  category: type
+- name: MemCache
+  category: type
+- name: ModuleMemCachesItem
+  category: type
+- name: constructor
+  category: callable
+- name: getCache
+  category: callable
+- name: getInfrastructureLogger
+  category: callable
+- name: _cleanupLastCompilation
+  category: callable
+- name: _cleanupLastNormalModuleFactory
+  category: callable
+- name: watch
+  category: callable
+- name: run
+  category: callable
+- name: runAsChild
+  category: callable
+- name: purgeInputFileSystem
+  category: callable
+- name: emitAssets
+  category: callable
+- name: emitRecords
+  category: callable
+- name: _emitRecords
+  category: callable
+- name: readRecords
+  category: callable
+- name: _readRecords
+  category: callable
+- name: createChildCompiler
+  category: callable
+- name: isChild
+  category: callable
+- name: createCompilation
+  category: callable
+- name: newCompilation
+  category: callable
+- name: createNormalModuleFactory
+  category: callable
+- name: createContextModuleFactory
+  category: callable
+- name: newCompilationParams
+  category: callable
+- name: compile
+  category: callable
+- name: close
+  category: callable
+- name: validate
+  category: callable
+should_not_contain: []
+tags:
+- javascript

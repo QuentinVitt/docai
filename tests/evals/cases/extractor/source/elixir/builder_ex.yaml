@@ -1,0 +1,10 @@
+fixture: tests/fixtures/source/elixir/builder.ex
+language: elixir
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Builder
+  category: type
+should_not_contain: []
+tags:
+- elixir

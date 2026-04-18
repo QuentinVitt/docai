@@ -1,0 +1,16 @@
+fixture: tests/fixtures/source/python/query.py
+language: python
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: QuerySet
+  category: type
+- name: ModelIterable
+  category: type
+- name: ValuesIterable
+  category: type
+- name: RawModelIterable
+  category: type
+should_not_contain: []
+tags:
+- python

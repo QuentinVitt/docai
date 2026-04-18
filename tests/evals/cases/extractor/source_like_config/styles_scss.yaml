@@ -1,0 +1,12 @@
+fixture: tests/fixtures/source_like_config/styles.scss
+language: scss
+file_type: source_like_config
+expected_deps:
+- tests/fixtures/source_like_config/_variables.scss
+- tests/fixtures/source_like_config/_mixins.scss
+- tests/fixtures/source_like_config/components/_button.scss
+- tests/fixtures/source_like_config/components/_card.scss
+must_contain: []
+should_not_contain: []
+tags:
+- scss

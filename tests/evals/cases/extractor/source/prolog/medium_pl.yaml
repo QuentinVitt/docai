@@ -1,0 +1,36 @@
+fixture: tests/fixtures/source/prolog/medium.pl
+language: prolog
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: my_length
+  category: callable
+- name: my_append
+  category: callable
+- name: factorial
+  category: callable
+- name: fibonacci
+  category: callable
+- name: my_reverse
+  category: callable
+- name: my_member
+  category: callable
+- name: my_last
+  category: callable
+- name: my_nth
+  category: callable
+- name: my_flatten
+  category: callable
+- name: my_msort
+  category: callable
+- name: merge_sorted
+  category: callable
+- name: gcd
+  category: callable
+- name: sum_list
+  category: callable
+- name: max_list
+  category: callable
+should_not_contain: []
+tags:
+- prolog

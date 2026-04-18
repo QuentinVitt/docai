@@ -1,0 +1,22 @@
+fixture: tests/fixtures/source/typescript/basic.d.ts
+language: typescript
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Class
+  category: type
+- name: Constructor
+  category: type
+- name: prototype
+  category: value
+- name: new
+  category: callable
+- name: AbstractClass
+  category: type
+- name: prototype
+  category: value
+- name: AbstractConstructor
+  category: type
+should_not_contain: []
+tags:
+- typescript

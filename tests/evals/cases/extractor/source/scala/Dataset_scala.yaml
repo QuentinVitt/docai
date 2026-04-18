@@ -1,0 +1,10 @@
+fixture: tests/fixtures/source/scala/Dataset.scala
+language: scala
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Dataset
+  category: type
+should_not_contain: []
+tags:
+- scala

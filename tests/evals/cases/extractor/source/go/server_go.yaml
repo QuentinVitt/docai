@@ -1,0 +1,14 @@
+fixture: tests/fixtures/source/go/server.go
+language: go
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: EtcdServer
+  category: type
+- name: Server
+  category: type
+- name: NewServer
+  category: callable
+should_not_contain: []
+tags:
+- go

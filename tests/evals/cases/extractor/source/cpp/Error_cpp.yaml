@@ -1,0 +1,88 @@
+fixture: tests/fixtures/source/cpp/Error.cpp
+language: cpp
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: ErrorErrorCode
+  category: type
+- name: MultipleErrors
+  category: value
+- name: FileError
+  category: value
+- name: InconvertibleError
+  category: value
+- name: ErrorErrorCategory
+  category: type
+- name: name
+  category: callable
+- name: message
+  category: callable
+- name: getErrorErrorCat
+  category: callable
+- name: anchor
+  category: callable
+- name: ID
+  category: value
+- name: ID
+  category: value
+- name: anchor
+  category: callable
+- name: ID
+  category: value
+- name: ID
+  category: value
+- name: ID
+  category: value
+- name: logAllUnhandledErrors
+  category: callable
+- name: toString
+  category: callable
+- name: toStringWithoutConsuming
+  category: callable
+- name: convertToErrorCode
+  category: callable
+- name: inconvertibleErrorCode
+  category: callable
+- name: convertToErrorCode
+  category: callable
+- name: errorCodeToError
+  category: callable
+- name: errorToErrorCode
+  category: callable
+- name: fatalUncheckedError
+  category: callable
+- name: StringError
+  category: callable
+- name: StringError
+  category: callable
+- name: StringError
+  category: callable
+- name: log
+  category: callable
+- name: convertToErrorCode
+  category: callable
+- name: createStringError
+  category: callable
+- name: report_fatal_error
+  category: callable
+- name: reportFatalInternalError
+  category: callable
+- name: reportFatalUsageError
+  category: callable
+- name: LLVMGetErrorTypeId
+  category: callable
+- name: LLVMConsumeError
+  category: callable
+- name: LLVMCantFail
+  category: callable
+- name: LLVMGetErrorMessage
+  category: callable
+- name: LLVMDisposeErrorMessage
+  category: callable
+- name: LLVMGetStringErrorTypeId
+  category: callable
+- name: LLVMCreateStringError
+  category: callable
+should_not_contain: []
+tags:
+- cpp

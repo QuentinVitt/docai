@@ -1,0 +1,90 @@
+fixture: tests/fixtures/source/scala/Functor.scala
+language: scala
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Functor
+  category: type
+- name: map
+  category: callable
+- name: imap
+  category: callable
+- name: fmap
+  category: callable
+- name: widen
+  category: callable
+- name: lift
+  category: callable
+- name: void
+  category: callable
+- name: fproduct
+  category: callable
+- name: fproductLeft
+  category: callable
+- name: as
+  category: callable
+- name: tupleLeft
+  category: callable
+- name: tupleRight
+  category: callable
+- name: mapOrKeep
+  category: callable
+- name: unzip
+  category: callable
+- name: ifF
+  category: callable
+- name: compose
+  category: callable
+- name: composeBifunctor
+  category: callable
+- name: composeContravariant
+  category: callable
+- name: Functor
+  category: value
+- name: apply
+  category: callable
+- name: ops
+  category: value
+- name: toAllFunctorOps
+  category: callable
+- name: Ops
+  category: type
+- name: TypeClassType
+  category: type
+- name: self
+  category: callable
+- name: typeClassInstance
+  category: value
+- name: map
+  category: callable
+- name: fmap
+  category: callable
+- name: widen
+  category: callable
+- name: void
+  category: callable
+- name: fproduct
+  category: callable
+- name: fproductLeft
+  category: callable
+- name: as
+  category: callable
+- name: tupleLeft
+  category: callable
+- name: tupleRight
+  category: callable
+- name: mapOrKeep
+  category: callable
+- name: AllOps
+  category: type
+- name: TypeClassType
+  category: type
+- name: ToFunctorOps
+  category: type
+- name: toFunctorOps
+  category: callable
+- name: nonInheritedOps
+  category: value
+should_not_contain: []
+tags:
+- scala

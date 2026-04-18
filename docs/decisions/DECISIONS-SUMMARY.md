@@ -499,6 +499,15 @@ The extraction model is intentionally minimal. All documentation richness (descr
 parameters, side effects, error behavior, complexity judgments) is produced by the
 Documentation Generator when it has the full source code.
 
+**Prompt templates** (`src/docai/prompts/`): LLM prompts stored as YAML under
+`src/docai/prompts/templates/<area>/base.yaml` with `system_prompt_template` and
+`user_prompt_template` keys. Language-specific overrides at `templates/<area>/overrides/<lang>.yaml`
+matched by a `language:` field. `load_prompt(area, language=None) -> PromptTemplate` resolves
+alphabetically, warns on duplicates, silently returns base on no match or missing overrides dir.
+User prompt uses `str.format_map()` substitution; system prompt used as-is (avoids `{%`/`{`
+conflicts). Templates bundled with the package via hatchling. Raises `PromptNotFoundError` if
+`base.yaml` is missing.
+
 **LLM fallback extraction pipeline** (`extractor/llm_fallback.py`): two focused LLM calls:
 1. **Type + deps call** — determines `FileType` and `dependencies`. Validator ensures all
    returned paths exist in the file manifest, and that `source_like_config` always has
@@ -741,6 +750,13 @@ output, retries, and validation.
 is never created — this surfaces as a `ConfigError` during workflow initialization, before
 the pipeline starts (ADR-023).
 
+**LLM stats**: `LLMService.stats() -> LLMStats` reads the JSONL log file and returns
+aggregated metrics: `total_calls`, `successful_calls`, `failed_calls`, token counts,
+`total_cost_usd` (None only if all attempts lack pricing), `total_latency_ms`, `avg_latency_ms`,
+`call_failures` (attempts where `error is not None`), `val_retries` (attempts where
+`validator_error is not None`), `errors: set[str]`, and `by_model: dict[str, ModelStats]`
+keyed by model string.
+
 **Agent tool functions** use a two-layer pattern (ADR-022): underlying implementations
 (fuzzy search, file reading, documentation lookup) live in `core/`, thin wrappers adapting
 them to the agent's calling convention (parameter schemas, structured return types,
@@ -905,6 +921,16 @@ self-contained mini project directory.
 
 LLM calls mocked at the wrapper interface in unit/integration tests. Output quality
 validation is a separate benchmarking activity using `.docai/logs/`.
+
+**Eval framework** (`tests/evals/`): standalone YAML-based eval runner outside pytest.
+Cases at `tests/evals/cases/<area>/**/*.yaml` — each defines `fixture`, `language`,
+`file_type`, `expected_deps`, `must_contain`, `should_not_contain`, `tags`. Case IDs derived
+from relative path with `/` → `__` and `.` → `_`. Scorer compares on (name, category) tuples;
+`pct_entities_found = 100.0` when `must_contain` is empty. Runner builds FileManifest from
+`tests/fixtures/`, runs `extract_with_llm` in parallel via `asyncio.Semaphore`. Results saved
+to `tests/evals/results/<timestamp>/summary.json`. Run with:
+`python -m tests.evals run --model MODEL --api-key KEY [--area AREA] [--case ID,...] [-j N]`
+49 cases migrated from `ground_truth.py` to `tests/evals/cases/extractor/`.
 
 ---
 

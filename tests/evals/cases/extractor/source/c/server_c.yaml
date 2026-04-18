@@ -1,0 +1,12 @@
+fixture: tests/fixtures/source/c/server.c
+language: c
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: serverCron
+  category: callable
+- name: beforeSleep
+  category: callable
+should_not_contain: []
+tags:
+- c

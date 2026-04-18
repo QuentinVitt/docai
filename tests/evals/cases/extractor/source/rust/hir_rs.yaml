@@ -1,0 +1,16 @@
+fixture: tests/fixtures/source/rust/hir.rs
+language: rust
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Lifetime
+  category: type
+- name: Path
+  category: type
+- name: PathSegment
+  category: type
+- name: GenericArg
+  category: type
+should_not_contain: []
+tags:
+- rust
