@@ -12,7 +12,7 @@ import openai
 import pytest
 from pydantic import BaseModel
 
-from docai.llm.datatypes import LLMProfile, LogConfig, ModelConfig
+from docai.llm.datatypes import LLMProfile, LLMStats, LogConfig, ModelConfig, ModelStats
 from docai.llm.errors import LLMError
 from docai.llm.service import LLMService
 
@@ -1054,3 +1054,318 @@ class TestLog:
         await log_service._log(latency=0.2, success=False, attempts=[])
         lines = (log_dir / "llm.log").read_text().strip().splitlines()
         assert len(lines) == 2
+
+
+# ── stats() helpers ───────────────────────────────────────────────────────────
+
+_STATS_TS = "2026-04-17T00:00:00+00:00"
+
+
+def _make_attempt(
+    *,
+    model: str = "gemini/gemini-2.0-flash",
+    latency_ms: float = 1000.0,
+    prompt_tokens: int = 100,
+    completion_tokens: int = 50,
+    prompt_tokens_price: float | None = 0.001,
+    completion_tokens_price: float | None = 0.002,
+    validator_error: str | None = None,
+    error: str | None = None,
+    no_usage: bool = False,
+) -> dict:
+    return {
+        "model_args": {"model": model},
+        "latency_ms": latency_ms,
+        "usage_metadata": (
+            None
+            if no_usage
+            else {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            }
+        ),
+        "prompt_tokens_price": prompt_tokens_price,
+        "completion_tokens_price": completion_tokens_price,
+        "messages": [],
+        "response": None,
+        "validator_error": validator_error,
+        "error": error,
+    }
+
+
+def _make_log_entry(
+    *,
+    success: bool = True,
+    total_latency_ms: float = 1000.0,
+    error_code: str | None = None,
+    attempts: list[dict] | None = None,
+) -> str:
+    return json.dumps({
+        "timestamp": _STATS_TS,
+        "total_latency_ms": total_latency_ms,
+        "success": success,
+        "attempts": attempts or [],
+        "final_response": "ok" if success else None,
+        "error_code": error_code,
+    })
+
+
+# ── stats() ───────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+class TestStats:
+    def test_empty_log_file_returns_zero_stats(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        stats = service.stats()
+        assert stats.total_calls == 0
+        assert stats.successful_calls == 0
+        assert stats.failed_calls == 0
+        assert stats.total_prompt_tokens == 0
+        assert stats.total_completion_tokens == 0
+        assert stats.total_cost_usd == 0.0
+        assert stats.total_latency_ms == 0.0
+        assert stats.avg_latency_ms == 0.0
+        assert stats.call_failures == 0
+        assert stats.val_retries == 0
+        assert stats.errors == set()
+        assert stats.by_model == {}
+
+    def test_single_successful_call_with_known_pricing(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            _make_log_entry(
+                success=True,
+                total_latency_ms=1200.0,
+                attempts=[
+                    _make_attempt(
+                        prompt_tokens=100,
+                        completion_tokens=50,
+                        prompt_tokens_price=0.001,
+                        completion_tokens_price=0.002,
+                    )
+                ],
+            )
+        )
+        stats = service.stats()
+        assert stats.total_calls == 1
+        assert stats.successful_calls == 1
+        assert stats.failed_calls == 0
+        assert stats.total_prompt_tokens == 100
+        assert stats.total_completion_tokens == 50
+        assert stats.total_cost_usd == pytest.approx(0.003)
+        assert stats.total_latency_ms == 1200.0
+        assert stats.avg_latency_ms == 1200.0
+        assert stats.call_failures == 0
+        assert stats.val_retries == 0
+        assert stats.errors == set()
+
+    def test_no_pricing_on_any_attempt_returns_none_for_total_cost(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            _make_log_entry(
+                attempts=[_make_attempt(prompt_tokens_price=None, completion_tokens_price=None)]
+            )
+        )
+        stats = service.stats()
+        assert stats.total_cost_usd is None
+
+    def test_val_retries_counted_from_validator_error_attempts(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            _make_log_entry(
+                attempts=[
+                    _make_attempt(validator_error="parse failed"),
+                    _make_attempt(validator_error="parse failed again"),
+                    _make_attempt(),
+                ],
+            )
+        )
+        stats = service.stats()
+        assert stats.val_retries == 2
+
+    def test_call_failures_counted_and_errors_collected(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            _make_log_entry(
+                success=False,
+                error_code="LLM_ALL_MODELS_FAILED",
+                attempts=[_make_attempt(error="auth failed")],
+            )
+        )
+        stats = service.stats()
+        assert stats.call_failures == 1
+        assert stats.errors == {"auth failed"}
+
+    def test_successful_and_failed_calls_counted_per_log_entry_not_per_attempt(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(success=True, attempts=[_make_attempt(), _make_attempt()]),
+                _make_log_entry(
+                    success=False,
+                    error_code="LLM_ALL_MODELS_FAILED",
+                    attempts=[_make_attempt(error="rate limited")],
+                ),
+            ])
+        )
+        stats = service.stats()
+        assert stats.total_calls == 2
+        assert stats.successful_calls == 1
+        assert stats.failed_calls == 1
+
+    def test_multiple_calls_different_models_produces_two_by_model_entries(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(
+                    attempts=[_make_attempt(model="gemini/gemini-2.0-flash", prompt_tokens=100)]
+                ),
+                _make_log_entry(
+                    attempts=[_make_attempt(model="gemini/gemini-2.0-pro", prompt_tokens=200)]
+                ),
+            ])
+        )
+        stats = service.stats()
+        assert set(stats.by_model.keys()) == {"gemini/gemini-2.0-flash", "gemini/gemini-2.0-pro"}
+        assert stats.by_model["gemini/gemini-2.0-flash"].total_prompt_tokens == 100
+        assert stats.by_model["gemini/gemini-2.0-pro"].total_prompt_tokens == 200
+
+    def test_multiple_calls_same_model_aggregated_in_single_by_model_entry(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(
+                    attempts=[_make_attempt(model="gemini/gemini-2.0-flash", prompt_tokens=100)]
+                ),
+                _make_log_entry(
+                    attempts=[_make_attempt(model="gemini/gemini-2.0-flash", prompt_tokens=200)]
+                ),
+            ])
+        )
+        stats = service.stats()
+        assert len(stats.by_model) == 1
+        assert stats.by_model["gemini/gemini-2.0-flash"].total_prompt_tokens == 300
+
+    def test_malformed_jsonl_line_skipped_silently(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                "this is not json",
+                _make_log_entry(success=True, total_latency_ms=500.0, attempts=[_make_attempt()]),
+            ])
+        )
+        stats = service.stats()
+        assert stats.total_calls == 1
+
+    def test_mix_of_valid_and_malformed_lines_counts_only_valid(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(success=True, attempts=[_make_attempt()]),
+                "{bad json",
+                _make_log_entry(success=True, attempts=[_make_attempt()]),
+                "also bad",
+                _make_log_entry(
+                    success=False,
+                    error_code="LLM_ALL_MODELS_FAILED",
+                    attempts=[_make_attempt(error="err")],
+                ),
+            ])
+        )
+        stats = service.stats()
+        assert stats.total_calls == 3
+        assert stats.successful_calls == 2
+        assert stats.failed_calls == 1
+
+    def test_mixed_pricing_returns_partial_sum_not_none(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(
+                    attempts=[
+                        _make_attempt(
+                            prompt_tokens_price=0.001, completion_tokens_price=0.002
+                        )
+                    ]
+                ),
+                _make_log_entry(
+                    attempts=[
+                        _make_attempt(
+                            prompt_tokens_price=None, completion_tokens_price=None
+                        )
+                    ]
+                ),
+            ])
+        )
+        stats = service.stats()
+        assert stats.total_cost_usd == pytest.approx(0.003)
+
+    def test_avg_latency_equals_total_divided_by_call_count(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(total_latency_ms=1000.0, attempts=[_make_attempt()]),
+                _make_log_entry(total_latency_ms=3000.0, attempts=[_make_attempt()]),
+            ])
+        )
+        stats = service.stats()
+        assert stats.total_latency_ms == 4000.0
+        assert stats.avg_latency_ms == 2000.0
+
+    def test_aggregate_prompt_and_completion_tokens_match_sum_of_by_model(
+        self, litellm_ok, log_dir: Path, log_config: LogConfig, minimal_profile: LLMProfile
+    ) -> None:
+        service = LLMService(profile=minimal_profile, log_config=log_config)
+        (log_dir / "llm.log").write_text(
+            "\n".join([
+                _make_log_entry(
+                    attempts=[
+                        _make_attempt(
+                            model="gemini/gemini-2.0-flash",
+                            prompt_tokens=100,
+                            completion_tokens=50,
+                        )
+                    ]
+                ),
+                _make_log_entry(
+                    attempts=[
+                        _make_attempt(
+                            model="gemini/gemini-2.0-pro",
+                            prompt_tokens=200,
+                            completion_tokens=80,
+                        )
+                    ]
+                ),
+            ])
+        )
+        stats = service.stats()
+        total_prompt = sum(m.total_prompt_tokens for m in stats.by_model.values())
+        total_completion = sum(m.total_completion_tokens for m in stats.by_model.values())
+        assert stats.total_prompt_tokens == total_prompt
+        assert stats.total_completion_tokens == total_completion

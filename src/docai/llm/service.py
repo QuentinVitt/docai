@@ -16,8 +16,10 @@ from docai.llm.datatypes import (
     LLMCallAttempt,
     LLMGenerateLog,
     LLMProfile,
+    LLMStats,
     LogConfig,
     ModelConfig,
+    ModelStats,
 )
 from docai.llm.errors import LLMError
 
@@ -373,3 +375,96 @@ class LLMService:
                 final_response=final_response,
                 error_code=error_code,
             )
+
+    def stats(self) -> LLMStats:
+        by_model: dict[str, ModelStats] = {}
+        total_calls = 0
+        successful_calls = 0
+        failed_calls = 0
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+        total_latency_ms = 0.0
+        call_failures = 0
+        val_retries = 0
+        errors: set[str] = set()
+        cost_sum = 0.0
+        has_any_pricing = False
+
+        for line in self._log_file.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = LLMGenerateLog.model_validate_json(line)
+            except Exception:
+                continue
+
+            total_calls += 1
+            if entry.success:
+                successful_calls += 1
+            else:
+                failed_calls += 1
+            total_latency_ms += entry.total_latency_ms
+
+            models_seen: set[str] = set()
+            for attempt in entry.attempts:
+                model = attempt.model_args.get("model", "unknown")
+                models_seen.add(model)
+
+                if attempt.usage_metadata is not None:
+                    total_prompt_tokens += attempt.usage_metadata.get("prompt_tokens", 0)
+                    total_completion_tokens += attempt.usage_metadata.get("completion_tokens", 0)
+
+                if (
+                    attempt.prompt_tokens_price is not None
+                    and attempt.completion_tokens_price is not None
+                ):
+                    cost_sum += attempt.prompt_tokens_price + attempt.completion_tokens_price
+                    has_any_pricing = True
+
+                if attempt.error is not None:
+                    call_failures += 1
+                    errors.add(attempt.error)
+                if attempt.validator_error is not None:
+                    val_retries += 1
+
+                if model not in by_model:
+                    by_model[model] = ModelStats(model=model)
+                m = by_model[model]
+                if attempt.usage_metadata is not None:
+                    m.total_prompt_tokens += attempt.usage_metadata.get("prompt_tokens", 0)
+                    m.total_completion_tokens += attempt.usage_metadata.get("completion_tokens", 0)
+                if attempt.error is not None:
+                    m.call_failures += 1
+                    m.errors.add(attempt.error)
+                if attempt.validator_error is not None:
+                    m.val_retries += 1
+                m.total_latency_ms += attempt.latency_ms
+
+            for model in models_seen:
+                m = by_model[model]
+                m.total_calls += 1
+                if entry.success:
+                    m.successful_calls += 1
+                else:
+                    m.failed_calls += 1
+
+        for m in by_model.values():
+            m.avg_latency_ms = m.total_latency_ms / m.total_calls if m.total_calls > 0 else 0.0
+
+        total_cost_usd: float | None = cost_sum if (total_calls == 0 or has_any_pricing) else None
+
+        return LLMStats(
+            total_calls=total_calls,
+            successful_calls=successful_calls,
+            failed_calls=failed_calls,
+            total_prompt_tokens=total_prompt_tokens,
+            total_completion_tokens=total_completion_tokens,
+            total_cost_usd=total_cost_usd,
+            total_latency_ms=total_latency_ms,
+            avg_latency_ms=total_latency_ms / total_calls if total_calls > 0 else 0.0,
+            call_failures=call_failures,
+            val_retries=val_retries,
+            errors=errors,
+            by_model=by_model,
+        )

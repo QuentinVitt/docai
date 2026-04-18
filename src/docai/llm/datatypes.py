@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -167,3 +168,35 @@ class LLMGenerateLog(BaseModel):
     attempts: list[LLMCallAttempt]
     final_response: str | None
     error_code: str | None
+
+
+@dataclass
+class ModelStats:
+    model: str = ""
+    total_calls: int = 0
+    successful_calls: int = 0
+    failed_calls: int = 0
+    total_prompt_tokens: int = 0
+    total_completion_tokens: int = 0
+    total_cost_usd: float | None = 0.0
+    total_latency_ms: float = 0.0
+    avg_latency_ms: float = 0.0
+    call_failures: int = 0
+    val_retries: int = 0
+    errors: set[str] = field(default_factory=set)
+
+
+@dataclass
+class LLMStats:
+    total_calls: int = 0
+    successful_calls: int = 0
+    failed_calls: int = 0
+    total_prompt_tokens: int = 0
+    total_completion_tokens: int = 0
+    total_cost_usd: float | None = 0.0
+    total_latency_ms: float = 0.0
+    avg_latency_ms: float = 0.0
+    call_failures: int = 0
+    val_retries: int = 0
+    errors: set[str] = field(default_factory=set)
+    by_model: dict[str, ModelStats] = field(default_factory=dict)
