@@ -1,0 +1,8 @@
+fixture: tests/fixtures/source/rust/lib.rs
+language: rust
+file_type: source_file
+expected_deps: []
+must_contain: []
+should_not_contain: []
+tags:
+- rust

@@ -1,0 +1,10 @@
+fixture: tests/fixtures/source/rust/task_mod.rs
+language: rust
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Task
+  category: type
+should_not_contain: []
+tags:
+- rust

@@ -1,0 +1,10 @@
+fixture: tests/fixtures/source/java/AbstractBeanFactory.java
+language: java
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: AbstractBeanFactory
+  category: type
+should_not_contain: []
+tags:
+- java

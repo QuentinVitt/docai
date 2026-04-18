@@ -1,0 +1,72 @@
+fixture: tests/fixtures/source/elixir/gen_server.ex
+language: elixir
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: GenServer
+  category: type
+- name: init
+  category: callable
+- name: handle_call
+  category: callable
+- name: handle_cast
+  category: callable
+- name: handle_info
+  category: callable
+- name: handle_continue
+  category: callable
+- name: terminate
+  category: callable
+- name: code_change
+  category: callable
+- name: format_status
+  category: callable
+- name: format_status
+  category: callable
+- name: on_start
+  category: type
+- name: name
+  category: type
+- name: options
+  category: type
+- name: option
+  category: type
+- name: debug
+  category: type
+- name: server
+  category: type
+- name: from
+  category: type
+- name: __using__
+  category: macro
+- name: __before_compile__
+  category: macro
+- name: start_link
+  category: callable
+- name: start
+  category: callable
+- name: do_start
+  category: callable
+- name: stop
+  category: callable
+- name: call
+  category: callable
+- name: cast
+  category: callable
+- name: abcast
+  category: callable
+- name: cast_msg
+  category: callable
+- name: do_send
+  category: callable
+- name: multi_call
+  category: callable
+- name: reply
+  category: callable
+- name: whereis
+  category: callable
+- name: format_report
+  category: callable
+should_not_contain: []
+tags:
+- elixir

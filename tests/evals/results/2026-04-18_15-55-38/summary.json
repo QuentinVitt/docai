@@ -1,0 +1,25 @@
+[
+  {
+    "case_id": "source__python__models_py",
+    "fixture": "tests/fixtures/source/python/models.py",
+    "file_type_match": true,
+    "deps_match": true,
+    "pct_entities_found": 100.0,
+    "false_entities": [],
+    "extra_entities": [
+      {
+        "name": "complexjson",
+        "category": "value"
+      },
+      {
+        "name": "RequestsJSONDecodeError",
+        "category": "type"
+      },
+      {
+        "name": "RequestsSSLError",
+        "category": "type"
+      }
+    ],
+    "error": null
+  }
+]

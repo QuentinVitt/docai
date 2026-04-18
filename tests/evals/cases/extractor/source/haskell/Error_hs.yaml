@@ -1,0 +1,40 @@
+fixture: tests/fixtures/source/haskell/Error.hs
+language: haskell
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: OnDecodeError
+  category: type
+- name: OnEncodeError
+  category: type
+- name: OnError
+  category: type
+- name: UnicodeException
+  category: type
+- name: DecodeError
+  category: callable
+- name: EncodeError
+  category: callable
+- name: Eq
+  category: implementation
+- name: showUnicodeException
+  category: callable
+- name: Show
+  category: implementation
+- name: Exception
+  category: implementation
+- name: NFData
+  category: implementation
+- name: strictDecode
+  category: callable
+- name: lenientDecode
+  category: callable
+- name: strictEncode
+  category: callable
+- name: ignore
+  category: callable
+- name: replace
+  category: callable
+should_not_contain: []
+tags:
+- haskell

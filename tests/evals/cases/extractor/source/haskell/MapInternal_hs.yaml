@@ -1,0 +1,10 @@
+fixture: tests/fixtures/source/haskell/MapInternal.hs
+language: haskell
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: Map
+  category: type
+should_not_contain: []
+tags:
+- haskell

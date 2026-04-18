@@ -1,0 +1,48 @@
+fixture: tests/fixtures/source/ruby/inflections.rb
+language: ruby
+file_type: source_file
+expected_deps: []
+must_contain:
+- name: String
+  category: type
+- name: pluralize
+  category: callable
+- name: singularize
+  category: callable
+- name: constantize
+  category: callable
+- name: safe_constantize
+  category: callable
+- name: camelize
+  category: callable
+- name: camelcase
+  category: callable
+- name: titleize
+  category: callable
+- name: titlecase
+  category: callable
+- name: underscore
+  category: callable
+- name: dasherize
+  category: callable
+- name: demodulize
+  category: callable
+- name: deconstantize
+  category: callable
+- name: parameterize
+  category: callable
+- name: tableize
+  category: callable
+- name: classify
+  category: callable
+- name: humanize
+  category: callable
+- name: upcase_first
+  category: callable
+- name: downcase_first
+  category: callable
+- name: foreign_key
+  category: callable
+should_not_contain: []
+tags:
+- ruby
